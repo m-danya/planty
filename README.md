@@ -27,7 +27,25 @@ poetry install
 # run postgres
 docker compose up -d
 
+# run migrations
+alembic upgrade head
+
 # (backend is not dockerized yet)
 # run "FastAPI" configuration in VS code or:
 uvicorn planty.main:app --reload
+```
+
+### Run tests
+
+```
+pytest
+```
+
+### Run linting & formatting
+
+(or just use Ruff extension for VS Code)
+
+```
+ruff check
+ruff format
 ```
