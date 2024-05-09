@@ -1,8 +1,15 @@
+from abc import ABC, abstractmethod
+
 from sqlalchemy.ext.asyncio import AsyncSession
-from planty.tasks.domain.repositories import ITaskRepository
+
 from planty.tasks.domain.entities import Task
 from planty.tasks.infrastructure.models import TaskModel
 from planty.utils import get_datetime_now
+
+
+class ITaskRepository(ABC):
+    @abstractmethod
+    async def add(self, task: Task) -> None: ...
 
 
 class SQLAlchemyTaskRepository(ITaskRepository):
@@ -10,7 +17,6 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         self._db_session = db_session
 
     async def add(self, task: Task) -> None:
-        # TODO: use mappers?
         task_model = TaskModel(
             id=task.id,
             # user_id=task.user_id,

@@ -24,9 +24,6 @@ python3.11 -m venv venv
 source venv/bin/activate
 poetry install
 
-# run postgres
-docker compose up -d
-
 # run migrations
 alembic upgrade head
 
@@ -34,6 +31,12 @@ alembic upgrade head
 # run "FastAPI" configuration in VS code or:
 uvicorn planty.main:app --reload
 ```
+
+### Switching between database engines
+
+By default, the SQLite engine is used for persistence, but you can easily switch
+to PostgreSQL: change `DB_TYPE` in `.env` file to `postgresql` and run
+PostgreSQL with `docker compose up -d`.
 
 ### Run tests
 

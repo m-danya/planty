@@ -2,12 +2,14 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Optional
 
+from uuid import UUID
+
 from planty.utils import get_datetime_now
 
 
 @dataclass(kw_only=True)
 class Task:
-    id: int
+    id: UUID
     user_id: int
     section_id: int
     title: str

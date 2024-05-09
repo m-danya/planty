@@ -7,14 +7,14 @@ from sqlalchemy.orm import DeclarativeBase
 from planty.config import settings
 
 if settings.MODE == "TEST":
-    DATABASE_URL = settings.TEST_DATABASE_URL
-    DATABASE_PARAMS = {"poolclass": NullPool}
+    database_url = settings.get_database_url(for_tests=True)
+    database_params = {"poolclass": NullPool}
 else:
-    DATABASE_URL = settings.DATABASE_URL
-    DATABASE_PARAMS = {}
+    database_url = settings.get_database_url()
+    database_params = {}
 
 
-engine = create_async_engine(DATABASE_URL, **DATABASE_PARAMS)
+engine = create_async_engine(database_url, **database_params)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 

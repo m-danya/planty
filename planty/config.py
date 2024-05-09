@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    DB_TYPE: Literal["sqlite", "postgresql"]
+
     DB_HOST: str
     DB_PORT: int
     DB_USER: str
@@ -16,21 +18,30 @@ class Settings(BaseSettings):
     TEST_DB_NAME: str
     TEST_DB_PASS: str
 
-    @property
-    def DATABASE_URL(self):
-        return (
-            "postgresql+asyncpg://"
-            f"{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:"
-            f"{self.DB_PORT}/{self.DB_NAME}"
-        )
-
-    @property
-    def TEST_DATABASE_URL(self):
-        return (
-            "postgresql+asyncpg://"
-            f"{self.TEST_DB_USER}:{self.TEST_DB_PASS}@{self.TEST_DB_HOST}:"
-            f"{self.TEST_DB_PORT}/{self.TEST_DB_NAME}"
-        )
+    def get_database_url(self, for_alembic: bool = False, for_tests: bool = False):
+        # TODO: refactor ifs
+        if for_tests:
+            if self.DB_TYPE == "postgresql":
+                return (
+                    "postgresql+asyncpg://"
+                    f"{self.TEST_DB_USER}:{self.TEST_DB_PASS}@{self.TEST_DB_HOST}:"
+                    f"{self.TEST_DB_PORT}/{self.TEST_DB_NAME}"
+                )
+            else:
+                return f"sqlite+aiosqlite:///{self.TEST_DB_NAME}.db"
+        else:
+            if self.DB_TYPE == "postgresql":
+                return (
+                    "postgresql+asyncpg://"
+                    f"{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:"
+                    f"{self.DB_PORT}/{self.DB_NAME}"
+                )
+            else:
+                return (
+                    f"sqlite+aiosqlite:///{self.DB_NAME}.db"
+                    if not for_alembic
+                    else f"sqlite+pysqlite:///{self.DB_NAME}.db"
+                )
 
     MODE: Literal["DEV", "TEST", "PROD"]
 
