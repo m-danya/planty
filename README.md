@@ -49,6 +49,6 @@ pytest
 (or just use Ruff extension for VS Code)
 
 ```
-ruff check
+ruff check --extend-select I --fix
 ruff format
 ```

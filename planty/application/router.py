@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from planty.tasks.application.schemas import TaskCreateModel
-from planty.database import get_async_session
-from planty.tasks.infrastructure.repositories import (
+from planty.application.schemas import TaskCreateModel
+from planty.application.services import TaskService
+from planty.infrastructure.database import get_async_session
+from planty.infrastructure.repositories import (
     ITaskRepository,
     SQLAlchemyTaskRepository,
 )
-from planty.tasks.application.services import TaskService
 
 router = APIRouter(
     tags=["User tasks"],

@@ -4,7 +4,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    MODE: Literal["DEV", "TEST", "PROD"]
     DB_TYPE: Literal["sqlite", "postgresql"]
+
+    # (if `DB_TYPE` is "sqlite", then only `DB_NAME` is used)
 
     DB_HOST: str
     DB_PORT: int
@@ -42,8 +45,6 @@ class Settings(BaseSettings):
                     if not for_alembic
                     else f"sqlite+pysqlite:///{self.DB_NAME}.db"
                 )
-
-    MODE: Literal["DEV", "TEST", "PROD"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

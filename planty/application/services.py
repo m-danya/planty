@@ -1,9 +1,8 @@
 """Services representing usecases of an application"""
 
-from planty.tasks.domain.entities import Task
-from planty.tasks.application.schemas import TaskCreateModel
-from planty.tasks.infrastructure.repositories import ITaskRepository
-from planty.utils import generate_uuid
+from planty.application.schemas import TaskCreateModel
+from planty.domain.entities import Task
+from planty.infrastructure.repositories import ITaskRepository
 
 
 class TaskService:
@@ -12,7 +11,6 @@ class TaskService:
 
     async def add_task(self, task: TaskCreateModel) -> None:
         task = Task(
-            id=generate_uuid(),
             user_id=task.user_id,
             section_id=task.user_id,
             title=task.title,

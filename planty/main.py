@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from planty.tasks.application.router import router as tasks_router
+from planty.application.router import router as tasks_router
 
 app = FastAPI(
     title="Planty",
