@@ -38,10 +38,11 @@ By default, the SQLite engine is used for persistence, but you can easily switch
 to PostgreSQL: change `DB_TYPE` in `.env` file to `postgresql` and run
 PostgreSQL with `docker compose up -d`.
 
-### Run tests
+### Run tests and type checking
 
 ```
 pytest
+mypy .
 ```
 
 ### Run linting & formatting

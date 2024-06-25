@@ -14,7 +14,7 @@ async def session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture(scope="function", autouse=True)
-async def prepare_database():
+async def prepare_database() -> None:
     assert settings.MODE == "TEST"
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

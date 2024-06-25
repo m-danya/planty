@@ -21,7 +21,9 @@ class Settings(BaseSettings):
     TEST_DB_NAME: str
     TEST_DB_PASS: str
 
-    def get_database_url(self, for_alembic: bool = False, for_tests: bool = False):
+    def get_database_url(
+        self, for_alembic: bool = False, for_tests: bool = False
+    ) -> str:
         # TODO: refactor ifs
         if for_tests:
             if self.DB_TYPE == "postgresql":

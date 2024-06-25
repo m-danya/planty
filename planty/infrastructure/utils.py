@@ -1,6 +1,8 @@
+# type: ignore
+
 import uuid
 
-from sqlalchemy.dialects.postgresql import UUID
+from uuid import UUID
 from sqlalchemy.types import CHAR, TypeDecorator
 
 

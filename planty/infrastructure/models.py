@@ -5,8 +5,9 @@ from uuid import UUID
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
+from planty.domain.entities import Task, User
 from planty.infrastructure.database import Base
-from planty.infrastructure.utils import GUID
+from planty.infrastructure.utils import GUID  # type: ignore
 
 
 class TaskModel(Base):
@@ -23,6 +24,22 @@ class TaskModel(Base):
     due_to_next: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     due_to_days_period: Mapped[Optional[int]]
 
+    @classmethod
+    def from_entity(cls, task: Task, user: Optional[User] = None) -> "TaskModel":
+        if user is None:
+            user = task.user
+        return cls(
+            id=task.id,
+            user_id=user.id,
+            # section_id=task.section_id,
+            added_at=task.added_at,
+            title=task.title,
+            description=task.description,
+            is_completed=task.is_completed,
+            due_to_next=task.due_to_next,
+            due_to_days_period=task.due_to_days_period,
+        )
+
 
 # TODO: think about auth domain
 class UserModel(Base):
@@ -32,11 +49,10 @@ class UserModel(Base):
     username: Mapped[str] = mapped_column(unique=True)
 
 
-# class SectionModel(Base):
-#     __tablename__ = "section"
-#     id: Mapped[int] = mapped_column(primary_key=True)
-#     parent_section_id: Mapped[Optional[int]] = mapped_column(
-#         ForeignKey("section.id"), nullable=True
-#     )
-#     title: Mapped[str]
-#     parent_section = relationship("Section", remote_side=[id], backref="subsections")
+class SectionModel(Base):
+    __tablename__ = "section"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    parent_id: Mapped[Optional[GUID]] = mapped_column(
+        ForeignKey("section.id"), nullable=True
+    )
+    title: Mapped[str]

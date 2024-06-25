@@ -14,6 +14,7 @@ asyncpg = "^0.29.0"
 loguru = "^0.7.2"
 gunicorn = "^21.2.0"
 aiosqlite = "^0.20.0"
+mypy = "^1.10.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
@@ -38,3 +39,10 @@ filterwarnings = [
 
 [tool.ruff]
 extend-exclude = ["alembic/versions"]
+
+[tool.mypy]
+explicit_package_bases = true
+strict = true
+allow_redefinition = true
+exclude = "alembic/"
+plugins =  ["pydantic.mypy"]
