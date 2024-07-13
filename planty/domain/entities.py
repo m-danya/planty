@@ -27,16 +27,10 @@ class User(BaseModel):
     username: Username
 
 
-class Section(BaseModel):
-    id: UUID = Field(default_factory=generate_uuid)
-    title: str
-    parent_id: Optional[UUID] = None
-
-
 class Task(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)
-    user: User
-    # section_id: int
+    user_id: UUID
+    section_id: UUID
     title: str
     description: Optional[str] = None
     is_completed: bool = False
@@ -62,3 +56,10 @@ class Task(BaseModel):
     ) -> None:
         self.due_to_next = due_to_next
         self.due_to_days_period = due_to_days_period
+
+
+class Section(BaseModel):
+    id: UUID = Field(default_factory=generate_uuid)
+    title: str
+    parent_id: Optional[UUID] = None
+    tasks: list[Task]

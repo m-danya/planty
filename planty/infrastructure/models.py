@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 
-from planty.domain.entities import Task, User
+from planty.domain.entities import Task
 from planty.infrastructure.database import Base
 from planty.infrastructure.utils import GUID  # type: ignore
 
@@ -15,8 +15,8 @@ class TaskModel(Base):
 
     id: Mapped[UUID] = mapped_column(GUID, primary_key=True, unique=True)
     added_at: Mapped[datetime] = mapped_column(DateTime)
-    user_id: Mapped[int] = mapped_column(ForeignKey("user.id"))
-    # section_id: Mapped[int] = mapped_column(ForeignKey("section.id"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
+    section_id: Mapped[UUID] = mapped_column(ForeignKey("section.id"))
     title: Mapped[str]
     description: Mapped[Optional[str]]
     is_completed: Mapped[bool]
@@ -25,13 +25,11 @@ class TaskModel(Base):
     due_to_days_period: Mapped[Optional[int]]
 
     @classmethod
-    def from_entity(cls, task: Task, user: Optional[User] = None) -> "TaskModel":
-        if user is None:
-            user = task.user
+    def from_entity(cls, task: Task) -> "TaskModel":
         return cls(
             id=task.id,
-            user_id=user.id,
-            # section_id=task.section_id,
+            user_id=task.user_id,
+            section_id=task.section_id,
             added_at=task.added_at,
             title=task.title,
             description=task.description,
@@ -51,8 +49,8 @@ class UserModel(Base):
 
 class SectionModel(Base):
     __tablename__ = "section"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(GUID, primary_key=True)
+    title: Mapped[str]
     parent_id: Mapped[Optional[GUID]] = mapped_column(
         ForeignKey("section.id"), nullable=True
     )
-    title: Mapped[str]

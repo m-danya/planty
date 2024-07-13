@@ -19,43 +19,46 @@ def user() -> User:
 
 @pytest.fixture
 def section() -> Section:
-    return Section(title="Test section #1")
+    return Section(title="Test section #1", tasks=[])
 
 
 @pytest.fixture
-def nonperiodic_task(user: User) -> Task:
+def nonperiodic_task(user: User, section: Section) -> Task:
     return Task(
-        user=user,
+        user_id=user.id,
         title="Get some cheese",
         description=None,
         is_completed=False,
         added_at=get_datetime_now(),
         due_to_next=None,
         due_to_days_period=None,
+        section_id=section.id,
     )
 
 
 @pytest.fixture
-def everyday_task(user: User) -> Task:
+def everyday_task(user: User, section: Section) -> Task:
     return Task(
-        user=user,
+        user_id=user.id,
         title="Read something interesting",
         description=None,
         is_completed=False,
         added_at=get_datetime_now(),
         due_to_next=get_today(),
         due_to_days_period=1,
+        section_id=section.id,
     )
 
 
 @pytest.fixture
-def every_three_days_task(user: User) -> Task:
+def every_three_days_task(user: User, section: Section) -> Task:
     return Task(
-        user=user,
+        user_id=user.id,
         title="Plant waters",
         description=None,
         is_completed=False,
         added_at=get_datetime_now(),
         due_to_next=get_today(),
         due_to_days_period=3,
+        section_id=section.id,
     )

@@ -1,8 +1,8 @@
 # type: ignore
 
 import uuid
-
 from uuid import UUID
+
 from sqlalchemy.types import CHAR, TypeDecorator
 
 

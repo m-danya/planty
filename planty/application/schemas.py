@@ -35,3 +35,8 @@ class TaskCreateRequest(BaseModel):
     due_to_days_period: Optional[int] = None
 
     model_config = {"json_schema_extra": {"examples": TASK_CREATE_EXAMPLES}}  # type: ignore
+
+
+class SectionCreateRequest(BaseModel):
+    user_id: UUID
+    title: str

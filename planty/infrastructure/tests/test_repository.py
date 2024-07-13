@@ -5,15 +5,15 @@ from planty.infrastructure.repositories import SQLAlchemyTaskRepository
 
 
 async def test_task_repo(session: AsyncSession, nonperiodic_task: Task) -> None:
-    repository = SQLAlchemyTaskRepository(session)
+    task_repo = SQLAlchemyTaskRepository(session)
 
-    await repository.add(nonperiodic_task)
+    await task_repo.add(nonperiodic_task)
     await session.commit()
 
-    task_got = await repository.get(nonperiodic_task.user, nonperiodic_task.id)
+    task_got = await task_repo.get(nonperiodic_task.id)
     assert task_got
     assert task_got.id == nonperiodic_task.id
-    # assert task_got.user == nonperiodic_task.user
+    assert task_got.user_id == nonperiodic_task.user_id
     assert task_got.title == nonperiodic_task.title
     assert task_got.description == nonperiodic_task.description
     assert task_got.is_completed == nonperiodic_task.is_completed
