@@ -5,18 +5,14 @@ from uuid import UUID
 
 from planty.application.exceptions import TaskNotFoundException
 from planty.application.schemas import SectionCreateRequest, TaskCreateRequest
+from planty.application.uow import IUnitOfWork
 from planty.domain.entities import Section, Task
-from planty.infrastructure.repositories import (
-    ISectionRepository,
-    ITaskRepository,
-    IUserRepository,
-)
 
 
 class TaskService:
-    def __init__(self, task_repo: ITaskRepository, user_repo: IUserRepository):
-        self._task_repo = task_repo
-        self._user_repo = user_repo
+    def __init__(self, uow: IUnitOfWork):
+        self._task_repo = uow.task_repo
+        self._user_repo = uow.user_repo
 
     async def add_task(self, task: TaskCreateRequest) -> UUID:
         task = Task(
@@ -45,9 +41,9 @@ class TaskService:
 
 
 class SectionService:
-    def __init__(self, section_repo: ISectionRepository, task_repo: ITaskRepository):
-        self._section_repo = section_repo
-        self._task_repo = task_repo
+    def __init__(self, uow: IUnitOfWork):
+        self._section_repo = uow.section_repo
+        self._task_repo = uow.task_repo
 
     async def add(self, section_data: SectionCreateRequest) -> Section:
         section = Section(title=section_data.title, parent_id=None, tasks=[])

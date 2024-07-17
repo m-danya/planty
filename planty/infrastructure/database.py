@@ -15,7 +15,10 @@ else:
 
 
 engine = create_async_engine(database_url, **database_params)
-async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+# Ensure to close the session obtained from this sessionmaker
+# (or use it as a context manager to automatically handle closure)
+raw_async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
 
 
 class Base(DeclarativeBase):
@@ -23,5 +26,5 @@ class Base(DeclarativeBase):
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_maker() as session:
+    async with raw_async_session_maker() as session:
         yield session

@@ -1,20 +1,18 @@
 from planty.application.schemas import TaskCreateRequest
 from planty.application.services import TaskService
+from planty.application.uow import IUnitOfWork
 from planty.domain.entities import Section, Task, User
-from planty.infrastructure.repositories import (
-    ITaskRepository,
-    IUserRepository,
-)
 
 
 async def test_add_task(
-    task_service: TaskService,
+    uow: IUnitOfWork,
     nonperiodic_task: Task,
     user: User,
     section: Section,
-    user_repo: IUserRepository,
-    task_repo: ITaskRepository,
 ) -> None:
+    user_repo = uow.user_repo
+    task_repo = uow.task_repo
+    task_service = TaskService(uow)
     await user_repo.add(user)
     task = nonperiodic_task
     task_create_request = TaskCreateRequest(
@@ -34,13 +32,13 @@ async def test_add_task(
 
 
 async def test_mark_completed_task(
-    task_service: TaskService,
+    uow: IUnitOfWork,
     nonperiodic_task: Task,
     user: User,
     section: Section,
-    user_repo: IUserRepository,
-    task_repo: ITaskRepository,
 ) -> None:
+    user_repo = uow.user_repo
+    task_service = TaskService(uow)
     await user_repo.add(user)
     task = nonperiodic_task
     task_create_request = TaskCreateRequest(

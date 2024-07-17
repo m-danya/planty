@@ -1,15 +1,21 @@
 import os
 
-import pytest
 
-from planty.domain.entities import Section, Task, User, Username
-from planty.utils import get_datetime_now, get_today
-
-# this file is located in the root of `planty` package to substitute the
-# `MODE` environmental variable _before_ the Settings object is created.
+# substitute the `MODE` _before_ the Settings object is created.
 os.environ["MODE"] = "TEST"
+import pytest  # noqa: E402
 
-# these fixtures are shared across different test sets
+from planty.domain.entities import Section, Task, User, Username  # noqa: E402
+from planty.utils import get_datetime_now, get_today  # noqa: E402
+from planty.application.uow import FakeUnitOfWork, IUnitOfWork  # noqa: E402
+
+
+# these fixtures are shared across different test sets:
+
+
+@pytest.fixture
+def uow() -> IUnitOfWork:
+    return FakeUnitOfWork()
 
 
 @pytest.fixture

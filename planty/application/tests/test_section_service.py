@@ -1,19 +1,15 @@
-
 from planty.application.services import SectionService
+from planty.application.uow import IUnitOfWork
 from planty.domain.entities import Section, Task
-from planty.infrastructure.repositories import (
-    ISectionRepository,
-    ITaskRepository,
-)
 
 
 async def test_add_task_to_section(
-    section_repo: ISectionRepository,
-    task_repo: ITaskRepository,
+    uow: IUnitOfWork,
     nonperiodic_task: Task,
     section: Section,
-    section_service: SectionService,
 ) -> None:
+    section_service = SectionService(uow)
+    task_repo, section_repo = uow.task_repo, uow.section_repo
     await section_repo.add(section)
     section_before = await section_service.get_section(section.id)
     assert section_before
