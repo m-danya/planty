@@ -1,10 +1,13 @@
 """Services representing usecases of an application"""
 
-from typing import Optional
 from uuid import UUID
 
 from planty.application.exceptions import TaskNotFoundException
-from planty.application.schemas import SectionCreateRequest, TaskCreateRequest
+from planty.application.schemas import (
+    SectionCreateRequest,
+    TaskCreateRequest,
+    TaskUpdateRequest,
+)
 from planty.application.uow import IUnitOfWork
 from planty.domain.entities import Section, Task
 
@@ -24,6 +27,19 @@ class TaskService:
             due_to_days_period=task.due_to_days_period,
         )
         await self._task_repo.add(task)
+        return task.id
+
+    async def update_task(self, task: TaskUpdateRequest) -> UUID:
+        task = Task(
+            id=task.task_id,
+            user_id=task.user_id,
+            section_id=task.section_id,
+            title=task.title,
+            is_completed=False,
+            due_to_next=task.due_to_next,
+            due_to_days_period=task.due_to_days_period,
+        )
+        await self._task_repo.update(task)
         return task.id
 
     async def get_task(self, task_id: UUID) -> Task:
@@ -50,6 +66,6 @@ class SectionService:
         await self._section_repo.add(section)
         return section
 
-    async def get_section(self, section_id: UUID) -> Optional[Section]:
+    async def get_section(self, section_id: UUID) -> Section:
         section = await self._section_repo.get(section_id)
         return section

@@ -1,45 +1,62 @@
-from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter
 
 from planty.application.schemas import (
     SectionCreateRequest,
+    SectionCreateResponse,
     TaskCreateRequest,
+    TaskCreateResponse,
+    TaskUpdateRequest,
+    TaskUpdateResponse,
 )
 from planty.application.services import SectionService, TaskService
 from planty.application.uow import SqlAlchemyUnitOfWork
+from planty.domain.entities import Section
 
 router = APIRouter(
     tags=["User tasks"],
 )
 
 
-# TODO: check username = "ab", does the validation work?
-
-
 @router.post("/task")
 async def create_task(
     task_data: TaskCreateRequest,
-) -> Any:  # TODO: add validation
-    task_service = TaskService(uow=SqlAlchemyUnitOfWork())
-    await task_service.add_task(task_data)
-    return {"message": "Task created"}
+) -> TaskCreateResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        task_id = await task_service.add_task(task_data)
+        await uow.commit()
+        return TaskCreateResponse(message="Task created", task_id=task_id)
+
+
+@router.put("/task")
+async def update_task(
+    task_data: TaskUpdateRequest,
+) -> TaskUpdateResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        await task_service.update_task(task_data)
+        await uow.commit()
+        return TaskUpdateResponse(message="Task updated")
 
 
 @router.post("/section")
 async def create_section(
     section_data: SectionCreateRequest,
-) -> Any:  # TODO: add validation
-    section_service = SectionService(uow=SqlAlchemyUnitOfWork())
-    section = await section_service.add(section_data)
-    return {"message": "Session created", "id": section.id}
+) -> SectionCreateResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        section = await section_service.add(section_data)
+        await uow.commit()
+        return SectionCreateResponse(message="Session created", section_id=section.id)
 
 
 @router.get("/section/{section_id}")
 async def get_section(
     section_id: UUID,
-) -> Any:  # TODO: add validation
-    section_service = SectionService(uow=SqlAlchemyUnitOfWork())
-    section = await section_service.get_section(section_id)
-    return section
+) -> Section:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        section = await section_service.get_section(section_id)
+        return section

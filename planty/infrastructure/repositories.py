@@ -5,6 +5,11 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from planty.application.exceptions import (
+    SectionNotFoundException,
+    TaskNotFoundException,
+    UserNotFoundException,
+)
 from planty.domain.entities import Section, Task, User, Username
 from planty.infrastructure.models import SectionModel, TaskModel
 
@@ -13,7 +18,7 @@ class IUserRepository(ABC):
     @abstractmethod
     async def add(self, user: User) -> None: ...
     @abstractmethod
-    async def get(self, user_id: UUID) -> Optional[User]: ...
+    async def get(self, user_id: UUID) -> User: ...
 
 
 class FakeUserRepository(IUserRepository):
@@ -23,11 +28,11 @@ class FakeUserRepository(IUserRepository):
     async def add(self, user: User) -> None:
         self._users.append(user)
 
-    async def get(self, user_id: UUID) -> Optional[User]:
+    async def get(self, user_id: UUID) -> User:
         for user in self._users:
             if user.id == user_id:
                 return user
-        return None
+        raise UserNotFoundException(user_id=user_id)
 
 
 class SQLAlchemyUserRepository(IUserRepository):
@@ -35,7 +40,7 @@ class SQLAlchemyUserRepository(IUserRepository):
         self._db_session = db_session
 
     async def add(self, user: User) -> None: ...
-    async def get(self, user_id: UUID) -> Optional[User]:
+    async def get(self, user_id: UUID) -> User:
         return User(username=Username("test_user"))
 
 
@@ -43,7 +48,7 @@ class ITaskRepository(ABC):
     @abstractmethod
     async def add(self, task: Task) -> None: ...
     @abstractmethod
-    async def get(self, task_id: UUID) -> Optional[Task]: ...
+    async def get(self, task_id: UUID) -> Task: ...
     @abstractmethod
     async def update(self, task: Task) -> None: ...
     @abstractmethod
@@ -57,18 +62,18 @@ class FakeTaskRepository(ITaskRepository):
     async def add(self, task: Task) -> None:
         self._tasks.append(task)
 
-    async def get(self, task_id: UUID) -> Optional[Task]:
+    async def get(self, task_id: UUID) -> Task:
         for task in self._tasks:
             if task.id == task_id:
                 return task
-        return None
+        raise TaskNotFoundException(task_id=task_id)
 
     async def update(self, task: Task) -> None:
         for i, some_task in enumerate(self._tasks):
             if some_task.id == task.id:
                 self._tasks[i] = task
                 return
-        raise ValueError(f"Task with id {task.id} not found")
+        raise TaskNotFoundException(task_id=task.id)
 
     async def get_tasks_by_section_id(self, section_id: UUID) -> list[Task]:
         return [task for task in self._tasks if task.section_id == section_id]
@@ -82,13 +87,13 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         task_model = TaskModel.from_entity(task)
         self._db_session.add(task_model)
 
-    async def get(self, task_id: UUID) -> Optional[Task]:
+    async def get(self, task_id: UUID) -> Task:
         result = await self._db_session.execute(
             select(TaskModel).where(TaskModel.id == task_id)
         )
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
-            return None
+            raise TaskNotFoundException(task_id=task_id)
 
         return Task(
             id=task_model.id,
@@ -108,7 +113,7 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         )
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
-            raise ValueError(f"Task with id {task.id} not found")
+            raise TaskNotFoundException(task_id=task.id)
 
         task_model.user_id = task.user_id
         task_model.section_id = task.section_id
@@ -146,7 +151,7 @@ class ISectionRepository(ABC):
     @abstractmethod
     async def add(self, section: Section) -> None: ...
     @abstractmethod
-    async def get(self, section_id: UUID) -> Optional[Section]: ...
+    async def get(self, section_id: UUID) -> Section: ...
     @abstractmethod
     async def update(self, section: Section) -> None: ...
 
@@ -159,20 +164,20 @@ class FakeSectionRepository(ISectionRepository):
     async def add(self, section: Section) -> None:
         self._sections.append(section)
 
-    async def get(self, section_id: UUID) -> Optional[Section]:
+    async def get(self, section_id: UUID) -> Section:
         for section in self._sections:
             if section.id == section_id:
                 tasks = await self._task_repo.get_tasks_by_section_id(section_id)
                 section.tasks = tasks
                 return section
-        return None
+        raise SectionNotFoundException(section_id=section_id)
 
     async def update(self, section: Section) -> None:
         for i, some_section in enumerate(self._sections):
             if some_section.id == section.id:
                 self._sections[i] = section
                 return
-        raise ValueError(f"Section with id {section.id} not found")
+        raise SectionNotFoundException(section_id=section.id)
 
 
 # TODO: TEST ACTUAL SQL REPOSITORIES
@@ -187,13 +192,13 @@ class SQLAlchemySectionRepository(ISectionRepository):
         )
         self._db_session.add(section_model)
 
-    async def get(self, section_id: UUID) -> Optional[Section]:
+    async def get(self, section_id: UUID) -> Section:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.id == section_id)
         )
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
-            return None
+            raise SectionNotFoundException(section_id=section_id)
 
         tasks = await self._task_repo.get_tasks_by_section_id(section_id)
 
@@ -205,12 +210,13 @@ class SQLAlchemySectionRepository(ISectionRepository):
         )
 
     async def update(self, section: Section) -> None:
+        # Warning: this method does not update `section.tasks`
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.id == section.id)
         )
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
-            raise ValueError(f"Section with id {section.id} not found")
+            raise SectionNotFoundException(section_id=section.id)
 
         section_model.title = section.title
         section_model.parent_id = section.parent_id

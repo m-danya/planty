@@ -37,6 +37,30 @@ class TaskCreateRequest(BaseModel):
     model_config = {"json_schema_extra": {"examples": TASK_CREATE_EXAMPLES}}  # type: ignore
 
 
+class TaskCreateResponse(BaseModel):
+    message: str
+    task_id: UUID
+
+
+class TaskUpdateRequest(BaseModel):
+    task_id: UUID
+    user_id: UUID
+    section_id: UUID
+    title: str
+    description: Optional[str] = None
+    due_to_next: Optional[date] = None
+    due_to_days_period: Optional[int] = None
+
+
+class TaskUpdateResponse(BaseModel):
+    message: str
+
+
 class SectionCreateRequest(BaseModel):
     user_id: UUID
     title: str
+
+
+class SectionCreateResponse(BaseModel):
+    message: str
+    section_id: UUID
