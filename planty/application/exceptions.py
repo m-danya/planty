@@ -32,8 +32,8 @@ class UserNotFoundException(EntityNotFoundException):
 
 
 class TaskNotFoundException(EntityNotFoundException):
-    entity_name = "user"
+    entity_name = "task"
 
 
 class SectionNotFoundException(EntityNotFoundException):
-    entity_name = "user"
+    entity_name = "section"

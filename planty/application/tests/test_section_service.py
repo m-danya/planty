@@ -4,12 +4,12 @@ from planty.domain.entities import Section, Task
 
 
 async def test_add_task_to_section(
-    uow: IUnitOfWork,
+    fake_uow: IUnitOfWork,
     nonperiodic_task: Task,
     section: Section,
 ) -> None:
-    section_service = SectionService(uow)
-    task_repo, section_repo = uow.task_repo, uow.section_repo
+    section_service = SectionService(fake_uow)
+    task_repo, section_repo = fake_uow.task_repo, fake_uow.section_repo
     await section_repo.add(section)
     section_before = await section_service.get_section(section.id)
     assert section_before

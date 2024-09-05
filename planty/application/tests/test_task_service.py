@@ -5,14 +5,14 @@ from planty.domain.entities import Section, Task, User
 
 
 async def test_add_task(
-    uow: IUnitOfWork,
+    fake_uow: IUnitOfWork,
     nonperiodic_task: Task,
     user: User,
     section: Section,
 ) -> None:
-    user_repo = uow.user_repo
-    task_repo = uow.task_repo
-    task_service = TaskService(uow)
+    user_repo = fake_uow.user_repo
+    task_repo = fake_uow.task_repo
+    task_service = TaskService(fake_uow)
     await user_repo.add(user)
     task = nonperiodic_task
     task_create_request = TaskCreateRequest(
@@ -32,13 +32,13 @@ async def test_add_task(
 
 
 async def test_mark_completed_task(
-    uow: IUnitOfWork,
+    fake_uow: IUnitOfWork,
     nonperiodic_task: Task,
     user: User,
     section: Section,
 ) -> None:
-    user_repo = uow.user_repo
-    task_service = TaskService(uow)
+    user_repo = fake_uow.user_repo
+    task_service = TaskService(fake_uow)
     await user_repo.add(user)
     task = nonperiodic_task
     task_create_request = TaskCreateRequest(

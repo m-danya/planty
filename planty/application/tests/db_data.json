@@ -1,0 +1,45 @@
+{
+    "users": [
+        {
+            "id": "38df4136-36b2-4171-8459-27f411af8323",
+            "username": "test_user",
+            "created_at": "2024-03-28T04:11:17.677Z"
+        }
+    ],
+    "sections": [
+        {
+            "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            "title": "Current tasks",
+            "parent_id": null
+        }
+    ],
+    "tasks": [
+        {
+            "id": "0c6865ac-6bba-4837-8d48-6a057d4b12bf",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            "title": "Read something interesting",
+            "description": "not urgent",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z"
+        },
+        {
+            "id": "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            "title": "Watch 'Breaking Bad'",
+            "description": "not urgent",
+            "is_completed": true,
+            "added_at": "2024-03-28T04:11:17.677Z"
+        },
+        {
+            "id": "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            "title": "Watch 'Better Call Saul'",
+            "description": "not urgent",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z"
+        }
+    ]
+}
