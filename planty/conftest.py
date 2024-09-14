@@ -7,21 +7,10 @@ import pytest  # noqa: E402
 
 from planty.domain.entities import Section, Task, User, Username  # noqa: E402
 from planty.utils import get_datetime_now, get_today  # noqa: E402
-from planty.application.uow import FakeUnitOfWork, IUnitOfWork, SqlAlchemyUnitOfWork  # noqa: E402
+from planty.application.uow import IUnitOfWork, SqlAlchemyUnitOfWork  # noqa: E402
 
 
 # these fixtures are shared across different test sets:
-
-
-# TODO: use sql_uow instead of fake_uow?
-@pytest.fixture
-def fake_uow() -> IUnitOfWork:
-    return FakeUnitOfWork()
-
-
-@pytest.fixture
-def sql_uow() -> IUnitOfWork:
-    return SqlAlchemyUnitOfWork()
 
 
 @pytest.fixture

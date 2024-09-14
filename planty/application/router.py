@@ -14,9 +14,7 @@ from planty.application.services import SectionService, TaskService
 from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.entities import Section
 
-router = APIRouter(
-    tags=["User tasks"],
-)
+router = APIRouter(tags=["User tasks"], prefix="/api")
 
 
 @router.post("/task")
@@ -60,3 +58,11 @@ async def get_section(
         section_service = SectionService(uow=uow)
         section = await section_service.get_section(section_id)
         return section
+
+
+@router.get("/sections")
+async def get_sections() -> list[Section]:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        sections = await section_service.get_all_sections()
+        return sections

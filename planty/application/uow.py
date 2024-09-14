@@ -7,9 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from planty.infrastructure.database import raw_async_session_maker
 from planty.infrastructure.repositories import (
-    FakeSectionRepository,
-    FakeTaskRepository,
-    FakeUserRepository,
     ISectionRepository,
     ITaskRepository,
     IUserRepository,
@@ -59,18 +56,3 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
 
     async def rollback(self) -> None:
         await self.db_session.rollback()
-
-
-class FakeUnitOfWork(IUnitOfWork):
-    def __init__(self) -> None:
-        self.user_repo = FakeUserRepository()
-        self.task_repo = FakeTaskRepository()
-        self.section_repo = FakeSectionRepository(self.task_repo)
-
-        self.committed = False
-
-    async def commit(self) -> None:
-        self.committed = True
-
-    async def rollback(self) -> None:
-        pass

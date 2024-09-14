@@ -33,8 +33,12 @@ def load_json_with_data(filename: str) -> dict[str, Any]:
     for table_key in test_data:
         for row in test_data[table_key]:
             for column in row:
+                if row[column] is None:
+                    continue
                 if column.endswith("_at"):
                     row[column] = datetime.strptime(row[column], TEST_DATETIME_FORMAT)
+                if column == "due_to_next" and row[column]:
+                    row[column] = datetime.strptime(row[column], "%Y-%m-%d").date()
     test_data["users"].sort(key=lambda x: x.get("id"))
     test_data["sections"].sort(key=lambda x: x.get("id"))
     test_data["tasks"].sort(key=lambda x: x.get("id"))

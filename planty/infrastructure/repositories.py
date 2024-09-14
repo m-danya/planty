@@ -21,20 +21,6 @@ class IUserRepository(ABC):
     async def get(self, user_id: UUID) -> User: ...
 
 
-class FakeUserRepository(IUserRepository):
-    def __init__(self) -> None:
-        self._users: list[User] = []
-
-    async def add(self, user: User) -> None:
-        self._users.append(user)
-
-    async def get(self, user_id: UUID) -> User:
-        for user in self._users:
-            if user.id == user_id:
-                return user
-        raise UserNotFoundException(user_id=user_id)
-
-
 class SQLAlchemyUserRepository(IUserRepository):
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
@@ -53,30 +39,6 @@ class ITaskRepository(ABC):
     async def update(self, task: Task) -> None: ...
     @abstractmethod
     async def get_tasks_by_section_id(self, section_id: UUID) -> list[Task]: ...
-
-
-class FakeTaskRepository(ITaskRepository):
-    def __init__(self) -> None:
-        self._tasks: list[Task] = []
-
-    async def add(self, task: Task) -> None:
-        self._tasks.append(task)
-
-    async def get(self, task_id: UUID) -> Task:
-        for task in self._tasks:
-            if task.id == task_id:
-                return task
-        raise TaskNotFoundException(task_id=task_id)
-
-    async def update(self, task: Task) -> None:
-        for i, some_task in enumerate(self._tasks):
-            if some_task.id == task.id:
-                self._tasks[i] = task
-                return
-        raise TaskNotFoundException(task_id=task.id)
-
-    async def get_tasks_by_section_id(self, section_id: UUID) -> list[Task]:
-        return [task for task in self._tasks if task.section_id == section_id]
 
 
 class SQLAlchemyTaskRepository(ITaskRepository):
@@ -153,34 +115,11 @@ class ISectionRepository(ABC):
     @abstractmethod
     async def get(self, section_id: UUID) -> Section: ...
     @abstractmethod
+    async def get_all(self, section_id: UUID) -> Section: ...
+    @abstractmethod
     async def update(self, section: Section) -> None: ...
 
 
-class FakeSectionRepository(ISectionRepository):
-    def __init__(self, task_repo: ITaskRepository) -> None:
-        self._sections: list[Section] = []
-        self._task_repo = task_repo
-
-    async def add(self, section: Section) -> None:
-        self._sections.append(section)
-
-    async def get(self, section_id: UUID) -> Section:
-        for section in self._sections:
-            if section.id == section_id:
-                tasks = await self._task_repo.get_tasks_by_section_id(section_id)
-                section.tasks = tasks
-                return section
-        raise SectionNotFoundException(section_id=section_id)
-
-    async def update(self, section: Section) -> None:
-        for i, some_section in enumerate(self._sections):
-            if some_section.id == section.id:
-                self._sections[i] = section
-                return
-        raise SectionNotFoundException(section_id=section.id)
-
-
-# TODO: TEST ACTUAL SQL REPOSITORIES
 class SQLAlchemySectionRepository(ISectionRepository):
     def __init__(self, db_session: AsyncSession, task_repo: ITaskRepository):
         self._db_session = db_session
@@ -208,6 +147,19 @@ class SQLAlchemySectionRepository(ISectionRepository):
             parent_id=section_model.parent_id,
             tasks=tasks,
         )
+
+    async def get_all(self) -> list[Section]:
+        result = await self._db_session.execute(select(SectionModel))
+        section_models = result.scalars()
+        return [
+            Section(
+                id=section_model.id,
+                title=section_model.title,
+                parent_id=section_model.parent_id,
+                tasks=await self._task_repo.get_tasks_by_section_id(section_model.id),
+            )
+            for section_model in section_models
+        ]
 
     async def update(self, section: Section) -> None:
         # Warning: this method does not update `section.tasks`

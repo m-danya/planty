@@ -47,6 +47,7 @@ class TaskUpdateRequest(BaseModel):
     user_id: UUID
     section_id: UUID
     title: str
+    is_completed: bool
     description: Optional[str] = None
     due_to_next: Optional[date] = None
     due_to_days_period: Optional[int] = None

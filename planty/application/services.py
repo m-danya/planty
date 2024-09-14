@@ -35,7 +35,8 @@ class TaskService:
             user_id=task.user_id,
             section_id=task.section_id,
             title=task.title,
-            is_completed=False,
+            description=task.description,
+            is_completed=task.is_completed,
             due_to_next=task.due_to_next,
             due_to_days_period=task.due_to_days_period,
         )
@@ -67,5 +68,7 @@ class SectionService:
         return section
 
     async def get_section(self, section_id: UUID) -> Section:
-        section = await self._section_repo.get(section_id)
-        return section
+        return await self._section_repo.get(section_id)
+
+    async def get_all_sections(self) -> list[Section]:
+        return await self._section_repo.get_all()

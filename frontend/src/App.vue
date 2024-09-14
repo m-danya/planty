@@ -1,0 +1,243 @@
+<template>
+  <div class="sections">
+    <div
+      class="section"
+      v-for="section in sections"
+      :key="section.id"
+      :data-section-id="section.id"
+    >
+      <h2>{{ section.title }}</h2>
+      <draggable
+        v-model="section.tasks"
+        group="tasks"
+        @end="onDragEnd"
+        item-key="id"
+        class="tasks"
+      >
+        <template #item="{ element: task }">
+          <div class="task">
+            <div class="task-header">
+              <button
+                class="complete-button"
+                @click="toggleTaskCompletion(task)"
+              >
+                <span v-if="task.is_completed">✔️</span>
+              </button>
+              <div
+                :class="{ 'task-title': true, is_completed: task.is_completed }"
+              >
+                {{ task.title }}
+              </div>
+            </div>
+            <div class="task-description">{{ task.description }}</div>
+            <div class="task-date" v-if="task.due_to_next">
+              Due: {{ formatDate(task.due_to_next) }}
+            </div>
+          </div>
+        </template>
+      </draggable>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from "vue";
+import axios from "axios";
+import draggable from "vuedraggable";
+
+const sections = ref([]);
+
+const fetchSections = async () => {
+  try {
+    const response = await axios.get("/api/sections");
+    sections.value = response.data;
+  } catch (error) {
+    console.error("Error fetching sections:", error);
+  }
+};
+const toggleTaskCompletion = async (task) => {
+  task.is_completed = !task.is_completed;
+  try {
+    await axios.put("/api/task", {
+      task_id: task.id,
+      user_id: task.user_id,
+      section_id: task.section_id,
+      title: task.title,
+      description: task.description,
+      due_to_next: task.due_to_next,
+      due_to_days_period: task.due_to_days_period,
+      is_completed: task.is_completed,
+    });
+  } catch (error) {
+    console.error("Error updating task:", error);
+  }
+};
+
+const onDragEnd = async (event) => {
+  const movedTask = event.item;
+  const newSectionElement = event.to.closest(".section");
+  const newSectionId = newSectionElement?.dataset?.sectionId;
+
+  if (movedTask.section_id !== newSectionId) {
+    movedTask.section_id = newSectionId;
+    try {
+      await axios.put("/api/task", {
+        task_id: movedTask.id,
+        user_id: movedTask.user_id,
+        section_id: movedTask.section_id,
+        title: movedTask.title,
+        description: movedTask.description,
+        due_to_next: movedTask.due_to_next,
+        due_to_days_period: movedTask.due_to_days_period,
+        is_completed: movedTask.is_completed,
+      });
+    } catch (error) {
+      console.error("Error updating task after drag-and-drop:", error);
+    }
+  }
+};
+
+const formatDate = (dateStr) => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString();
+};
+
+onMounted(() => {
+  fetchSections();
+});
+</script>
+
+<style scoped>
+.sections {
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+}
+
+.section {
+  margin-bottom: 30px;
+  padding: 20px;
+  /* background-color: #f8f9fa; */
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.section:hover {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 15px;
+  color: #343a40;
+}
+
+.tasks {
+  min-height: 50px;
+  padding-left: 0;
+  list-style: none;
+}
+
+.task {
+  padding: 15px 20px;
+  border: 1px solid #ddd8d8;
+  margin-bottom: 15px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.task:hover {
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.05);
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.complete-button {
+  width: 28px;
+  height: 28px;
+  background-color: transparent;
+  border: 2px solid #28a745;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.complete-button:hover {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.task-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #495057;
+  flex-grow: 1;
+  margin-left: 15px;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+.task-title.is_completed {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.task-description {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #868e96;
+}
+
+.task-date {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #adb5bd;
+  text-align: right;
+}
+
+.task-date::before {
+  content: "📅 ";
+}
+
+@media (min-width: 768px) {
+  .sections {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .section {
+    width: calc(50% - 40px);
+    margin-right: 20px;
+  }
+
+  .section:nth-child(2n) {
+    margin-right: 0;
+  }
+
+  h2 {
+    font-size: 20px;
+  }
+}
+
+div {
+  -webkit-text-size-adjust: 100%;
+  font-feature-settings: normal;
+  font-family: ui-sans-serif, -apple-system, system-ui, Segoe UI, Helvetica,
+    Apple Color Emoji, Arial, sans-serif, Segoe UI Emoji, Segoe UI Symbol;
+  font-variation-settings: normal;
+  /* line-height: 1.5; */
+  -moz-tab-size: 4;
+  tab-size: 4;
+}
+</style>

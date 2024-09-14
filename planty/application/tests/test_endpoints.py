@@ -22,7 +22,7 @@ async def test_create_task(
         "description": additional_test_data["tasks"][0]["description"],
     }
 
-    response = await ac.post("/task", json=task_data)
+    response = await ac.post("/api/task", json=task_data)
 
     assert response.status_code == status_code
 
@@ -66,7 +66,7 @@ async def test_update_task(
         "description": "Bravo, Vince",
     }
 
-    response = await ac.put("/task", json=task_data)
+    response = await ac.put("/api/task", json=task_data)
 
     assert response.status_code == status_code
 
@@ -86,7 +86,7 @@ async def test_create_section(
     additional_test_data: dict[str, Any],
 ) -> None:
     section_data = additional_test_data["sections"][0]
-    response = await ac.post("/section", json=section_data)
+    response = await ac.post("/api/section", json=section_data)
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Session created"
@@ -111,7 +111,7 @@ async def test_get_section(
     ac: AsyncClient,
     db_tasks_data: list[dict[str, Any]],
 ) -> None:
-    response = await ac.get(f"/section/{id_}")
+    response = await ac.get(f"/api/section/{id_}")
     assert response.status_code == status_code
     if not response.is_success:
         assert response.json()["detail"] == error_detail
