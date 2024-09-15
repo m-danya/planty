@@ -3,14 +3,15 @@
         {
             "id": "38df4136-36b2-4171-8459-27f411af8323",
             "username": "test_user",
-            "created_at": "2024-03-28T04:11:17.677Z"
+            "added_at": "2024-03-28T04:11:17.677Z"
         }
     ],
     "sections": [
         {
             "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
             "title": "Current tasks",
-            "parent_id": null
+            "parent_id": null,
+            "added_at": "2024-03-28T04:11:17.677Z"
         }
     ],
     "tasks": [

@@ -29,19 +29,13 @@ class TaskService:
         await self._task_repo.add(task)
         return task.id
 
-    async def update_task(self, task: TaskUpdateRequest) -> UUID:
-        task = Task(
-            id=task.task_id,
-            user_id=task.user_id,
-            section_id=task.section_id,
-            title=task.title,
-            description=task.description,
-            is_completed=task.is_completed,
-            due_to_next=task.due_to_next,
-            due_to_days_period=task.due_to_days_period,
-        )
+    async def update_task(self, task_data: TaskUpdateRequest) -> Task:
+        task = await self._task_repo.get(task_data.id)
+        task_data = task_data.model_dump(exclude_unset=True)
+        for key, value in task_data.items():
+            setattr(task, key, value)
         await self._task_repo.update(task)
-        return task.id
+        return task
 
     async def get_task(self, task_id: UUID) -> Task:
         task = await self._task_repo.get(task_id)

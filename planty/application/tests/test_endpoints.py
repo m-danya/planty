@@ -30,7 +30,7 @@ async def test_create_task(
         data = response.json()
         assert "message" in data
         assert data["message"] == "Task created"
-        assert "task_id" in data
+        assert "id" in data
 
     if error_detail:
         data = response.json()
@@ -59,14 +59,11 @@ async def test_update_task(
 ) -> None:
     existing_task_data = db_tasks_data[2]
     task_data = {
-        "task_id": existing_task_data["id"] if task_id == "existing" else task_id,
-        "user_id": existing_task_data["user_id"],
-        "section_id": existing_task_data["section_id"],
-        "title": existing_task_data["title"],
+        "id": existing_task_data["id"] if task_id == "existing" else task_id,
         "description": "Bravo, Vince",
     }
 
-    response = await ac.put("/api/task", json=task_data)
+    response = await ac.patch("/api/task", json=task_data)
 
     assert response.status_code == status_code
 
@@ -90,7 +87,7 @@ async def test_create_section(
     assert response.status_code == 200
     data = response.json()
     assert data["message"] == "Session created"
-    assert "section_id" in data
+    assert "id" in data
 
 
 @pytest.mark.parametrize(

@@ -1,20 +1,23 @@
 from planty.application.schemas import TaskCreateRequest
 from planty.application.services import TaskService
-from planty.application.uow import IUnitOfWork, SqlAlchemyUnitOfWork
+from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.entities import Section, Task, User
 
 
 async def test_add_task(
     nonperiodic_task: Task,
-    user: User,
-    section: Section,
+    persisted_user: User,
+    persisted_section: Section,
 ) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
-        user_repo = uow.user_repo
         task_repo = uow.task_repo
         task_service = TaskService(uow)
-        await user_repo.add(user)
-        task = nonperiodic_task
+
+        task, user, section = nonperiodic_task, persisted_user, persisted_section
+
+        task.section_id = section.id
+        task.user_id = user.id
+
         task_create_request = TaskCreateRequest(
             user_id=user.id,
             section_id=section.id,
@@ -33,14 +36,17 @@ async def test_add_task(
 
 async def test_mark_completed_task(
     nonperiodic_task: Task,
-    user: User,
-    section: Section,
+    persisted_user: User,
+    persisted_section: Section,
 ) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
-        user_repo = uow.user_repo
         task_service = TaskService(uow)
-        await user_repo.add(user)
-        task = nonperiodic_task
+
+        task, user, section = nonperiodic_task, persisted_user, persisted_section
+
+        task.section_id = section.id
+        task.user_id = user.id
+
         task_create_request = TaskCreateRequest(
             user_id=user.id,
             section_id=section.id,

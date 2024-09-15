@@ -5,7 +5,6 @@ from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import insert
 
 from planty.config import settings
 from planty.infrastructure.database import Base, engine, raw_async_session_maker
@@ -73,8 +72,8 @@ async def prepare_database(db_test_data: dict[str, list[dict[str, Any]]]) -> Non
             (SectionModel, "sections"),
             (TaskModel, "tasks"),
         ]:
-            query = insert(Model).values(db_test_data[table_key])
-            await session.execute(query)
+            for item in db_test_data[table_key]:
+                session.add(Model(**item))
 
         await session.commit()
 

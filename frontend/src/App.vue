@@ -58,8 +58,9 @@ const fetchSections = async () => {
 const toggleTaskCompletion = async (task) => {
   task.is_completed = !task.is_completed;
   try {
-    await axios.put("/api/task", {
-      task_id: task.id,
+    // TODO: fix incorrect request
+    await axios.patch("/api/task", {
+      id: task.id,
       user_id: task.user_id,
       section_id: task.section_id,
       title: task.title,
@@ -81,8 +82,9 @@ const onDragEnd = async (event) => {
   if (movedTask.section_id !== newSectionId) {
     movedTask.section_id = newSectionId;
     try {
-      await axios.put("/api/task", {
-        task_id: movedTask.id,
+      // TODO: fix incorrect request
+      await axios.patch("/api/task", {
+        id: movedTask.id,
         user_id: movedTask.user_id,
         section_id: movedTask.section_id,
         title: movedTask.title,

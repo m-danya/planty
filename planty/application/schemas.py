@@ -2,8 +2,9 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
+from planty.domain.entities import Task
 from planty.utils import generate_uuid, get_today
 
 TASK_CREATE_EXAMPLES = [
@@ -34,34 +35,58 @@ class TaskCreateRequest(BaseModel):
     due_to_next: Optional[date] = None
     due_to_days_period: Optional[int] = None
 
-    model_config = {"json_schema_extra": {"examples": TASK_CREATE_EXAMPLES}}  # type: ignore
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
+    )
 
 
 class TaskCreateResponse(BaseModel):
     message: str
-    task_id: UUID
+    id: UUID
+
+    model_config = ConfigDict(extra="forbid")
+
+
+"""
+[!!!]
+
+If pydantic models' field with non-Optional type hinting the has None value by
+default, it makes it optional, but user can't set it to None explicitly, which
+is very convenient for using it with
+`update_request.model_dump(exclude_unset=True)` in SmthUpdateRequest.
+
+Default values are not validated in pydantic, but this hack requires to write
+"type: ignore" for each non-optional field's assignment to None to calm down
+mypy.
+"""
 
 
 class TaskUpdateRequest(BaseModel):
-    task_id: UUID
-    user_id: UUID
-    section_id: UUID
-    title: str
-    is_completed: bool
+    id: UUID
+    user_id: UUID = None  #                       type: ignore
+    section_id: UUID = None  #                    type: ignore
+    title: str = None  #                          type: ignore
     description: Optional[str] = None
     due_to_next: Optional[date] = None
     due_to_days_period: Optional[int] = None
 
+    model_config = ConfigDict(extra="forbid")
+
 
 class TaskUpdateResponse(BaseModel):
     message: str
+    task: Task
 
 
 class SectionCreateRequest(BaseModel):
     user_id: UUID
     title: str
+    parent_id: Optional[UUID] = None
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class SectionCreateResponse(BaseModel):
     message: str
-    section_id: UUID
+    id: UUID

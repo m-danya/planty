@@ -3,9 +3,9 @@ from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import Date, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from planty.domain.entities import Task
+from planty.domain.entities import Section, Task, User
 from planty.infrastructure.database import Base
 from planty.infrastructure.utils import GUID  # type: ignore
 
@@ -23,6 +23,9 @@ class TaskModel(Base):
 
     due_to_next: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     due_to_days_period: Mapped[Optional[int]]
+
+    section = relationship("SectionModel", back_populates="tasks")
+    user = relationship("UserModel", back_populates="tasks")
 
     @classmethod
     def from_entity(cls, task: Task) -> "TaskModel":
@@ -43,8 +46,19 @@ class TaskModel(Base):
 class UserModel(Base):
     __tablename__ = "user"
     id: Mapped[UUID] = mapped_column(GUID, primary_key=True, unique=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime)
+    added_at: Mapped[datetime] = mapped_column(DateTime)
     username: Mapped[str] = mapped_column(unique=True)
+
+    # sections = relationship("SectionModel", back_populates="user")
+    tasks = relationship("TaskModel", back_populates="user")
+
+    @classmethod
+    def from_entity(cls, user: User) -> "UserModel":
+        return cls(
+            id=user.id,
+            added_at=user.added_at,
+            username=str(user.username),
+        )
 
 
 class SectionModel(Base):
@@ -54,3 +68,15 @@ class SectionModel(Base):
     parent_id: Mapped[Optional[GUID]] = mapped_column(
         ForeignKey("section.id"), nullable=True
     )
+    added_at: Mapped[datetime] = mapped_column(DateTime)
+
+    tasks = relationship("TaskModel", back_populates="section")
+
+    @classmethod
+    def from_entity(cls, section: Section) -> "SectionModel":
+        return cls(
+            id=section.id,
+            title=section.title,
+            parent_id=section.parent_id,
+            added_at=section.added_at,
+        )

@@ -25,18 +25,18 @@ async def create_task(
         task_service = TaskService(uow=uow)
         task_id = await task_service.add_task(task_data)
         await uow.commit()
-        return TaskCreateResponse(message="Task created", task_id=task_id)
+        return TaskCreateResponse(message="Task created", id=task_id)
 
 
-@router.put("/task")
+@router.patch("/task")
 async def update_task(
     task_data: TaskUpdateRequest,
 ) -> TaskUpdateResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
-        await task_service.update_task(task_data)
+        task = await task_service.update_task(task_data)
         await uow.commit()
-        return TaskUpdateResponse(message="Task updated")
+        return TaskUpdateResponse(message="Task updated", task=task)
 
 
 @router.post("/section")
@@ -47,7 +47,7 @@ async def create_section(
         section_service = SectionService(uow=uow)
         section = await section_service.add(section_data)
         await uow.commit()
-        return SectionCreateResponse(message="Session created", section_id=section.id)
+        return SectionCreateResponse(message="Session created", id=section.id)
 
 
 @router.get("/section/{section_id}")

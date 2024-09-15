@@ -41,18 +41,18 @@ class SqlAlchemyUnitOfWork(IUnitOfWork):
         self.session_factory = raw_async_session_maker
 
     async def __aenter__(self) -> IUnitOfWork:
-        self.db_session: AsyncSession = self.session_factory()
-        self.user_repo = SQLAlchemyUserRepository(self.db_session)
-        self.task_repo = SQLAlchemyTaskRepository(self.db_session)
-        self.section_repo = SQLAlchemySectionRepository(self.db_session, self.task_repo)
+        self.session: AsyncSession = self.session_factory()
+        self.user_repo = SQLAlchemyUserRepository(self.session)
+        self.task_repo = SQLAlchemyTaskRepository(self.session)
+        self.section_repo = SQLAlchemySectionRepository(self.session, self.task_repo)
         return await super().__aenter__()
 
     async def __aexit__(self, *args: Any) -> None:
         await super().__aexit__(*args)
-        await self.db_session.close()
+        await self.session.close()
 
     async def commit(self) -> None:
-        await self.db_session.commit()
+        await self.session.commit()
 
     async def rollback(self) -> None:
-        await self.db_session.rollback()
+        await self.session.rollback()

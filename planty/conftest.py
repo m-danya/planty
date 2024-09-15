@@ -7,7 +7,7 @@ import pytest  # noqa: E402
 
 from planty.domain.entities import Section, Task, User, Username  # noqa: E402
 from planty.utils import get_datetime_now, get_today  # noqa: E402
-from planty.application.uow import IUnitOfWork, SqlAlchemyUnitOfWork  # noqa: E402
+from planty.application.uow import SqlAlchemyUnitOfWork  # noqa: E402
 
 
 # these fixtures are shared across different test sets:
@@ -15,12 +15,28 @@ from planty.application.uow import IUnitOfWork, SqlAlchemyUnitOfWork  # noqa: E4
 
 @pytest.fixture
 def user() -> User:
-    return User(username=Username("test_user"))
+    return User(username=Username("test_user_2"))
 
 
 @pytest.fixture
 def section() -> Section:
     return Section(title="Test section #1", tasks=[])
+
+
+@pytest.fixture
+async def persisted_user(user: User) -> User:
+    async with SqlAlchemyUnitOfWork() as uow:
+        await uow.user_repo.add(user)
+        await uow.commit()
+    return user
+
+
+@pytest.fixture
+async def persisted_section(section: Section) -> Section:
+    async with SqlAlchemyUnitOfWork() as uow:
+        await uow.section_repo.add(section)
+        await uow.commit()
+    return section
 
 
 @pytest.fixture

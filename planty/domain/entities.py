@@ -19,12 +19,16 @@ class Username(RootModel[UsernameType]):
                 raise ValueError(f"Symbol '{c}' is not allowed in username")
         return s
 
+    def __str__(self) -> str:
+        return str(self.root)
+
     model_config = ConfigDict(frozen=True)
 
 
 class User(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)
     username: Username
+    added_at: datetime = Field(default_factory=get_datetime_now)
 
 
 class Task(BaseModel):
@@ -63,3 +67,4 @@ class Section(BaseModel):
     title: str
     parent_id: Optional[UUID] = None
     tasks: list[Task]
+    added_at: datetime = Field(default_factory=get_datetime_now)

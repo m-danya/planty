@@ -10,8 +10,8 @@ from planty.application.exceptions import (
     TaskNotFoundException,
     UserNotFoundException,
 )
-from planty.domain.entities import Section, Task, User, Username
-from planty.infrastructure.models import SectionModel, TaskModel
+from planty.domain.entities import Section, Task, User
+from planty.infrastructure.models import SectionModel, TaskModel, UserModel
 
 
 class IUserRepository(ABC):
@@ -25,9 +25,23 @@ class SQLAlchemyUserRepository(IUserRepository):
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
 
-    async def add(self, user: User) -> None: ...
+    async def add(self, user: User) -> None:
+        user_model = UserModel.from_entity(user)
+        self._db_session.add(user_model)
+
     async def get(self, user_id: UUID) -> User:
-        return User(username=Username("test_user"))
+        result = await self._db_session.execute(
+            select(UserModel).where(UserModel.id == user_id)
+        )
+        user_model: Optional[UserModel] = result.scalar_one_or_none()
+        if user_model is None:
+            raise UserNotFoundException(user_id=user_id)
+
+        return User(
+            id=user_model.id,
+            username=user_model.username,
+            added_at=user_model.added_at,
+        )
 
 
 class ITaskRepository(ABC):
@@ -115,7 +129,7 @@ class ISectionRepository(ABC):
     @abstractmethod
     async def get(self, section_id: UUID) -> Section: ...
     @abstractmethod
-    async def get_all(self, section_id: UUID) -> Section: ...
+    async def get_all(self) -> list[Section]: ...
     @abstractmethod
     async def update(self, section: Section) -> None: ...
 
@@ -126,9 +140,7 @@ class SQLAlchemySectionRepository(ISectionRepository):
         self._task_repo = task_repo
 
     async def add(self, section: Section) -> None:
-        section_model = SectionModel(
-            id=section.id, title=section.title, parent_id=section.parent_id
-        )
+        section_model = SectionModel.from_entity(section)
         self._db_session.add(section_model)
 
     async def get(self, section_id: UUID) -> Section:
