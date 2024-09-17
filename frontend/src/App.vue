@@ -6,7 +6,12 @@
       :key="section.id"
       :data-section-id="section.id"
     >
-      <h2>{{ section.title }}</h2>
+      <div class="section-header">
+        <h2>{{ section.title }}</h2>
+        <button class="shuffle-button" @click="shuffleSection(section.id)">
+          🔀
+        </button>
+      </div>
       <draggable
         v-model="section.tasks"
         group="tasks"
@@ -39,7 +44,6 @@
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref, onMounted } from "vue";
 import axios from "axios";
@@ -55,6 +59,22 @@ const fetchSections = async () => {
     console.error("Error fetching sections:", error);
   }
 };
+
+const shuffleSection = async (sectionId) => {
+  try {
+    const response = await axios.post("/api/section/shuffle", {
+      section_id: sectionId,
+    });
+    const shuffledSection = response.data.section;
+    const index = sections.value.findIndex(
+      (section) => section.id === sectionId
+    );
+    sections.value[index].tasks = shuffledSection.tasks;
+  } catch (error) {
+    console.error("Error shuffling section:", error);
+  }
+};
+
 const toggleTaskCompletion = async (task) => {
   task.is_completed = !task.is_completed;
   try {
@@ -119,7 +139,6 @@ onMounted(() => {
 .section {
   margin-bottom: 30px;
   padding: 20px;
-  /* background-color: #f8f9fa; */
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -129,11 +148,24 @@ onMounted(() => {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 h2 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 15px;
   color: #343a40;
+}
+
+.shuffle-button {
+  background-color: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
 }
 
 .tasks {

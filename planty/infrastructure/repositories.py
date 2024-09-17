@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from uuid import UUID
 
+from pydantic import NonNegativeInt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,22 +46,23 @@ class SQLAlchemyUserRepository(IUserRepository):
 
 
 class ITaskRepository(ABC):
+    # Only the Section service is allowed to change the `index` attribute
     @abstractmethod
-    async def add(self, task: Task) -> None: ...
+    async def add(self, task: Task, index: NonNegativeInt) -> None: ...
     @abstractmethod
     async def get(self, task_id: UUID) -> Task: ...
     @abstractmethod
-    async def update(self, task: Task) -> None: ...
+    async def update_or_create(self, task: Task) -> None: ...
     @abstractmethod
-    async def get_tasks_by_section_id(self, section_id: UUID) -> list[Task]: ...
+    async def get_section_tasks(self, section_id: UUID) -> list[Task]: ...
 
 
 class SQLAlchemyTaskRepository(ITaskRepository):
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
 
-    async def add(self, task: Task) -> None:
-        task_model = TaskModel.from_entity(task)
+    async def add(self, task: Task, index: NonNegativeInt) -> None:
+        task_model = TaskModel.from_entity(task, index=index)
         self._db_session.add(task_model)
 
     async def get(self, task_id: UUID) -> Task:
@@ -83,13 +85,21 @@ class SQLAlchemyTaskRepository(ITaskRepository):
             due_to_days_period=task_model.due_to_days_period,
         )
 
-    async def update(self, task: Task) -> None:
+    async def update_or_create(
+        self,
+        task: Task,
+        index: Optional[NonNegativeInt] = None,
+        must_exist: bool = False,
+    ) -> None:
         result = await self._db_session.execute(
             select(TaskModel).where(TaskModel.id == task.id)
         )
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
-            raise TaskNotFoundException(task_id=task.id)
+            if must_exist:
+                raise TaskNotFoundException(task_id=task.id)
+            await self.add(task, index=index)
+            return
 
         task_model.user_id = task.user_id
         task_model.section_id = task.section_id
@@ -99,10 +109,12 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         task_model.added_at = task.added_at
         task_model.due_to_next = task.due_to_next
         task_model.due_to_days_period = task.due_to_days_period
+        if index is not None:
+            task_model.index = index
 
         self._db_session.add(task_model)
 
-    async def get_tasks_by_section_id(self, section_id: UUID) -> list[Task]:
+    async def get_section_tasks(self, section_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
             select(TaskModel).where(TaskModel.section_id == section_id)
         )
@@ -119,7 +131,7 @@ class SQLAlchemyTaskRepository(ITaskRepository):
                 due_to_next=task_model.due_to_next,
                 due_to_days_period=task_model.due_to_days_period,
             )
-            for task_model in task_models
+            for task_model in sorted(task_models, key=lambda t: t.index)
         ]
 
 
@@ -151,13 +163,11 @@ class SQLAlchemySectionRepository(ISectionRepository):
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
 
-        tasks = await self._task_repo.get_tasks_by_section_id(section_id)
-
         return Section(
             id=section_model.id,
             title=section_model.title,
             parent_id=section_model.parent_id,
-            tasks=tasks,
+            tasks=await self._task_repo.get_section_tasks(section_id),
         )
 
     async def get_all(self) -> list[Section]:
@@ -168,13 +178,12 @@ class SQLAlchemySectionRepository(ISectionRepository):
                 id=section_model.id,
                 title=section_model.title,
                 parent_id=section_model.parent_id,
-                tasks=await self._task_repo.get_tasks_by_section_id(section_model.id),
+                tasks=await self._task_repo.get_section_tasks(section_model.id),
             )
             for section_model in section_models
         ]
 
-    async def update(self, section: Section) -> None:
-        # Warning: this method does not update `section.tasks`
+    async def update_without_tasks(self, section: Section) -> None:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.id == section.id)
         )
@@ -184,5 +193,22 @@ class SQLAlchemySectionRepository(ISectionRepository):
 
         section_model.title = section.title
         section_model.parent_id = section.parent_id
+
+        self._db_session.add(section_model)
+
+    async def update(self, section: Section) -> None:
+        # Warning: does not update any excluded tasks from section.tasks
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.id == section.id)
+        )
+        section_model: Optional[SectionModel] = result.scalar_one_or_none()
+        if section_model is None:
+            raise SectionNotFoundException(section_id=section.id)
+
+        section_model.title = section.title
+        section_model.parent_id = section.parent_id
+
+        for i, task in enumerate(section.tasks):
+            await self._task_repo.update_or_create(task, index=i)
 
         self._db_session.add(section_model)

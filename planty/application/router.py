@@ -5,6 +5,8 @@ from fastapi import APIRouter
 from planty.application.schemas import (
     SectionCreateRequest,
     SectionCreateResponse,
+    ShuffleSectionRequest,
+    ShuffleSectionResponse,
     TaskCreateRequest,
     TaskCreateResponse,
     TaskUpdateRequest,
@@ -22,8 +24,8 @@ async def create_task(
     task_data: TaskCreateRequest,
 ) -> TaskCreateResponse:
     async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        task_id = await task_service.add_task(task_data)
+        section_service = SectionService(uow=uow)
+        task_id = await section_service.create_task(task_data)
         await uow.commit()
         return TaskCreateResponse(message="Task created", id=task_id)
 
@@ -61,8 +63,19 @@ async def get_section(
 
 
 @router.get("/sections")
-async def get_sections() -> list[Section]:
+async def get_sections() -> list[Section]:  # TODO: move typing to schema
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         sections = await section_service.get_all_sections()
         return sections
+
+
+@router.post("/section/shuffle")
+async def shuffle_section(
+    request: ShuffleSectionRequest,
+) -> ShuffleSectionResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        section = await section_service.shuffle(request)
+        await uow.commit()
+        return ShuffleSectionResponse(message="🎩 Done! 🪄", section=section)

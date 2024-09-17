@@ -2,6 +2,7 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
+from pydantic import NonNegativeInt
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +21,7 @@ class TaskModel(Base):
     title: Mapped[str]
     description: Mapped[Optional[str]]
     is_completed: Mapped[bool]
+    index: Mapped[int]
 
     due_to_next: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     due_to_days_period: Mapped[Optional[int]]
@@ -28,7 +30,7 @@ class TaskModel(Base):
     user = relationship("UserModel", back_populates="tasks")
 
     @classmethod
-    def from_entity(cls, task: Task) -> "TaskModel":
+    def from_entity(cls, task: Task, index: NonNegativeInt) -> "TaskModel":
         return cls(
             id=task.id,
             user_id=task.user_id,
@@ -39,6 +41,7 @@ class TaskModel(Base):
             is_completed=task.is_completed,
             due_to_next=task.due_to_next,
             due_to_days_period=task.due_to_days_period,
+            index=index,
         )
 
 

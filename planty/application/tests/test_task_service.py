@@ -1,5 +1,5 @@
 from planty.application.schemas import TaskCreateRequest
-from planty.application.services import TaskService
+from planty.application.services import SectionService, TaskService
 from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.entities import Section, Task, User
 
@@ -11,7 +11,7 @@ async def test_add_task(
 ) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
         task_repo = uow.task_repo
-        task_service = TaskService(uow)
+        section_service = SectionService(uow)
 
         task, user, section = nonperiodic_task, persisted_user, persisted_section
 
@@ -27,13 +27,14 @@ async def test_add_task(
             due_to_days_period=task.due_to_days_period,
         )
 
-        task_id = await task_service.add_task(task_create_request)
+        task_id = await section_service.create_task(task_create_request)
         task_got = await task_repo.get(task_id)
         assert task_got
         assert task_got.id == task_id
         assert task_got.title == task.title
 
 
+# TODO: move to another file?
 async def test_mark_completed_task(
     nonperiodic_task: Task,
     persisted_user: User,
@@ -41,6 +42,7 @@ async def test_mark_completed_task(
 ) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow)
+        section_service = SectionService(uow)
 
         task, user, section = nonperiodic_task, persisted_user, persisted_section
 
@@ -56,7 +58,7 @@ async def test_mark_completed_task(
             due_to_days_period=task.due_to_days_period,
         )
 
-        task_id = await task_service.add_task(task_create_request)
+        task_id = await section_service.create_task(task_create_request)
 
         task_before: Task = await task_service.get_task(task_id)
         assert task_before.is_completed is False

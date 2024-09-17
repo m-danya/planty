@@ -1,8 +1,16 @@
 from datetime import date, datetime, timedelta
+import random
 from typing import Annotated, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, RootModel, field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    NonNegativeInt,
+    RootModel,
+    field_validator,
+)
 
 from planty.utils import generate_uuid, get_datetime_now
 
@@ -68,3 +76,25 @@ class Section(BaseModel):
     parent_id: Optional[UUID] = None
     tasks: list[Task]
     added_at: datetime = Field(default_factory=get_datetime_now)
+
+    def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None):
+        if index is None:
+            index = len(self.tasks)
+        self.tasks.insert(index, task)
+
+    def remove_task(self, task: Task) -> Task:
+        self.tasks = [t for t in self.tasks if t.id != task.id]
+        return task
+
+    @staticmethod
+    def move_task(
+        task_to_move: Task,
+        section_from: "Section",
+        section_to: "Section",
+        index: NonNegativeInt,
+    ):
+        task_to_move = section_from.remove_task(task_to_move)
+        section_to.insert_task(task_to_move, index)
+
+    def shuffle_tasks(self):
+        random.shuffle(self.tasks)

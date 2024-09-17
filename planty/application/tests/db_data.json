@@ -23,7 +23,8 @@
             "description": "not urgent",
             "is_completed": false,
             "added_at": "2024-03-28T04:11:17.677Z",
-            "due_to_next": "2024-12-28"
+            "due_to_next": "2024-12-28",
+            "index": 1
         },
         {
             "id": "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
@@ -33,7 +34,8 @@
             "description": "not urgent",
             "is_completed": true,
             "added_at": "2024-03-28T04:11:17.677Z",
-            "due_to_next": "2025-01-20"
+            "due_to_next": "2025-01-20",
+            "index": 2
         },
         {
             "id": "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",
@@ -43,7 +45,8 @@
             "description": "not urgent",
             "is_completed": false,
             "added_at": "2024-03-28T04:11:17.677Z",
-            "due_to_next": null
+            "due_to_next": null,
+            "index": 3
         }
     ]
 }

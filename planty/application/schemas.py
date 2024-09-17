@@ -2,9 +2,9 @@ from datetime import date
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
-from planty.domain.entities import Task
+from planty.domain.entities import Section, Task
 from planty.utils import generate_uuid, get_today
 
 TASK_CREATE_EXAMPLES = [
@@ -46,6 +46,31 @@ class TaskCreateResponse(BaseModel):
     id: UUID
 
     model_config = ConfigDict(extra="forbid")
+
+
+class TaskMoveRequest(BaseModel):
+    task_id: UUID
+    section_to_id: UUID
+    index: NonNegativeInt
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
+    )
+
+
+class ShuffleSectionRequest(BaseModel):
+    section_id: UUID
+
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
+    )
+
+
+class ShuffleSectionResponse(BaseModel):
+    message: str
+    section: Section
 
 
 """
