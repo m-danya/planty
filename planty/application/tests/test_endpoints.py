@@ -6,7 +6,7 @@ from httpx import AsyncClient
 @pytest.mark.parametrize(
     "status_code,error_detail",
     [
-        (200, None),
+        (201, None),
     ],
 )
 async def test_create_task(
@@ -26,10 +26,8 @@ async def test_create_task(
 
     assert response.status_code == status_code
 
-    if status_code == 200:
+    if status_code == 201:
         data = response.json()
-        assert "message" in data
-        assert data["message"] == "Task created"
         assert "id" in data
 
     if error_detail:
@@ -69,8 +67,6 @@ async def test_update_task(
 
     if status_code == 200:
         data = response.json()
-        assert "message" in data
-        assert data["message"] == "Task updated"
 
     if error_detail:
         data = response.json()
@@ -84,9 +80,8 @@ async def test_create_section(
 ) -> None:
     section_data = additional_test_data["sections"][0]
     response = await ac.post("/api/section", json=section_data)
-    assert response.status_code == 200
+    assert response.status_code == 201
     data = response.json()
-    assert data["message"] == "Session created"
     assert "id" in data
 
 
@@ -115,3 +110,45 @@ async def test_get_section(
         return
     expected_tasks_n = sum(task["section_id"] == id_ for task in db_tasks_data)
     assert expected_tasks_n == len(response.json()["tasks"])
+
+
+@pytest.mark.parametrize(
+    "task_id,section_id,index,status_code,error_detail",
+    [
+        (
+            "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            0,  # move to the beginning of empty section
+            200,
+            None,
+        ),
+        (
+            "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            123,  # move to an incorrect index
+            422,
+            "The task can't be moved to the specified index",
+        ),
+    ],
+)
+async def test_move_task(
+    task_id: str,
+    section_id: str,
+    index: int,
+    status_code: int,
+    error_detail: str,
+    ac: AsyncClient,
+    db_tasks_data: list[dict[str, Any]],
+) -> None:
+    response = await ac.post(
+        "/api/task/move",
+        json={
+            "task_id": task_id,
+            "section_to_id": section_id,
+            "index": index,
+        },
+    )
+    assert response.status_code == status_code
+    if not response.is_success:
+        assert response.json()["detail"] == error_detail
+        return

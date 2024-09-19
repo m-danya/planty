@@ -35,7 +35,7 @@ async def test_add_task(
 
 
 # TODO: move to another file?
-async def test_mark_completed_task(
+async def test_toggle_completed_task(
     nonperiodic_task: Task,
     persisted_user: User,
     persisted_section: Section,
@@ -62,6 +62,9 @@ async def test_mark_completed_task(
 
         task_before: Task = await task_service.get_task(task_id)
         assert task_before.is_completed is False
-        await task_service.mark_task_completed(task_id)
+        await task_service.toggle_task_completed(task_id)
         task_after: Task = await task_service.get_task(task_id)
         assert task_after.is_completed is True
+        await task_service.toggle_task_completed(task_id)
+        task_after: Task = await task_service.get_task(task_id)
+        assert task_after.is_completed is False

@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
-from planty.domain.entities import Section, Task
+from planty.domain.entities import Task
 from planty.utils import generate_uuid, get_today
 
 TASK_CREATE_EXAMPLES = [
@@ -42,7 +42,6 @@ class TaskCreateRequest(BaseModel):
 
 
 class TaskCreateResponse(BaseModel):
-    message: str
     id: UUID
 
     model_config = ConfigDict(extra="forbid")
@@ -55,7 +54,14 @@ class TaskMoveRequest(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
+    )
+
+
+class TaskToggleCompletedRequest(BaseModel):
+    task_id: UUID
+
+    model_config = ConfigDict(
+        extra="forbid",
     )
 
 
@@ -64,13 +70,7 @@ class ShuffleSectionRequest(BaseModel):
 
     model_config = ConfigDict(
         extra="forbid",
-        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
     )
-
-
-class ShuffleSectionResponse(BaseModel):
-    message: str
-    section: Section
 
 
 """
@@ -100,7 +100,6 @@ class TaskUpdateRequest(BaseModel):
 
 
 class TaskUpdateResponse(BaseModel):
-    message: str
     task: Task
 
 
@@ -113,5 +112,4 @@ class SectionCreateRequest(BaseModel):
 
 
 class SectionCreateResponse(BaseModel):
-    message: str
     id: UUID

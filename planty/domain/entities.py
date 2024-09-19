@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from planty.utils import generate_uuid, get_datetime_now
+from planty.domain.exceptions import MovingTaskIndexError
 
 UsernameType = Annotated[str, Field(min_length=3, max_length=50)]
 
@@ -63,6 +64,12 @@ class Task(BaseModel):
         else:
             self.is_completed = True
 
+    def toggle_completed(self) -> None:
+        if self.is_completed:
+            self.is_completed = False
+        else:
+            self.mark_completed()
+
     def update_due_date(
         self, due_to_next: Optional[date], due_to_days_period: Optional[int]
     ) -> None:
@@ -80,6 +87,9 @@ class Section(BaseModel):
     def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None):
         if index is None:
             index = len(self.tasks)
+        if index > len(self.tasks):
+            raise MovingTaskIndexError()
+        task.section_id = self.id
         self.tasks.insert(index, task)
 
     def remove_task(self, task: Task) -> Task:

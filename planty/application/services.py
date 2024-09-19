@@ -33,11 +33,11 @@ class TaskService:
             raise TaskNotFoundException(task_id=task_id)
         return task
 
-    async def mark_task_completed(self, task_id: UUID) -> None:
+    async def toggle_task_completed(self, task_id: UUID) -> None:
         task = await self._task_repo.get(task_id)
         if not task:
             raise TaskNotFoundException(task_id=task_id)
-        task.mark_completed()
+        task.toggle_completed()
         await self._task_repo.update_or_create(task)
 
 
