@@ -9,8 +9,7 @@
   },
   "dependencies": {
     "axios": "^1.7.7",
-    "vue": "^3.2.13",
-    "vuedraggable": "^4.1.0"
+    "vue": "^3.2.13"
   },
   "devDependencies": {
     "@vue/cli-plugin-eslint": "~5.0.0",
