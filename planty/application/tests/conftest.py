@@ -10,7 +10,7 @@ from planty.main import app as fastapi_app
 
 
 @pytest.fixture(scope="function", autouse=True)
-async def prepare_database(db_test_data: dict[str, list[dict[str, Any]]]) -> None:
+async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
     assert settings.MODE == "TEST"
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -22,7 +22,7 @@ async def prepare_database(db_test_data: dict[str, list[dict[str, Any]]]) -> Non
             (SectionModel, "sections"),
             (TaskModel, "tasks"),
         ]:
-            for item in db_test_data[table_key]:
+            for item in test_data[table_key]:
                 session.add(Model(**item))
 
         await session.commit()

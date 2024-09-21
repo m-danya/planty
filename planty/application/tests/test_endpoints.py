@@ -53,9 +53,9 @@ async def test_update_task(
     status_code: int,
     error_detail: str,
     ac: AsyncClient,
-    db_tasks_data: list[dict[str, Any]],
+    tasks_data: list[dict[str, Any]],
 ) -> None:
-    existing_task_data = db_tasks_data[2]
+    existing_task_data = tasks_data[2]
     task_data = {
         "id": existing_task_data["id"] if task_id == "existing" else task_id,
         "description": "Bravo, Vince",
@@ -101,14 +101,14 @@ async def test_get_section(
     status_code: int,
     error_detail: str,
     ac: AsyncClient,
-    db_tasks_data: list[dict[str, Any]],
+    tasks_data: list[dict[str, Any]],
 ) -> None:
     response = await ac.get(f"/api/section/{id_}")
     assert response.status_code == status_code
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
-    expected_tasks_n = sum(task["section_id"] == id_ for task in db_tasks_data)
+    expected_tasks_n = sum(task["section_id"] == id_ for task in tasks_data)
     assert expected_tasks_n == len(response.json()["tasks"])
 
 
@@ -138,7 +138,6 @@ async def test_move_task(
     status_code: int,
     error_detail: str,
     ac: AsyncClient,
-    db_tasks_data: list[dict[str, Any]],
 ) -> None:
     response = await ac.post(
         "/api/task/move",
@@ -152,3 +151,22 @@ async def test_move_task(
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
+
+
+@pytest.mark.parametrize(
+    "task_id",
+    ["f4186c04-3f2d-4217-a6ed-5c40bc9946d2"],
+)
+async def test_toggle_completed_task(
+    task_id: str,
+    ac: AsyncClient,
+) -> None:
+    for expected_is_completed in [True, False, True]:
+        response = await ac.post(
+            "/api/task/toggle_completed",
+            json={
+                "task_id": task_id,
+            },
+        )
+        data = response.json()
+        assert data["is_completed"] is expected_is_completed

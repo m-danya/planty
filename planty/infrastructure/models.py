@@ -23,8 +23,9 @@ class TaskModel(Base):
     is_completed: Mapped[bool]
     index: Mapped[int]
 
-    due_to_next: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    due_to_days_period: Mapped[Optional[int]]
+    due_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    recurrence_period: Mapped[Optional[int]]
+    flexible_recurrence_mode: Mapped[bool]
 
     section = relationship("SectionModel", back_populates="tasks")
     user = relationship("UserModel", back_populates="tasks")
@@ -39,9 +40,24 @@ class TaskModel(Base):
             title=task.title,
             description=task.description,
             is_completed=task.is_completed,
-            due_to_next=task.due_to_next,
-            due_to_days_period=task.due_to_days_period,
+            due_to=task.due_to,
+            recurrence_period=task.recurrence_period,
+            flexible_recurrence_mode=task.flexible_recurrence_mode,
             index=index,
+        )
+
+    def to_entity(self) -> Task:
+        return Task(
+            id=self.id,
+            user_id=self.user_id,
+            section_id=self.section_id,
+            title=self.title,
+            description=self.description,
+            is_completed=self.is_completed,
+            added_at=self.added_at,
+            due_to=self.due_to,
+            recurrence_period=self.recurrence_period,
+            flexible_recurrence_mode=self.flexible_recurrence_mode,
         )
 
 
@@ -82,4 +98,12 @@ class SectionModel(Base):
             title=section.title,
             parent_id=section.parent_id,
             added_at=section.added_at,
+        )
+
+    def to_entity(self, tasks=list[Task]) -> Section:
+        return Section(
+            id=self.id,
+            title=self.title,
+            parent_id=self.parent_id,
+            tasks=tasks,
         )

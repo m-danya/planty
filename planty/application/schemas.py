@@ -65,6 +65,14 @@ class TaskToggleCompletedRequest(BaseModel):
     )
 
 
+class TaskToggleCompletedResponse(BaseModel):
+    is_completed: bool
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+
 class ShuffleSectionRequest(BaseModel):
     section_id: UUID
 

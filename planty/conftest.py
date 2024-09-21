@@ -9,9 +9,6 @@ from typing import Any  # noqa: E402
 
 import pytest  # noqa: E402
 
-from planty.application.uow import SqlAlchemyUnitOfWork  # noqa: E402
-from planty.domain.entities import Section, Task, User, Username  # noqa: E402
-from planty.utils import get_datetime_now, get_today  # noqa: E402
 
 # these fixtures are shared across different test sets:
 
@@ -21,8 +18,8 @@ TEST_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 
 @pytest.fixture(scope="session")
-def db_test_data() -> dict[str, list[dict[str, Any]]]:
-    return _load_json_with_data("db_data.json")
+def test_data() -> dict[str, list[dict[str, Any]]]:
+    return _load_json_with_data("data.json")
 
 
 @pytest.fixture(scope="session")
@@ -40,92 +37,29 @@ def _load_json_with_data(filename: str) -> dict[str, Any]:
                     continue
                 if column.endswith("_at"):
                     row[column] = datetime.strptime(row[column], TEST_DATETIME_FORMAT)
-                if column == "due_to_next" and row[column]:
+                if column == "due_to" and row[column]:
                     row[column] = datetime.strptime(row[column], "%Y-%m-%d").date()
-    test_data["users"].sort(key=lambda x: x.get("id"))
-    test_data["sections"].sort(key=lambda x: x.get("id"))
-    test_data["tasks"].sort(key=lambda x: x.get("id"))
+
     # TODO: make this dict immutable to prevent accidental modification
     return test_data
 
 
 @pytest.fixture(scope="session")
-def db_tasks_data(
-    db_test_data: dict[str, list[dict[str, Any]]],
+def users_data(
+    test_data: dict[str, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
-    return db_test_data["tasks"]
+    return test_data["users"]
 
 
 @pytest.fixture(scope="session")
-def db_sections_data(
-    db_test_data: dict[str, list[dict[str, Any]]],
+def tasks_data(
+    test_data: dict[str, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
-    return db_test_data["sections"]
+    return test_data["tasks"]
 
 
-@pytest.fixture
-def user() -> User:
-    return User(username=Username("test_user_2"))
-
-
-@pytest.fixture
-def section() -> Section:
-    return Section(title="Test section #1", tasks=[])
-
-
-@pytest.fixture
-async def persisted_user(user: User) -> User:
-    async with SqlAlchemyUnitOfWork() as uow:
-        await uow.user_repo.add(user)
-        await uow.commit()
-    return user
-
-
-@pytest.fixture
-async def persisted_section(section: Section) -> Section:
-    async with SqlAlchemyUnitOfWork() as uow:
-        await uow.section_repo.add(section)
-        await uow.commit()
-    return section
-
-
-@pytest.fixture
-def nonperiodic_task(user: User, section: Section) -> Task:
-    return Task(
-        user_id=user.id,
-        title="Get some cheese",
-        description=None,
-        is_completed=False,
-        added_at=get_datetime_now(),
-        due_to_next=None,
-        due_to_days_period=None,
-        section_id=section.id,
-    )
-
-
-@pytest.fixture
-def everyday_task(user: User, section: Section) -> Task:
-    return Task(
-        user_id=user.id,
-        title="Read something interesting",
-        description=None,
-        is_completed=False,
-        added_at=get_datetime_now(),
-        due_to_next=get_today(),
-        due_to_days_period=1,
-        section_id=section.id,
-    )
-
-
-@pytest.fixture
-def every_three_days_task(user: User, section: Section) -> Task:
-    return Task(
-        user_id=user.id,
-        title="Plant waters",
-        description=None,
-        is_completed=False,
-        added_at=get_datetime_now(),
-        due_to_next=get_today(),
-        due_to_days_period=3,
-        section_id=section.id,
-    )
+@pytest.fixture(scope="session")
+def sections_data(
+    test_data: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    return test_data["sections"]

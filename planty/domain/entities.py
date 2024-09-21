@@ -48,8 +48,10 @@ class Task(BaseModel):
     description: Optional[str] = None
     is_completed: bool = False
     added_at: datetime = Field(default_factory=get_datetime_now)
-    due_to_next: Optional[date] = None
-    due_to_days_period: Optional[int] = None
+
+    due_to: Optional[date] = None
+    recurrence_period: Optional[int] = None
+    flexible_recurrence_mode: bool = False  # like an exclamation mark in Todoist
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Task) and self.id == other.id
@@ -58,9 +60,12 @@ class Task(BaseModel):
         return hash(self.id)
 
     def mark_completed(self) -> None:
-        if self.due_to_days_period:
-            assert self.due_to_next
-            self.due_to_next += timedelta(days=self.due_to_days_period)
+        if self.recurrence_period:
+            days_delta = timedelta(days=self.recurrence_period)
+            if self.flexible_recurrence_mode:
+                self.due_to = get_datetime_now().date() + days_delta
+            else:
+                self.due_to += days_delta
         else:
             self.is_completed = True
 
@@ -69,12 +74,6 @@ class Task(BaseModel):
             self.is_completed = False
         else:
             self.mark_completed()
-
-    def update_due_date(
-        self, due_to_next: Optional[date], due_to_days_period: Optional[int]
-    ) -> None:
-        self.due_to_next = due_to_next
-        self.due_to_days_period = due_to_days_period
 
 
 class Section(BaseModel):

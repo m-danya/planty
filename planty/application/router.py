@@ -10,6 +10,7 @@ from planty.application.schemas import (
     TaskCreateResponse,
     TaskMoveRequest,
     TaskToggleCompletedRequest,
+    TaskToggleCompletedResponse,
     TaskUpdateRequest,
     TaskUpdateResponse,
 )
@@ -50,8 +51,9 @@ async def move_task(request: TaskMoveRequest):
 async def toggle_task_completed(request: TaskToggleCompletedRequest):
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
-        await task_service.toggle_task_completed(request.task_id)
+        is_completed = await task_service.toggle_task_completed(request.task_id)
         await uow.commit()
+    return TaskToggleCompletedResponse(is_completed=is_completed)
 
 
 @router.post("/section", status_code=status.HTTP_201_CREATED)

@@ -33,12 +33,13 @@ class TaskService:
             raise TaskNotFoundException(task_id=task_id)
         return task
 
-    async def toggle_task_completed(self, task_id: UUID) -> None:
+    async def toggle_task_completed(self, task_id: UUID) -> bool:
         task = await self._task_repo.get(task_id)
         if not task:
             raise TaskNotFoundException(task_id=task_id)
         task.toggle_completed()
         await self._task_repo.update_or_create(task)
+        return task.is_completed
 
 
 class SectionService:
@@ -63,8 +64,8 @@ class SectionService:
             section_id=task.section_id,
             title=task.title,
             is_completed=False,
-            due_to_next=task.due_to_next,
-            due_to_days_period=task.due_to_days_period,
+            due_to=task.due_to_next,
+            recurrence_period=task.due_to_days_period,
         )
         section = await self._section_repo.get(task.section_id)
         section.insert_task(task)

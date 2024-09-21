@@ -73,17 +73,7 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         if task_model is None:
             raise TaskNotFoundException(task_id=task_id)
 
-        return Task(
-            id=task_model.id,
-            user_id=task_model.user_id,
-            section_id=task_model.section_id,
-            title=task_model.title,
-            description=task_model.description,
-            is_completed=task_model.is_completed,
-            added_at=task_model.added_at,
-            due_to_next=task_model.due_to_next,
-            due_to_days_period=task_model.due_to_days_period,
-        )
+        return task_model.to_entity()
 
     async def update_or_create(
         self,
@@ -107,8 +97,8 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         task_model.description = task.description
         task_model.is_completed = task.is_completed
         task_model.added_at = task.added_at
-        task_model.due_to_next = task.due_to_next
-        task_model.due_to_days_period = task.due_to_days_period
+        task_model.due_to = task.due_to
+        task_model.recurrence_period = task.recurrence_period
         if index is not None:
             task_model.index = index
 
@@ -120,17 +110,7 @@ class SQLAlchemyTaskRepository(ITaskRepository):
         )
         task_models = result.scalars().all()
         return [
-            Task(
-                id=task_model.id,
-                user_id=task_model.user_id,
-                section_id=task_model.section_id,
-                title=task_model.title,
-                description=task_model.description,
-                is_completed=task_model.is_completed,
-                added_at=task_model.added_at,
-                due_to_next=task_model.due_to_next,
-                due_to_days_period=task_model.due_to_days_period,
-            )
+            task_model.to_entity()
             for task_model in sorted(task_models, key=lambda t: t.index)
         ]
 
@@ -162,23 +142,15 @@ class SQLAlchemySectionRepository(ISectionRepository):
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
-
-        return Section(
-            id=section_model.id,
-            title=section_model.title,
-            parent_id=section_model.parent_id,
-            tasks=await self._task_repo.get_section_tasks(section_id),
-        )
+        tasks = await self._task_repo.get_section_tasks(section_id)
+        return section_model.to_entity(tasks=tasks)
 
     async def get_all(self) -> list[Section]:
         result = await self._db_session.execute(select(SectionModel))
         section_models = result.scalars()
         return [
-            Section(
-                id=section_model.id,
-                title=section_model.title,
-                parent_id=section_model.parent_id,
-                tasks=await self._task_repo.get_section_tasks(section_model.id),
+            section_model.to_entity(
+                tasks=await self._task_repo.get_section_tasks(section_model.id)
             )
             for section_model in section_models
         ]
