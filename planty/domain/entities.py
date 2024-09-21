@@ -13,13 +13,19 @@ from pydantic import (
 )
 
 from planty.utils import generate_uuid, get_datetime_now
-from planty.domain.exceptions import MovingTaskIndexError
+from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
 
 UsernameType = Annotated[str, Field(min_length=3, max_length=50)]
 
 
 class Username(RootModel[UsernameType]):
     root: UsernameType
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, User) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
 
     @field_validator("root")
     def validate_username(cls, s: str) -> str:
@@ -83,6 +89,12 @@ class Section(BaseModel):
     tasks: list[Task]
     added_at: datetime = Field(default_factory=get_datetime_now)
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Section) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)
+
     def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None):
         if index is None:
             index = len(self.tasks)
@@ -92,6 +104,8 @@ class Section(BaseModel):
         self.tasks.insert(index, task)
 
     def remove_task(self, task: Task) -> Task:
+        if task.section_id != self.id:
+            raise RemovingFromWrongSectionError()
         self.tasks = [t for t in self.tasks if t.id != task.id]
         return task
 

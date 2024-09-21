@@ -15,6 +15,7 @@ loguru = "^0.7.2"
 gunicorn = "^21.2.0"
 aiosqlite = "^0.20.0"
 mypy = "^1.10.0"
+coverage = "^7.6.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
@@ -46,3 +47,6 @@ strict = true
 allow_redefinition = true
 exclude = "alembic/"
 plugins =  ["pydantic.mypy"]
+
+[tool.coverage.run]
+concurrency = ["greenlet", "thread"]

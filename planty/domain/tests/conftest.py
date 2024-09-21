@@ -22,8 +22,9 @@ def all_sections(
 ) -> list[Section]:
     sections = []
     for section in sections_data:
-        section_tasks = [task for task in all_tasks if task.section_id == section.id]
-        sections.append(SectionModel(**section).to_entity(tasks=section_tasks))
+        section = SectionModel(**section).to_entity(tasks=[])
+        section.tasks = [task for task in all_tasks if task.section_id == section.id]
+        sections.append(section)
     return sections
 
 
@@ -40,3 +41,13 @@ def everyday_task(all_tasks: list[Task]) -> Task:
 @pytest.fixture
 def flexible_recurrence_task(all_tasks: list[Task]) -> Task:
     return all_tasks[3]
+
+
+@pytest.fixture
+def nonempty_section(all_sections: list[Section]) -> Section:
+    return all_sections[2]
+
+
+@pytest.fixture
+def another_nonempty_section(all_sections: list[Section]) -> Section:
+    return all_sections[0]

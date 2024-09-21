@@ -18,6 +18,12 @@
             "title": "Tasks for later",
             "parent_id": null,
             "added_at": "2024-09-28T04:11:17.677Z"
+        },
+        {
+            "id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Chores",
+            "parent_id": null,
+            "added_at": "2024-09-28T04:11:17.677Z"
         }
     ],
     "tasks": [
@@ -70,6 +76,52 @@
             "recurrence_period": 2,
             "flexible_recurrence_mode": true,
             "index": 4
-        }
+        },
+        {
+            "id": "295089f4-da6c-4a14-8527-4019d51849d9",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Clean the house",
+            "description": "🧹🫧🧽🪣",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z",
+            "flexible_recurrence_mode": false,
+            "index": 1
+        },
+        {
+            "id": "f15c4c32-3d85-4a64-a216-75bdf6f2d8c5",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Wash the dishes",
+            "description": "🧼🧴",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z",
+            "flexible_recurrence_mode": false,
+            "index": 2
+        },
+        {
+            "id": "8274b67b-13d7-43a1-a9f9-8c47a62c1741",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Take out the trash",
+            "description": "🚮🗑️",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z",
+            "flexible_recurrence_mode": true,
+            "recurrence_period": 1,
+            "due_to": "2024-03-28",
+            "index": 3
+        },
+        {
+            "id": "de59bdb5-5f91-48dc-a034-246b8f86be25",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Laundry",
+            "description": "👕🧺🧼",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z",
+            "flexible_recurrence_mode": false,
+            "index": 4
+        }        
     ]
 }

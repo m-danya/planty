@@ -8,3 +8,11 @@ class MovingTaskIndexError(PlantyException):
     @property
     def _detail(self) -> str:
         return "The task can't be moved to the specified index"
+
+
+class RemovingFromWrongSectionError(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "This task doesn't belong to this section"

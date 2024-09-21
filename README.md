@@ -45,6 +45,13 @@ pytest
 mypy .
 ```
 
+Measuring code coverage:
+
+```
+coverage run -m pytest
+coverage report # or "coverage html"
+```
+
 ### Run linting & formatting
 
 (or just use Ruff extension for VS Code)
