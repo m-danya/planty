@@ -1,8 +1,9 @@
-from typing import Any
+from typing import Any, Optional
 import pytest
 from httpx import AsyncClient
 
 
+# TODO: test task creation with `recurrence`
 @pytest.mark.parametrize(
     "status_code,error_detail",
     [
@@ -11,7 +12,7 @@ from httpx import AsyncClient
 )
 async def test_create_task(
     status_code: int,
-    error_detail: str,
+    error_detail: Optional[str],
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
 ) -> None:
@@ -51,7 +52,7 @@ async def test_create_task(
 async def test_update_task(
     task_id: str,
     status_code: int,
-    error_detail: str,
+    error_detail: Optional[str],
     ac: AsyncClient,
     tasks_data: list[dict[str, Any]],
 ) -> None:
@@ -99,7 +100,7 @@ async def test_create_section(
 async def test_get_section(
     id_: str,
     status_code: int,
-    error_detail: str,
+    error_detail: Optional[str],
     ac: AsyncClient,
     tasks_data: list[dict[str, Any]],
 ) -> None:
@@ -136,7 +137,7 @@ async def test_move_task(
     section_id: str,
     index: int,
     status_code: int,
-    error_detail: str,
+    error_detail: Optional[str],
     ac: AsyncClient,
 ) -> None:
     response = await ac.post(
@@ -170,3 +171,52 @@ async def test_toggle_completed_task(
         )
         data = response.json()
         assert data["is_completed"] is expected_is_completed
+
+
+@pytest.mark.parametrize(
+    "user_id, not_before, not_after, n_tasks_expected, status_code, error_detail",
+    [
+        # TODO: nonexisting user -> 404
+        (
+            "38df4136-36b2-4171-8459-27f411af8323",
+            "2001-01-01",
+            "2002-12-31",
+            244,
+            200,
+            None,
+        ),
+        (
+            "38df4136-36b2-4171-8459-27f411af8323",
+            "2002-12-31",
+            "2001-01-01",
+            0,
+            422,
+            "Incorrect date interval",
+        ),
+    ],
+)
+async def test_get_tasks_by_date(
+    user_id: str,
+    not_before: str,
+    not_after: str,
+    n_tasks_expected: int,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+) -> None:
+    response = await ac.get(
+        "/api/task/by_date",
+        params={
+            "user_id": user_id,
+            "not_before": not_before,
+            "not_after": not_after,
+        },
+    )
+    assert response.status_code == status_code
+    if not response.is_success:
+        assert response.json()["detail"] == error_detail
+        return
+    tasks_by_date = response.json()
+
+    n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
+    assert n_tasks == n_tasks_expected

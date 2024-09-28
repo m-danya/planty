@@ -4,7 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
-from planty.domain.entities import Task
+from planty.domain.task import RecurrenceInfo, Task
 from planty.utils import generate_uuid, get_today
 
 TASK_CREATE_EXAMPLES = [
@@ -32,8 +32,8 @@ class TaskCreateRequest(BaseModel):
     section_id: UUID
     title: str
     description: Optional[str] = None
-    due_to_next: Optional[date] = None
-    due_to_days_period: Optional[int] = None
+    due_to: Optional[date] = None
+    recurrence: Optional[RecurrenceInfo] = None
 
     model_config = ConfigDict(
         extra="forbid",
@@ -45,6 +45,10 @@ class TaskCreateResponse(BaseModel):
     id: UUID
 
     model_config = ConfigDict(extra="forbid")
+
+
+class TaskRemoveRequest(BaseModel):
+    task_id: UUID
 
 
 class TaskMoveRequest(BaseModel):

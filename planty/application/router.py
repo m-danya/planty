@@ -1,3 +1,4 @@
+from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, status
@@ -9,6 +10,7 @@ from planty.application.schemas import (
     TaskCreateRequest,
     TaskCreateResponse,
     TaskMoveRequest,
+    TaskRemoveRequest,
     TaskToggleCompletedRequest,
     TaskToggleCompletedResponse,
     TaskUpdateRequest,
@@ -16,7 +18,7 @@ from planty.application.schemas import (
 )
 from planty.application.services import SectionService, TaskService
 from planty.application.uow import SqlAlchemyUnitOfWork
-from planty.domain.entities import Section
+from planty.domain.task import Section, Task
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
 
@@ -30,6 +32,14 @@ async def create_task(task_data: TaskCreateRequest) -> TaskCreateResponse:
         return TaskCreateResponse(id=task_id)
 
 
+@router.delete("/task")
+async def remove_task(task_data: TaskRemoveRequest) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        await section_service.remove_task(task_data.task_id)
+        await uow.commit()
+
+
 @router.patch("/task")
 async def update_task(task_data: TaskUpdateRequest) -> TaskUpdateResponse:
     async with SqlAlchemyUnitOfWork() as uow:
@@ -39,8 +49,23 @@ async def update_task(task_data: TaskUpdateRequest) -> TaskUpdateResponse:
         return TaskUpdateResponse(task=task)
 
 
+@router.get("/task/by_date")
+async def get_tasks_by_date(
+    user_id: UUID,
+    not_before: date,
+    not_after: date,
+) -> dict[date, list[Task]]:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        tasks_by_date = await task_service.get_tasks_by_date(
+            user_id, not_before, not_after
+        )
+        await uow.commit()
+        return tasks_by_date
+
+
 @router.post("/task/move")
-async def move_task(request: TaskMoveRequest):
+async def move_task(request: TaskMoveRequest) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         await section_service.move_task(request)
@@ -48,7 +73,9 @@ async def move_task(request: TaskMoveRequest):
 
 
 @router.post("/task/toggle_completed")
-async def toggle_task_completed(request: TaskToggleCompletedRequest):
+async def toggle_task_completed(
+    request: TaskToggleCompletedRequest,
+) -> TaskToggleCompletedResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
         is_completed = await task_service.toggle_task_completed(request.task_id)

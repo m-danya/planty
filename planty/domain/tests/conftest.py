@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from planty.domain.entities import Section, Task, User
+from planty.domain.task import Section, Task, User
 from planty.infrastructure.models import SectionModel, TaskModel, UserModel
 
 
@@ -21,8 +21,8 @@ def all_sections(
     sections_data: list[dict[str, Any]], all_tasks: list[Task]
 ) -> list[Section]:
     sections = []
-    for section in sections_data:
-        section = SectionModel(**section).to_entity(tasks=[])
+    for section_data in sections_data:
+        section = SectionModel(**section_data).to_entity(tasks=[])
         section.tasks = [task for task in all_tasks if task.section_id == section.id]
         sections.append(section)
     return sections

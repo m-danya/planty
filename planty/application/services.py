@@ -1,8 +1,9 @@
 """Services representing usecases of an application"""
 
+from datetime import date
 from uuid import UUID
 
-from planty.application.exceptions import TaskNotFoundException
+from planty.application.exceptions import IncorrectDateInterval, TaskNotFoundException
 from planty.application.schemas import (
     SectionCreateRequest,
     ShuffleSectionRequest,
@@ -11,7 +12,8 @@ from planty.application.schemas import (
     TaskUpdateRequest,
 )
 from planty.application.uow import IUnitOfWork
-from planty.domain.entities import Section, Task
+from planty.domain.calendar import multiply_tasks_with_recurrences
+from planty.domain.task import Section, Task
 
 
 class TaskService:
@@ -27,12 +29,6 @@ class TaskService:
         await self._task_repo.update_or_create(task)
         return task
 
-    async def get_task(self, task_id: UUID) -> Task:
-        task = await self._task_repo.get(task_id)
-        if not task:
-            raise TaskNotFoundException(task_id=task_id)
-        return task
-
     async def toggle_task_completed(self, task_id: UUID) -> bool:
         task = await self._task_repo.get(task_id)
         if not task:
@@ -40,6 +36,21 @@ class TaskService:
         task.toggle_completed()
         await self._task_repo.update_or_create(task)
         return task.is_completed
+
+    async def get_tasks_by_date(
+        self,
+        user_id: UUID,
+        not_before: date,
+        not_after: date,
+    ) -> dict[date, list[Task]]:
+        if not_before > not_after:
+            raise IncorrectDateInterval()
+        prefiltered_tasks = await self._task_repo.get_tasks_by_due_date(
+            not_before=not_before,
+            not_after=not_after,
+            user_id=user_id,
+        )
+        return multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
 
 
 class SectionService:
@@ -64,21 +75,22 @@ class SectionService:
             section_id=task.section_id,
             title=task.title,
             is_completed=False,
-            due_to=task.due_to_next,
-            recurrence_period=task.due_to_days_period,
+            due_to=task.due_to,
+            recurrence=task.recurrence,
         )
         section = await self._section_repo.get(task.section_id)
         section.insert_task(task)
         await self._section_repo.update(section)
         return task.id
 
-    async def remove_task(self, task: TaskCreateRequest) -> None:
+    async def remove_task(self, task_id: UUID) -> None:
+        task = await self._task_repo.get(task_id)
         section = await self._section_repo.get(task.section_id)
         task = section.remove_task(task)
         await self._task_repo.remove(task)
         await self._section_repo.update(section)
 
-    async def move_task(self, request: TaskMoveRequest):
+    async def move_task(self, request: TaskMoveRequest) -> None:
         task = await self._task_repo.get(request.task_id)
         section_from = await self._section_repo.get(task.section_id)
         same_section = request.section_to_id == section_from.id

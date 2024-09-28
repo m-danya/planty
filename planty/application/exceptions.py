@@ -37,3 +37,8 @@ class TaskNotFoundException(EntityNotFoundException):
 
 class SectionNotFoundException(EntityNotFoundException):
     entity_name = "section"
+
+
+class IncorrectDateInterval(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    detail = "Incorrect date interval"

@@ -2,7 +2,7 @@ from datetime import timedelta
 
 import pytest
 
-from planty.domain.entities import Task
+from planty.domain.task import Task
 from planty.utils import get_today
 
 
@@ -28,11 +28,14 @@ def test_complete_flexible_recurrence(
     flexible_recurrence_task: Task, is_enabled: bool
 ) -> None:
     task = flexible_recurrence_task
-    task.flexible_recurrence_mode = is_enabled
+    assert task.recurrence
+    task.recurrence.flexible_mode = is_enabled
+    assert task.recurrence
+    assert task.due_to
     if is_enabled:
-        expected_due_to = get_today() + timedelta(days=task.recurrence_period)
+        expected_due_to = get_today() + timedelta(days=task.recurrence.period)
     else:
-        expected_due_to = task.due_to + timedelta(days=task.recurrence_period)
+        expected_due_to = task.due_to + timedelta(days=task.recurrence.period)
 
     task.mark_completed()
 

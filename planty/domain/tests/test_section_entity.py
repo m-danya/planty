@@ -1,7 +1,7 @@
-from typing import ContextManager, Optional
-from contextlib import nullcontext as does_not_raise
+from typing import Optional
+from contextlib import AbstractContextManager, nullcontext as does_not_raise
 import pytest
-from planty.domain.entities import Section, Task
+from planty.domain.task import Section, Task
 from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
 
 
@@ -20,7 +20,7 @@ def test_insert_task_in_section(
     nonempty_section: Section,
     nonperiodic_task: Task,
     index: Optional[int],
-    expected_raises: Optional[ContextManager],
+    expected_raises: Optional[AbstractContextManager[None]],
 ) -> None:
     raises_exception = bool(expected_raises)
     if not expected_raises:
@@ -105,7 +105,7 @@ def test_move_task_to_the_another_section(
     another_nonempty_section: Section,
     index_from_move: int,
     index_to_move: int,
-    expected_raises: Optional[ContextManager],
+    expected_raises: Optional[AbstractContextManager[None]],
     mistakenly_swap: bool,
 ) -> None:
     raises_exception = bool(expected_raises)

@@ -6,7 +6,7 @@ from pydantic import NonNegativeInt
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from planty.domain.entities import Section, Task, User
+from planty.domain.task import RecurrenceInfo, Section, Task, User
 from planty.infrastructure.database import Base
 from planty.infrastructure.utils import GUID  # type: ignore
 
@@ -25,7 +25,8 @@ class TaskModel(Base):
 
     due_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     recurrence_period: Mapped[Optional[int]]
-    flexible_recurrence_mode: Mapped[bool]
+    recurrence_type: Mapped[Optional[str]]
+    flexible_recurrence_mode: Mapped[Optional[bool]]
 
     section = relationship("SectionModel", back_populates="tasks")
     user = relationship("UserModel", back_populates="tasks")
@@ -41,12 +42,24 @@ class TaskModel(Base):
             description=task.description,
             is_completed=task.is_completed,
             due_to=task.due_to,
-            recurrence_period=task.recurrence_period,
-            flexible_recurrence_mode=task.flexible_recurrence_mode,
+            recurrence_period=task.recurrence.period if task.recurrence else None,
+            recurrence_type=task.recurrence.type if task.recurrence else None,
+            flexible_recurrence_mode=(
+                task.recurrence.flexible_mode if task.recurrence else None
+            ),
             index=index,
         )
 
     def to_entity(self) -> Task:
+        recurrence = (
+            RecurrenceInfo(
+                period=self.recurrence_period,
+                type=self.recurrence_type,
+                flexible_mode=self.flexible_recurrence_mode,
+            )
+            if self.recurrence_period is not None
+            else None
+        )
         return Task(
             id=self.id,
             user_id=self.user_id,
@@ -56,8 +69,7 @@ class TaskModel(Base):
             is_completed=self.is_completed,
             added_at=self.added_at,
             due_to=self.due_to,
-            recurrence_period=self.recurrence_period,
-            flexible_recurrence_mode=self.flexible_recurrence_mode,
+            recurrence=recurrence,
         )
 
 
@@ -75,8 +87,15 @@ class UserModel(Base):
     def from_entity(cls, user: User) -> "UserModel":
         return cls(
             id=user.id,
-            added_at=user.added_at,
             username=str(user.username),
+            added_at=user.added_at,
+        )
+
+    def to_entity(self) -> User:
+        return User(
+            id=self.id,
+            username=self.username,
+            added_at=self.added_at,
         )
 
 
@@ -100,7 +119,7 @@ class SectionModel(Base):
             added_at=section.added_at,
         )
 
-    def to_entity(self, tasks=list[Task]) -> Section:
+    def to_entity(self, tasks: list[Task]) -> Section:
         return Section(
             id=self.id,
             title=self.title,
