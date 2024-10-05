@@ -1,0 +1,133 @@
+<!-- DOESN'T WORK FOR SOME REASON (probably, extra headers issue)-->
+<!--(simple cURL command without extra headers command works fine)-->
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Загрузка файла на MinIO через Pre-signed URL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+        }
+        .container {
+            max-width: 500px;
+            margin: auto;
+        }
+        label {
+            display: block;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            font-size: 16px;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #e0ffe0;
+            border: 1px solid #00cc00;
+            color: #006600;
+        }
+        .error {
+            background-color: #ffe0e0;
+            border: 1px solid #cc0000;
+            color: #660000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Загрузка файла на MinIO</h1>
+
+        <!-- Поле для выбора файла -->
+        <label for="fileInput">Выберите файл для загрузки:</label>
+        <input type="file" id="fileInput" />
+
+        <!-- Поле для ввода pre-signed URL -->
+        <label for="urlInput">Вставьте Pre-signed URL от MinIO:</label>
+        <input type="text" id="urlInput" placeholder="https://minio.example.com/..." />
+
+        <!-- Кнопка загрузки -->
+        <button id="uploadButton">Загрузить файл</button>
+
+        <!-- Поле для отображения сообщений -->
+        <div id="message" class="message" style="display: none;"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadButton').addEventListener('click', async () => {
+            const fileInput = document.getElementById('fileInput');
+            const urlInput = document.getElementById('urlInput');
+            const messageDiv = document.getElementById('message');
+
+            const file = fileInput.files[0];
+            const uploadUrl = urlInput.value.trim();
+
+            // Сброс сообщений
+            messageDiv.style.display = 'none';
+            messageDiv.className = 'message';
+            messageDiv.textContent = '';
+
+            if (!file) {
+                showMessage('Пожалуйста, выберите файл для загрузки.', 'error');
+                return;
+            }
+
+            if (!uploadUrl) {
+                showMessage('Пожалуйста, вставьте Pre-signed URL.', 'error');
+                return;
+            }
+
+            // Определение Content-Type файла
+            const contentType = file.type || 'application/octet-stream';
+            const filename = file.name;
+
+            try {
+                // Загрузка файла с использованием pre-signed URL
+                const response = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    // headers: {
+                    //     // 'Content-Type': contentType,
+                    //     // 'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
+                    // },
+                    body: file,
+                });
+
+                if (response.ok) {
+                    showMessage('Файл успешно загружен.', 'success');
+                } else {
+                    const errorText = await response.text();
+                    showMessage(`Ошибка при загрузке файла: ${response.status} ${response.statusText}\n${errorText}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Ошибка при загрузке файла: ${error.message}`, 'error');
+            }
+        });
+
+        /**
+         * Функция для отображения сообщений пользователю
+         * @param {string} text - Текст сообщения
+         * @param {string} type - Тип сообщения ('success' или 'error')
+         */
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

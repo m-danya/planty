@@ -11,7 +11,7 @@ from planty.main import app as fastapi_app
 
 @pytest.fixture(scope="function", autouse=True)
 async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
-    assert settings.MODE == "TEST"
+    assert settings.mode == "TEST"
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)

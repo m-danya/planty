@@ -4,51 +4,59 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    MODE: Literal["DEV", "TEST", "PROD"]
-    DB_TYPE: Literal["sqlite", "postgresql"]
+    mode: Literal["DEV", "TEST", "PROD"]
+
+    aws_url: str
+    aws_secret_access_key: str
+    aws_access_key_id: str
+    aws_attachments_bucket: str
+
+    db_type: Literal["sqlite", "postgresql"]
 
     # (if `DB_TYPE` is "sqlite", then only `DB_NAME` is used)
 
-    DB_HOST: str
-    DB_PORT: int
-    DB_USER: str
-    DB_NAME: str
-    DB_PASS: str
+    db_host: str
+    db_port: int
+    db_user: str
+    db_name: str
+    db_pass: str
 
-    TEST_DB_HOST: str
-    TEST_DB_PORT: int
-    TEST_DB_USER: str
-    TEST_DB_NAME: str
-    TEST_DB_PASS: str
+    test_db_host: str
+    test_db_port: int
+    test_db_user: str
+    test_db_name: str
+    test_db_pass: str
 
     def get_database_url(
         self, for_alembic: bool = False, for_tests: bool = False
     ) -> str:
         # TODO: refactor ifs
         if for_tests:
-            if self.DB_TYPE == "postgresql":
+            if self.db_type == "postgresql":
                 return (
                     "postgresql+asyncpg://"
-                    f"{self.TEST_DB_USER}:{self.TEST_DB_PASS}@{self.TEST_DB_HOST}:"
-                    f"{self.TEST_DB_PORT}/{self.TEST_DB_NAME}"
+                    f"{self.test_db_user}:{self.test_db_pass}@{self.test_db_host}:"
+                    f"{self.test_db_port}/{self.test_db_name}"
                 )
             else:
-                return f"sqlite+aiosqlite:///{self.TEST_DB_NAME}.db"
+                return f"sqlite+aiosqlite:///{self.test_db_name}.db"
         else:
-            if self.DB_TYPE == "postgresql":
+            if self.db_type == "postgresql":
                 return (
                     "postgresql+asyncpg://"
-                    f"{self.DB_USER}:{self.DB_PASS}@{self.DB_HOST}:"
-                    f"{self.DB_PORT}/{self.DB_NAME}"
+                    f"{self.db_user}:{self.db_pass}@{self.db_host}:"
+                    f"{self.db_port}/{self.db_name}"
                 )
             else:
                 return (
-                    f"sqlite+aiosqlite:///{self.DB_NAME}.db"
+                    f"sqlite+aiosqlite:///{self.db_name}.db"
                     if not for_alembic
-                    else f"sqlite+pysqlite:///{self.DB_NAME}.db"
+                    else f"sqlite+pysqlite:///{self.db_name}.db"
                 )
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=".env", extra="ignore", env_prefix="PLANTY_"
+    )
 
 
 settings = Settings()

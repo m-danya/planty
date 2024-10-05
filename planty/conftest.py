@@ -1,7 +1,7 @@
 import os
 
-# substitute the `MODE` _before_ the Settings object is created.
-os.environ["MODE"] = "TEST"
+# substitute the `PLANTY_MODE` _before_ the Settings object is created.
+os.environ["PLANTY_MODE"] = "TEST"
 import json  # noqa: E402
 from datetime import datetime  # noqa: E402
 from pathlib import Path  # noqa: E402

@@ -1,19 +1,52 @@
 services:
+  minio:
+    image: minio/minio
+    ports:
+      - "0.0.0.0:9000:9000"
+    volumes:
+      - minio-volume:/data
+    command: server --console-address ":9001" /data
+    environment:
+      MINIO_ROOT_USER: ${PLANTY_AWS_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${PLANTY_AWS_SECRET_ACCESS_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 1sO # TODO: review healthcheck params
+      timeout: 1s
+      retries: 5
+      start_period: 1s
+
+  minio-createbuckets:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 ${PLANTY_AWS_ACCESS_KEY_ID} ${PLANTY_AWS_SECRET_ACCESS_KEY};
+      /usr/bin/mc mb myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
+      /usr/bin/mc anonymous set public myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
+      exit 0;
+      "
+
   db:
     image: postgres:16
     restart: always
     ports:
-    - ${DB_PORT}:5432
+      - ${PLANTY_DB_PORT}:5432
     environment:
-        - POSTGRES_DB=${DB_NAME}
-        - POSTGRES_PASSWORD=${DB_PASS}
+      - POSTGRES_DB=${PLANTY_DB_NAME}
+      - POSTGRES_PASSWORD=${PLANTY_DB_PASS}
     healthcheck:
-        test: ["CMD-SHELL", "pg_isready -U postgres"]
-        interval: 5s
-        timeout: 5s
-        retries: 5
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     volumes:
-        - postgres-volume:/var/lib/postgresql/data
-        - ./planty/tests/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql
+      - postgres-volume:/var/lib/postgresql/data
+      - ./planty/tests/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql
+    profiles: [with-postgres]
+
 volumes:
   postgres-volume:
+  minio-volume:

@@ -6,7 +6,7 @@ from sqlalchemy.orm import DeclarativeBase
 
 from planty.config import settings
 
-if settings.MODE == "TEST":
+if settings.mode == "TEST":
     database_url = settings.get_database_url(for_tests=True)
     database_params = {"poolclass": NullPool}
 else:
@@ -18,7 +18,7 @@ engine = create_async_engine(database_url, **database_params)
 
 
 # Enable foreign key checks for SQLite
-if settings.DB_TYPE == "sqlite":
+if settings.db_type == "sqlite":
 
     @event.listens_for(engine.sync_engine, "connect")
     def set_sqlite_pragma(dbapi_connection: Any, connection_record: Any) -> None:

@@ -61,6 +61,7 @@ class Task(BaseModel):
     section_id: UUID
     title: str
     description: Optional[str] = None
+    content: Optional[str] = None  # Markdown content
     is_completed: bool = False
     added_at: datetime = Field(default_factory=get_datetime_now)
 
@@ -140,3 +141,8 @@ class Section(BaseModel):
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)
+
+
+# TODO:
+# class Attachment:
+#     ...

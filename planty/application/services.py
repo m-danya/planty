@@ -2,6 +2,12 @@
 
 from datetime import date
 from uuid import UUID
+import uuid
+
+import aiobotocore
+import aiobotocore.session
+import httpx
+from types_aiobotocore_s3.client import S3Client
 
 from planty.application.exceptions import IncorrectDateInterval, TaskNotFoundException
 from planty.application.schemas import (
@@ -14,6 +20,7 @@ from planty.application.schemas import (
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
 from planty.domain.task import Section, Task
+from planty.config import settings
 
 
 class TaskService:
@@ -112,3 +119,47 @@ class SectionService:
         section.shuffle_tasks()
         await self._section_repo.update(section)
         return section
+
+
+# TODO: limit file uploading for each user
+
+
+class AttachmentsService:
+    def __init__(self) -> None:
+        self.session = aiobotocore.session.get_session()
+        self.bucket_name = settings.aws_attachments_bucket
+
+    async def get_presigned_url_for_uploading(self):
+        file_key = str(uuid.uuid4())
+
+        async with self.session.create_client(
+            "s3",
+            endpoint_url=settings.aws_url,
+            aws_secret_access_key=settings.aws_secret_access_key,
+            aws_access_key_id=settings.aws_access_key_id,
+        ) as client:
+            client: S3Client
+            url = await client.generate_presigned_url(
+                "put_object",
+                Params={
+                    "Bucket": self.bucket_name,
+                    "Key": file_key,
+                },
+                ExpiresIn=24 * 3600,  # 24 hours
+            )
+            return {
+                "put_url": url,
+                "get_url": f"{settings.aws_url}/{settings.aws_attachments_bucket}/{file_key}",
+            }
+
+
+async def test_attachments_service():
+    # TODO: move to tests (+ configure test minio env)
+    a = AttachmentsService()
+    urls = await a.get_presigned_url_for_uploading()
+    response = httpx.put(urls["put_url"], content=b"some content")
+    response = httpx.get(urls["get_url"])
+    assert response.is_success
+
+
+# asyncio.run(test_attachments_service())
