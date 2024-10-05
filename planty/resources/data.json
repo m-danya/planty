@@ -63,7 +63,6 @@
             "is_completed": false,
             "added_at": "2024-03-28T04:11:17.677Z",
             "due_to": null,
-            "flexible_recurrence_mode": false,
             "index": 3
         },
         {
@@ -88,7 +87,6 @@
             "description": "🧹🫧🧽🪣",
             "is_completed": false,
             "added_at": "2024-03-28T04:11:17.677Z",
-            "flexible_recurrence_mode": false,
             "index": 1
         },
         {
@@ -125,7 +123,6 @@
             "description": "👕🧺🧼",
             "is_completed": false,
             "added_at": "2024-03-28T04:11:17.677Z",
-            "flexible_recurrence_mode": false,
             "index": 4
         },
         {
@@ -141,6 +138,17 @@
             "recurrence_period": 3,
             "recurrence_type": "days",
             "index": 4
-        }        
+        },
+        {
+            "id": "2c5f3244-ec03-4ddd-b78c-cc4ab5db4d42",
+            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+            "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "title": "Non-recurrent task with due_to",
+            "description": "🧺",
+            "is_completed": false,
+            "added_at": "2024-03-28T04:11:17.677Z",
+            "due_to": "2025-01-01",
+            "index": 4
+        }      
     ]
 }

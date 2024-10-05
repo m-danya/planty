@@ -30,6 +30,7 @@ class Username(RootModel[UsernameType]):
         return hash(self.root)
 
     @field_validator("root")
+    @classmethod
     def validate_username(cls, s: str) -> str:
         for c in s:
             if not (c.isalnum() or c == "_"):

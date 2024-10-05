@@ -27,7 +27,6 @@ def recurrence_rule(
         yield d
 
 
-# TODO: write tests
 def get_task_recurrences(task: Task, not_after: date) -> list[date]:
     if task.due_to is None or task.due_to > not_after:
         return []

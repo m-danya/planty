@@ -44,6 +44,16 @@ def flexible_recurrence_task(all_tasks: list[Task]) -> Task:
 
 
 @pytest.fixture
+def task_from_2001(all_tasks: list[Task]) -> Task:
+    return all_tasks[8]
+
+
+@pytest.fixture
+def task_with_due_to_and_no_recurrence(all_tasks: list[Task]) -> Task:
+    return all_tasks[9]
+
+
+@pytest.fixture
 def nonempty_section(all_sections: list[Section]) -> Section:
     return all_sections[2]
 
