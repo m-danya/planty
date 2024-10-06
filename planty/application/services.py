@@ -1,16 +1,17 @@
 """Services representing usecases of an application"""
 
 from datetime import date
+from typing import Optional
 from uuid import UUID
 import uuid
 
 import aiobotocore
 import aiobotocore.session
 import httpx
-from types_aiobotocore_s3.client import S3Client
 
 from planty.application.exceptions import IncorrectDateInterval, TaskNotFoundException
 from planty.application.schemas import (
+    NewAttachmentURLs,
     SectionCreateRequest,
     ShuffleSectionRequest,
     TaskCreateRequest,
@@ -124,12 +125,12 @@ class SectionService:
 # TODO: limit file uploading for each user
 
 
-class AttachmentsService:
-    def __init__(self) -> None:
+class AttachmentService:
+    def __init__(self, uow: Optional[IUnitOfWork] = None) -> None:
         self.session = aiobotocore.session.get_session()
         self.bucket_name = settings.aws_attachments_bucket
 
-    async def get_presigned_url_for_uploading(self):
+    async def get_presigned_url_for_uploading(self) -> NewAttachmentURLs:
         file_key = str(uuid.uuid4())
 
         async with self.session.create_client(
@@ -138,28 +139,36 @@ class AttachmentsService:
             aws_secret_access_key=settings.aws_secret_access_key,
             aws_access_key_id=settings.aws_access_key_id,
         ) as client:
-            client: S3Client
-            url = await client.generate_presigned_url(
-                "put_object",
-                Params={
-                    "Bucket": self.bucket_name,
-                    "Key": file_key,
-                },
-                ExpiresIn=24 * 3600,  # 24 hours
+            post_info = await client.generate_presigned_post(
+                Bucket=self.bucket_name,
+                Key=file_key,
+                ExpiresIn=3600,  # 1 hour
+                Conditions=[
+                    ["starts-with", "$Content-Disposition", ""],
+                    ["content-length-range", 0, 50 * 1048576],  # max 50 MiB
+                ],
             )
-            return {
-                "put_url": url,
-                "get_url": f"{settings.aws_url}/{settings.aws_attachments_bucket}/{file_key}",
-            }
+            # TODO: add to Task.attachments + save in db + clean unused?
+            return NewAttachmentURLs(
+                post_url=post_info["url"],
+                post_fields=post_info["fields"],
+                get_url=f"{settings.aws_url}/{settings.aws_attachments_bucket}/{file_key}",
+            )
 
 
-async def test_attachments_service():
-    # TODO: move to tests (+ configure test minio env)
-    a = AttachmentsService()
+# TODO: move to tests (+ configure test minio env)
+async def test_attachments_service() -> None:
+    a = AttachmentService()
     urls = await a.get_presigned_url_for_uploading()
-    response = httpx.put(urls["put_url"], content=b"some content")
-    response = httpx.get(urls["get_url"])
+    print(f"{urls = }")
+    response = httpx.post(
+        urls.post_url,
+        data={
+            **urls.post_fields,
+            "Content-Disposition": 'attachment; filename="shrek.txt"',
+        },
+        files={"file": ("filename", b"some content")},
+    )
     assert response.is_success
-
-
-# asyncio.run(test_attachments_service())
+    response = httpx.get(urls.get_url)
+    assert response.is_success

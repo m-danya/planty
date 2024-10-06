@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
@@ -125,3 +125,13 @@ class SectionCreateRequest(BaseModel):
 
 class SectionCreateResponse(BaseModel):
     id: UUID
+
+
+class GetNewAttachmentURLs(BaseModel):
+    task_id: UUID
+
+
+class NewAttachmentURLs(BaseModel):
+    post_url: str
+    post_fields: dict[str, Any]
+    get_url: str

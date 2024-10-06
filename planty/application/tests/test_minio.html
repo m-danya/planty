@@ -1,133 +1,169 @@
-<!-- DOESN'T WORK FOR SOME REASON (probably, extra headers issue)-->
-<!--(simple cURL command without extra headers command works fine)-->
-
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Загрузка файла на MinIO через Pre-signed URL</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Загрузка файла с использованием presigned POST</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 40px;
-        }
-        .container {
-            max-width: 500px;
-            margin: auto;
-        }
-        label {
-            display: block;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        input[type="text"], input[type="file"] {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            box-sizing: border-box;
-        }
-        button {
-            margin-top: 20px;
-            padding: 10px 15px;
-            font-size: 16px;
-        }
-        .message {
-            margin-top: 20px;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        .success {
-            background-color: #e0ffe0;
-            border: 1px solid #00cc00;
-            color: #006600;
-        }
-        .error {
-            background-color: #ffe0e0;
-            border: 1px solid #cc0000;
-            color: #660000;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+      textarea,
+      input[type="text"],
+      input[type="url"],
+      input[type="uuid"] {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      #uploadButton, #fetchUrlsButton {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin-right: 10px;
+      }
+      #result {
+        margin-top: 20px;
+      }
+      #result img {
+        max-width: 100%;
+        height: auto;
+      }
+      #error {
+        color: red;
+        margin-top: 20px;
+      }
     </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Загрузка файла на MinIO</h1>
+  </head>
+  <body>
+    <h1>Загрузка файла с использованием presigned POST</h1>
 
-        <!-- Поле для выбора файла -->
-        <label for="fileInput">Выберите файл для загрузки:</label>
-        <input type="file" id="fileInput" />
-
-        <!-- Поле для ввода pre-signed URL -->
-        <label for="urlInput">Вставьте Pre-signed URL от MinIO:</label>
-        <input type="text" id="urlInput" placeholder="https://minio.example.com/..." />
-
-        <!-- Кнопка загрузки -->
-        <button id="uploadButton">Загрузить файл</button>
-
-        <!-- Поле для отображения сообщений -->
-        <div id="message" class="message" style="display: none;"></div>
+    <div class="form-group">
+      <label for="taskId">Task ID (UUID):</label>
+      <input
+        type="text"
+        id="taskId"
+        placeholder="Введите UUID задачи"
+        required
+      />
     </div>
 
+    <div class="form-group">
+      <label for="fileInput">Выберите файл для загрузки:</label>
+      <input type="file" id="fileInput" accept="image/*" required />
+    </div>
+
+    <button id="fetchUrlsButton">Получить URL для загрузки</button>
+    <button id="uploadButton" disabled>Загрузить файл</button>
+
+    <div id="result"></div>
+    <div id="error"></div>
+
     <script>
-        document.getElementById('uploadButton').addEventListener('click', async () => {
-            const fileInput = document.getElementById('fileInput');
-            const urlInput = document.getElementById('urlInput');
-            const messageDiv = document.getElementById('message');
+      document.getElementById("fetchUrlsButton").addEventListener("click", async () => {
+        // Очистка предыдущих результатов и ошибок
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("error").innerText = "";
 
-            const file = fileInput.files[0];
-            const uploadUrl = urlInput.value.trim();
+        const taskId = document.getElementById("taskId").value.trim();
 
-            // Сброс сообщений
-            messageDiv.style.display = 'none';
-            messageDiv.className = 'message';
-            messageDiv.textContent = '';
-
-            if (!file) {
-                showMessage('Пожалуйста, выберите файл для загрузки.', 'error');
-                return;
-            }
-
-            if (!uploadUrl) {
-                showMessage('Пожалуйста, вставьте Pre-signed URL.', 'error');
-                return;
-            }
-
-            // Определение Content-Type файла
-            const contentType = file.type || 'application/octet-stream';
-            const filename = file.name;
-
-            try {
-                // Загрузка файла с использованием pre-signed URL
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    // headers: {
-                    //     // 'Content-Type': contentType,
-                    //     // 'Content-Disposition': `attachment; filename="${encodeURIComponent(filename)}"`,
-                    // },
-                    body: file,
-                });
-
-                if (response.ok) {
-                    showMessage('Файл успешно загружен.', 'success');
-                } else {
-                    const errorText = await response.text();
-                    showMessage(`Ошибка при загрузке файла: ${response.status} ${response.statusText}\n${errorText}`, 'error');
-                }
-            } catch (error) {
-                showMessage(`Ошибка при загрузке файла: ${error.message}`, 'error');
-            }
-        });
-
-        /**
-         * Функция для отображения сообщений пользователю
-         * @param {string} text - Текст сообщения
-         * @param {string} type - Тип сообщения ('success' или 'error')
-         */
-        function showMessage(text, type) {
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = text;
-            messageDiv.className = `message ${type}`;
-            messageDiv.style.display = 'block';
+        if (!taskId) {
+          document.getElementById("error").innerText = "Пожалуйста, введите Task ID.";
+          return;
         }
+
+        try {
+          // Отправка POST запроса к эндпоинту /task/attachment
+          const response = await fetch("http://127.0.0.1:8000/api/task/attachment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ task_id: taskId }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка при получении URL: ${response.status} ${response.statusText}\n${errorText}`);
+          }
+
+          const urls = await response.json();
+
+          // Сохранение полученных URL в атрибутах кнопки загрузки
+          document.getElementById("uploadButton").dataset.postUrl = urls.post_url;
+          document.getElementById("uploadButton").dataset.postFields = JSON.stringify(urls.post_fields);
+          document.getElementById("uploadButton").dataset.getUrl = urls.get_url;
+
+          // Активация кнопки загрузки
+          document.getElementById("uploadButton").disabled = false;
+
+          alert("URL для загрузки успешно получены. Теперь вы можете загрузить файл.");
+        } catch (error) {
+          document.getElementById("error").innerText = `Произошла ошибка: ${error.message}`;
+          console.error(error);
+        }
+      });
+
+      document.getElementById("uploadButton").addEventListener("click", async () => {
+        // Очистка предыдущих результатов и ошибок
+        document.getElementById("result").innerHTML = "";
+        document.getElementById("error").innerText = "";
+
+        const fileInput = document.getElementById("fileInput").files[0];
+
+        if (!fileInput) {
+          document.getElementById("error").innerText = "Пожалуйста, выберите файл для загрузки.";
+          return;
+        }
+
+        const postUrl = document.getElementById("uploadButton").dataset.postUrl;
+        const postFields = JSON.parse(document.getElementById("uploadButton").dataset.postFields);
+        const getUrl = document.getElementById("uploadButton").dataset.getUrl;
+
+        // Создание FormData и добавление полей из postFields
+        const formData = new FormData();
+        for (const [key, value] of Object.entries(postFields)) {
+          formData.append(key, value);
+        }
+
+        // Добавление Content-Disposition для имени файла
+        formData.append(
+          "Content-Disposition",
+          `attachment; filename="${fileInput.name}"`
+        );
+
+        // Добавление файла
+        formData.append("file", fileInput);
+
+        try {
+          // Отправка POST запроса к presigned URL
+          const response = await fetch(postUrl, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (response.ok || response.status === 204) {
+            // Отображение загруженного изображения
+            const img = document.createElement("img");
+            img.src = getUrl;
+            img.alt = "Загруженное изображение";
+            document.getElementById("result").appendChild(img);
+          } else {
+            const errorText = await response.text();
+            throw new Error(`Ошибка при загрузке файла: ${response.status} ${response.statusText}\n${errorText}`);
+          }
+        } catch (error) {
+          document.getElementById("error").innerText = `Произошла ошибка: ${error.message}`;
+          console.error(error);
+        }
+      });
     </script>
-</body>
+  </body>
 </html>

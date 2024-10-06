@@ -11,10 +11,10 @@ services:
       MINIO_ROOT_PASSWORD: ${PLANTY_AWS_SECRET_ACCESS_KEY}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 1sO # TODO: review healthcheck params
+      interval: 1s
       timeout: 1s
       retries: 5
-      start_period: 1s
+      start_period: 10s
 
   minio-createbuckets:
     image: minio/mc
@@ -25,7 +25,7 @@ services:
       /bin/sh -c "
       /usr/bin/mc alias set myminio http://minio:9000 ${PLANTY_AWS_ACCESS_KEY_ID} ${PLANTY_AWS_SECRET_ACCESS_KEY};
       /usr/bin/mc mb myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
-      /usr/bin/mc anonymous set public myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
+      /usr/bin/mc anonymous set download myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
       exit 0;
       "
 
