@@ -1,33 +1,30 @@
-"""Services representing usecases of an application"""
-
 from datetime import date
-from typing import Optional
 from uuid import UUID
-import uuid
 
 import aiobotocore
 import aiobotocore.session
-import httpx
 
 from planty.application.exceptions import IncorrectDateInterval, TaskNotFoundException
 from planty.application.schemas import (
-    NewAttachmentURLs,
+    AttachmentUploadInfo,
+    RequestAttachmentUpload,
     SectionCreateRequest,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskMoveRequest,
     TaskUpdateRequest,
 )
+from planty.application.services.attachments import generate_presigned_post_url
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
-from planty.domain.task import Section, Task
-from planty.config import settings
+from planty.domain.task import Attachment, Section, Task
 
 
 class TaskService:
     def __init__(self, uow: IUnitOfWork):
         self._task_repo = uow.task_repo
         self._user_repo = uow.user_repo
+        self._s3_session = aiobotocore.session.get_session()
 
     async def update_task(self, task_data: TaskUpdateRequest) -> Task:
         task = await self._task_repo.get(task_data.id)
@@ -59,6 +56,24 @@ class TaskService:
             user_id=user_id,
         )
         return multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
+
+    async def add_attachment(
+        self, request: RequestAttachmentUpload
+    ) -> AttachmentUploadInfo:
+        task = await self._task_repo.get(request.task_id)
+        post_url, post_fields, file_key = await generate_presigned_post_url(
+            self._s3_session
+        )
+        task.add_attachment(
+            Attachment(
+                task_id=task.id,
+                aes_key_b64=request.aes_key_b64,
+                aes_iv_b64=request.aes_iv_b64,
+                s3_file_key=file_key,
+            )
+        )
+        await self._task_repo.update_or_create(task)
+        return AttachmentUploadInfo(post_url=post_url, post_fields=post_fields)
 
 
 class SectionService:
@@ -120,55 +135,3 @@ class SectionService:
         section.shuffle_tasks()
         await self._section_repo.update(section)
         return section
-
-
-# TODO: limit file uploading for each user
-
-
-class AttachmentService:
-    def __init__(self, uow: Optional[IUnitOfWork] = None) -> None:
-        self.session = aiobotocore.session.get_session()
-        self.bucket_name = settings.aws_attachments_bucket
-
-    async def get_presigned_url_for_uploading(self) -> NewAttachmentURLs:
-        file_key = str(uuid.uuid4())
-
-        async with self.session.create_client(
-            "s3",
-            endpoint_url=settings.aws_url,
-            aws_secret_access_key=settings.aws_secret_access_key,
-            aws_access_key_id=settings.aws_access_key_id,
-        ) as client:
-            post_info = await client.generate_presigned_post(
-                Bucket=self.bucket_name,
-                Key=file_key,
-                ExpiresIn=3600,  # 1 hour
-                Conditions=[
-                    ["starts-with", "$Content-Disposition", ""],
-                    ["content-length-range", 0, 50 * 1048576],  # max 50 MiB
-                ],
-            )
-            # TODO: add to Task.attachments + save in db + clean unused?
-            return NewAttachmentURLs(
-                post_url=post_info["url"],
-                post_fields=post_info["fields"],
-                get_url=f"{settings.aws_url}/{settings.aws_attachments_bucket}/{file_key}",
-            )
-
-
-# TODO: move to tests (+ configure test minio env)
-async def test_attachments_service() -> None:
-    a = AttachmentService()
-    urls = await a.get_presigned_url_for_uploading()
-    print(f"{urls = }")
-    response = httpx.post(
-        urls.post_url,
-        data={
-            **urls.post_fields,
-            "Content-Disposition": 'attachment; filename="shrek.txt"',
-        },
-        files={"file": ("filename", b"some content")},
-    )
-    assert response.is_success
-    response = httpx.get(urls.get_url)
-    assert response.is_success

@@ -13,7 +13,9 @@ def all_users(users_data: list[dict[str, Any]]) -> list[User]:
 
 @pytest.fixture
 def all_tasks(tasks_data: list[dict[str, Any]]) -> list[Task]:
-    return [TaskModel(**task).to_entity() for task in tasks_data]
+    # TODO: get attachments from json too and append it here (as in
+    # `all_sections` with tasks)
+    return [TaskModel(**task).to_entity(attachments=[]) for task in tasks_data]
 
 
 @pytest.fixture

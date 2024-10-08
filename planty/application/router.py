@@ -4,8 +4,8 @@ from uuid import UUID
 from fastapi import APIRouter, status
 
 from planty.application.schemas import (
-    GetNewAttachmentURLs,
-    NewAttachmentURLs,
+    RequestAttachmentUpload,
+    AttachmentUploadInfo,
     SectionCreateRequest,
     SectionCreateResponse,
     ShuffleSectionRequest,
@@ -18,7 +18,10 @@ from planty.application.schemas import (
     TaskUpdateRequest,
     TaskUpdateResponse,
 )
-from planty.application.services import AttachmentService, SectionService, TaskService
+from planty.application.services.tasks import (
+    SectionService,
+    TaskService,
+)
 from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.task import Section, Task
 
@@ -85,12 +88,14 @@ async def toggle_task_completed(
     return TaskToggleCompletedResponse(is_completed=is_completed)
 
 
+# TODO: write description for this endpoint
 @router.post("/task/attachment")
-async def get_attachment_urls(request: GetNewAttachmentURLs) -> NewAttachmentURLs:
+async def get_attachment_urls(request: RequestAttachmentUpload) -> AttachmentUploadInfo:
     async with SqlAlchemyUnitOfWork() as uow:
-        attachment_service = AttachmentService(uow=uow)
-        urls = await attachment_service.get_presigned_url_for_uploading()
-        return urls
+        task_service = TaskService(uow=uow)
+        upload_info = await task_service.add_attachment(request)
+        await uow.commit()
+    return upload_info
 
 
 @router.post("/section", status_code=status.HTTP_201_CREATED)

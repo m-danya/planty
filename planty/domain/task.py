@@ -66,8 +66,9 @@ class Task(BaseModel):
     added_at: datetime = Field(default_factory=get_datetime_now)
 
     due_to: Optional[date] = None
-
     recurrence: Optional[RecurrenceInfo] = None
+
+    attachments: list["Attachment"] = Field(default_factory=list)
 
     @model_validator(mode="before")
     @classmethod
@@ -100,6 +101,9 @@ class Task(BaseModel):
             self.is_completed = False
         else:
             self.mark_completed()
+
+    def add_attachment(self, attachment: "Attachment") -> None:
+        self.attachments.append(attachment)
 
 
 class Section(BaseModel):
@@ -143,6 +147,17 @@ class Section(BaseModel):
         random.shuffle(self.tasks)
 
 
-# TODO:
-# class Attachment:
-#     ...
+class Attachment(BaseModel):
+    id: UUID = Field(default_factory=generate_uuid)
+    aes_key_b64: str
+    aes_iv_b64: str
+    s3_file_key: str
+    task_id: UUID
+
+    added_at: datetime = Field(default_factory=get_datetime_now)
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Attachment) and self.id == other.id
+
+    def __hash__(self) -> int:
+        return hash(self.id)

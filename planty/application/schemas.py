@@ -127,11 +127,12 @@ class SectionCreateResponse(BaseModel):
     id: UUID
 
 
-class GetNewAttachmentURLs(BaseModel):
+class RequestAttachmentUpload(BaseModel):
     task_id: UUID
+    aes_key_b64: str
+    aes_iv_b64: str
 
 
-class NewAttachmentURLs(BaseModel):
+class AttachmentUploadInfo(BaseModel):
     post_url: str
     post_fields: dict[str, Any]
-    get_url: str

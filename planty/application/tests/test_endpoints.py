@@ -220,3 +220,58 @@ async def test_get_tasks_by_date(
 
     n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
     assert n_tasks == n_tasks_expected
+
+
+@pytest.mark.parametrize(
+    "task_id, status_code,error_detail",
+    [
+        ("existing", 200, None),
+        (
+            "f8b057ea-8c3c-4d14-9b95-ef9acbccffa6",  # random UUID
+            404,
+            "There is no task with {'task_id': UUID('f8b057ea-8c3c-4d14-9b95-ef9acbccffa6')}",
+        ),
+    ],
+)
+async def test_add_attachment(
+    task_id: str,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+    tasks_data: list[dict[str, Any]],
+) -> None:
+    # NOTE: running S3 is not required for this test, as this endpoint just
+    # generates pre-signed link "offline"
+    existing_task_data = tasks_data[2]
+    task_id = existing_task_data["id"] if task_id == "existing" else task_id
+
+    request_data = {
+        "task_id": task_id,
+        "aes_key_b64": "someBase64EncodedAESKey==",
+        "aes_iv_b64": "someBase64EncodedIV==",
+    }
+
+    response = await ac.post("/api/task/attachment", json=request_data)
+
+    assert response.status_code == status_code
+
+    if status_code == 200:
+        data = response.json()
+        assert "post_url" in data
+        assert "post_fields" in data
+        assert isinstance(data["post_fields"], dict)
+
+    if error_detail:
+        data = response.json()
+        assert "detail" in data
+        assert data["detail"] == error_detail
+        return
+
+    section_id = existing_task_data["section_id"]
+    response = await ac.get(f"/api/section/{section_id}")
+    task_got = next(t for t in response.json()["tasks"] if t["id"] == task_id)
+    assert len(task_got["attachments"]) == 1
+    assert task_got["attachments"][0]["aes_key_b64"] == request_data["aes_key_b64"]
+    assert task_got["attachments"][0]["aes_iv_b64"] == request_data["aes_iv_b64"]
+    assert task_got["attachments"][0]["s3_file_key"]
+    assert task_got["attachments"][0]["task_id"] == task_id
