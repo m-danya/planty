@@ -4,20 +4,30 @@ from uuid import UUID
 import aiobotocore
 import aiobotocore.session
 
-from planty.application.exceptions import IncorrectDateInterval, TaskNotFoundException
+from planty.application.exceptions import (
+    AttachmentNotFoundException,
+    IncorrectDateInterval,
+    TaskNotFoundException,
+)
 from planty.application.schemas import (
     AttachmentUploadInfo,
     RequestAttachmentUpload,
     SectionCreateRequest,
+    SectionResponse,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskMoveRequest,
     TaskUpdateRequest,
+    SectionsListResponse,
 )
-from planty.application.services.attachments import generate_presigned_post_url
+from planty.application.services.attachments import (
+    delete_attachment,
+    generate_presigned_post_url,
+)
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
 from planty.domain.task import Attachment, Section, Task
+from planty.config import settings
 
 
 class TaskService:
@@ -75,6 +85,20 @@ class TaskService:
         await self._task_repo.update_or_create(task)
         return AttachmentUploadInfo(post_url=post_url, post_fields=post_fields)
 
+    async def remove_attachment(self, task_id: UUID, attachment_id: UUID) -> None:
+        task = await self._task_repo.get(task_id)
+        try:
+            attachment: Attachment = next(
+                a for a in task.attachments if a.id == attachment_id
+            )
+        except StopIteration:
+            raise AttachmentNotFoundException(id=attachment_id)
+        # remove from minio
+        await delete_attachment(self._s3_session, attachment.s3_file_key)
+        task.remove_attachment(attachment)
+        await self._task_repo.update_or_create(task)
+        await self._task_repo.delete_attachment(attachment)
+
 
 class SectionService:
     def __init__(self, uow: IUnitOfWork):
@@ -86,11 +110,28 @@ class SectionService:
         await self._section_repo.add(section)
         return section
 
-    async def get_section(self, section_id: UUID) -> Section:
-        return await self._section_repo.get(section_id)
+    async def get_section(self, section_id: UUID) -> SectionResponse:
+        section: Section = await self._section_repo.get(section_id)
+        return await self._convert_to_response(section)
 
-    async def get_all_sections(self) -> list[Section]:
-        return await self._section_repo.get_all()
+    async def get_all_sections(self) -> SectionsListResponse:
+        sections: list[Section] = await self._section_repo.get_all()
+        sections: SectionsListResponse = await self._convert_list_to_response(sections)
+        return sections
+
+    async def _convert_to_response(self, section: Section) -> SectionResponse:
+        section = section.model_dump()
+        for task in section.get("tasks", []):
+            for attachment in task.get("attachments", []):
+                attachment["url"] = (
+                    f"{settings.aws_url}/{settings.aws_attachments_bucket}/{attachment['s3_file_key']}"
+                )
+        return SectionResponse(**section)
+
+    async def _convert_list_to_response(
+        self, sections: list[Section]
+    ) -> SectionsListResponse:
+        return [await self._convert_to_response(section) for section in sections]
 
     async def create_task(self, task: TaskCreateRequest) -> UUID:
         task = Task(

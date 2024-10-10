@@ -142,6 +142,13 @@ class SQLAlchemyTaskRepository:
         attachment_model = AttachmentModel.from_entity(attachment, index=index)
         self._db_session.add(attachment_model)
 
+    async def delete_attachment(self, attachment: Attachment) -> None:
+        result = await self._db_session.execute(
+            select(AttachmentModel).where(AttachmentModel.id == attachment.id)
+        )
+        attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
+        await self._db_session.delete(attachment_model)
+
     async def get_tasks_by_due_date(
         self, not_before: date, not_after: date, user_id: UUID
     ) -> list[Task]:

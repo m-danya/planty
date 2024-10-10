@@ -8,6 +8,7 @@ from planty.application.schemas import (
     AttachmentUploadInfo,
     SectionCreateRequest,
     SectionCreateResponse,
+    SectionResponse,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskCreateResponse,
@@ -17,6 +18,7 @@ from planty.application.schemas import (
     TaskToggleCompletedResponse,
     TaskUpdateRequest,
     TaskUpdateResponse,
+    SectionsListResponse,
 )
 from planty.application.services.tasks import (
     SectionService,
@@ -37,6 +39,7 @@ async def create_task(task_data: TaskCreateRequest) -> TaskCreateResponse:
         return TaskCreateResponse(id=task_id)
 
 
+# TODO: use query params for DELETE, body must be empty!
 @router.delete("/task")
 async def remove_task(task_data: TaskRemoveRequest) -> None:
     async with SqlAlchemyUnitOfWork() as uow:
@@ -88,14 +91,37 @@ async def toggle_task_completed(
     return TaskToggleCompletedResponse(is_completed=is_completed)
 
 
-# TODO: write description for this endpoint
-@router.post("/task/attachment")
-async def get_attachment_urls(request: RequestAttachmentUpload) -> AttachmentUploadInfo:
+@router.post(
+    "/task/attachment",
+    description=(
+        "This endpoint allows the frontend to obtain a pre-signed POST URL along "
+        "with the required fields for uploading an attachment to an S3-compatible "
+        "storage. The frontend is responsible for encrypting the file client-side "
+        "using AES-128 CBC with the provided key and IV. After encryption, the frontend "
+        "directly uploads the file to the S3 storage using the pre-signed URL and fields. "
+        "\n\nThe frontend can include the 'Content-Disposition' header in the "
+        "upload request to specify the file name, ensuring that the file is downloaded "
+        "later with the correct name."
+        "\n\nThe approach with client-side encryption allows using even non-trusted "
+        "S3 Storage providers for user files."
+    ),
+)
+async def get_attachment_uploading_info(
+    request: RequestAttachmentUpload,
+) -> AttachmentUploadInfo:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
         upload_info = await task_service.add_attachment(request)
         await uow.commit()
     return upload_info
+
+
+@router.delete("/task/{task_id}/attachment/{attachment_id}")
+async def remove_attachment(task_id: UUID, attachment_id: UUID) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        await task_service.remove_attachment(task_id, attachment_id)
+        await uow.commit()
 
 
 @router.post("/section", status_code=status.HTTP_201_CREATED)
@@ -112,7 +138,7 @@ async def create_section(
 @router.get("/section/{section_id}")
 async def get_section(
     section_id: UUID,
-) -> Section:
+) -> SectionResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         section = await section_service.get_section(section_id)
@@ -120,7 +146,7 @@ async def get_section(
 
 
 @router.get("/sections")
-async def get_sections() -> list[Section]:
+async def get_sections() -> SectionsListResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         sections = await section_service.get_all_sections()

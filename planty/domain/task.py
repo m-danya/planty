@@ -105,6 +105,9 @@ class Task(BaseModel):
     def add_attachment(self, attachment: "Attachment") -> None:
         self.attachments.append(attachment)
 
+    def remove_attachment(self, attachment: "Attachment") -> None:
+        self.attachments.remove(attachment)
+
 
 class Section(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)

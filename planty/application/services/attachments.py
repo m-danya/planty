@@ -29,22 +29,14 @@ async def generate_presigned_post_url(
             ],
         )
         return post_info["url"], post_info["fields"], file_key
-        # get_url=f"{settings.aws_url}/{settings.aws_attachments_bucket}/{file_key}",
 
 
-# TODO: move to tests (+ configure test minio env)
-# async def test_attachments_service() -> None:
-#     a = AttachmentService()
-#     urls = await a.get_presigned_url_for_uploading()
-#     print(f"{urls = }")
-#     response = httpx.post(
-#         urls.post_url,
-#         data={
-#             **urls.post_fields,
-#             "Content-Disposition": 'attachment; filename="shrek.txt"',
-#         },
-#         files={"file": ("filename", b"some content")},
-#     )
-#     assert response.is_success
-#     response = httpx.get(urls.get_url)
-#     assert response.is_success
+async def delete_attachment(s3_session: AioSession, file_key: str) -> None:
+    async with s3_session.create_client(
+        "s3",
+        endpoint_url=settings.aws_url,
+        aws_secret_access_key=settings.aws_secret_access_key,
+        aws_access_key_id=settings.aws_access_key_id,
+    ) as client:
+        # assuming that attachmemnt exists
+        await client.delete_object(Bucket=settings.aws_attachments_bucket, Key=file_key)

@@ -1,4 +1,8 @@
-from typing import Any, Optional
+from contextlib import contextmanager
+import subprocess
+import time
+from typing import Any, Generator, Optional
+import httpx
 import pytest
 from httpx import AsyncClient
 
@@ -73,6 +77,13 @@ async def test_update_task(
         data = response.json()
         assert "detail" in data
         assert data["detail"] == error_detail
+
+
+async def test_get_sections(
+    ac: AsyncClient,
+) -> None:
+    response = await ac.get("/api/sections")
+    assert response.is_success
 
 
 async def test_create_section(
@@ -222,6 +233,20 @@ async def test_get_tasks_by_date(
     assert n_tasks == n_tasks_expected
 
 
+@contextmanager
+def minio_container() -> Generator[None, None, None]:
+    subprocess.run(
+        #  -p planty_test
+        "docker compose up -d minio minio-createbuckets",
+        shell=True,
+        check=True,
+    )
+    # TODO: add loop with healthchecking!
+    time.sleep(5)
+    yield
+    # TODO: compose down or not whether it was already up?
+
+
 @pytest.mark.parametrize(
     "task_id, status_code,error_detail",
     [
@@ -240,8 +265,6 @@ async def test_add_attachment(
     ac: AsyncClient,
     tasks_data: list[dict[str, Any]],
 ) -> None:
-    # NOTE: running S3 is not required for this test, as this endpoint just
-    # generates pre-signed link "offline"
     existing_task_data = tasks_data[2]
     task_id = existing_task_data["id"] if task_id == "existing" else task_id
 
@@ -257,9 +280,9 @@ async def test_add_attachment(
 
     if status_code == 200:
         data = response.json()
-        assert "post_url" in data
-        assert "post_fields" in data
-        assert isinstance(data["post_fields"], dict)
+        post_url = data["post_url"]
+        post_fields = data["post_fields"]
+        assert isinstance(post_fields, dict)
 
     if error_detail:
         data = response.json()
@@ -274,4 +297,34 @@ async def test_add_attachment(
     assert task_got["attachments"][0]["aes_key_b64"] == request_data["aes_key_b64"]
     assert task_got["attachments"][0]["aes_iv_b64"] == request_data["aes_iv_b64"]
     assert task_got["attachments"][0]["s3_file_key"]
+    attachment_id = task_got["attachments"][0]["id"]
     assert task_got["attachments"][0]["task_id"] == task_id
+    get_url = task_got["attachments"][0]["url"]
+
+    with minio_container():
+        # Try to upload image with given URL
+        response = httpx.post(
+            post_url,
+            data={
+                **post_fields,
+                "Content-Disposition": 'attachment; filename="test_file.txt"',
+            },
+            files={"file": ("filename", b"some content")},
+        )
+        assert response.is_success
+
+        # Try to download it
+        response = httpx.get(get_url)
+        assert response.is_success
+
+        # Remove it
+        response = await ac.delete(f"/api/task/{task_id}/attachment/{attachment_id}")
+        assert response.is_success
+
+        # Verify that it's removed
+        response = httpx.get(get_url)
+        assert not response.is_success
+
+
+# TODO: !!! add attachments URL to all routes
+# TODO: test removing non-existing attachment
