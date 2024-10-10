@@ -39,7 +39,7 @@
       "recurrence_period": 1,
       "flexible_recurrence_mode": false,
       "recurrence_type": "days",
-      "index": 1
+      "index": 0
     },
     {
       "id": "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
@@ -52,7 +52,7 @@
       "due_to": "2025-01-20",
       "flexible_recurrence_mode": false,
       "recurrence_type": "days",
-      "index": 2
+      "index": 1
     },
     {
       "id": "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",
@@ -63,7 +63,7 @@
       "is_completed": false,
       "added_at": "2024-03-28T04:11:17.677Z",
       "due_to": null,
-      "index": 3
+      "index": 2
     },
     {
       "id": "7874f13d-ef4b-4fbd-87a8-db6bbf407976",
@@ -77,7 +77,7 @@
       "recurrence_period": 2,
       "flexible_recurrence_mode": true,
       "recurrence_type": "days",
-      "index": 4
+      "index": 3
     },
     {
       "id": "295089f4-da6c-4a14-8527-4019d51849d9",
@@ -87,7 +87,7 @@
       "description": "🧹🫧🧽🪣",
       "is_completed": false,
       "added_at": "2024-03-28T04:11:17.677Z",
-      "index": 1
+      "index": 0
     },
     {
       "id": "f15c4c32-3d85-4a64-a216-75bdf6f2d8c5",
@@ -99,7 +99,7 @@
       "added_at": "2024-03-28T04:11:17.677Z",
       "flexible_recurrence_mode": false,
       "recurrence_type": "days",
-      "index": 2
+      "index": 1
     },
     {
       "id": "8274b67b-13d7-43a1-a9f9-8c47a62c1741",
@@ -113,7 +113,7 @@
       "recurrence_period": 1,
       "recurrence_type": "days",
       "due_to": "2024-03-28",
-      "index": 3
+      "index": 2
     },
     {
       "id": "de59bdb5-5f91-48dc-a034-246b8f86be25",
@@ -123,7 +123,7 @@
       "description": "👕🧺🧼",
       "is_completed": false,
       "added_at": "2024-03-28T04:11:17.677Z",
-      "index": 4
+      "index": 3
     },
     {
       "id": "fe03f915-a5d8-4b4a-9ee6-93dacb2bf08e",
@@ -148,7 +148,7 @@
       "is_completed": false,
       "added_at": "2024-03-28T04:11:17.677Z",
       "due_to": "2025-01-01",
-      "index": 4
+      "index": 5
     }
   ],
   "attachments": [
@@ -159,7 +159,7 @@
       "s3_file_key": "1f393472-61ff-4d86-acc5-c225cd1b57da",
       "task_id": "de59bdb5-5f91-48dc-a034-246b8f86be25",
       "added_at": "2024-03-28T04:11:17.677Z",
-      "index": 1
+      "index": 0
     }
   ]
 }

@@ -133,14 +133,14 @@ class RequestAttachmentUpload(BaseModel):
     aes_iv_b64: str
 
 
-class RequestAttachmentRemove(BaseModel):
-    task_id: UUID
-    attachment_id: UUID
-
-
 class AttachmentUploadInfo(BaseModel):
     post_url: str
     post_fields: dict[str, Any]
+
+
+class RequestAttachmentRemove(BaseModel):
+    task_id: UUID
+    attachment_id: UUID
 
 
 class AttachmentResponse(Attachment):

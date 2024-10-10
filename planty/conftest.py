@@ -31,6 +31,7 @@ def _load_json_with_data(filename: str) -> dict[str, Any]:
     with open(Path(__file__).parent / "resources" / filename) as f:
         test_data: dict[str, Any] = json.load(f)
     for table_key in test_data:
+        last_idx: int = 0
         for row in test_data[table_key]:
             for column in row:
                 if row[column] is None:
@@ -39,6 +40,13 @@ def _load_json_with_data(filename: str) -> dict[str, Any]:
                     row[column] = datetime.strptime(row[column], TEST_DATETIME_FORMAT)
                 if column == "due_to" and row[column]:
                     row[column] = datetime.strptime(row[column], "%Y-%m-%d").date()
+                if column == "index":
+                    # Prevent forgetting to change index in json
+                    idx = row[column]
+                    assert (
+                        idx == last_idx + 1 or idx == 0
+                    ), f"Unexpected index in entity with id {row['id']}"
+                    last_idx = idx
 
     # TODO: make this dict immutable to prevent accidental modification
     return test_data
