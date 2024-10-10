@@ -14,6 +14,7 @@ from planty.application.schemas import (
     TaskCreateResponse,
     TaskMoveRequest,
     TaskRemoveRequest,
+    TasksByDateResponse,
     TaskToggleCompletedRequest,
     TaskToggleCompletedResponse,
     TaskUpdateRequest,
@@ -25,7 +26,6 @@ from planty.application.services.tasks import (
     TaskService,
 )
 from planty.application.uow import SqlAlchemyUnitOfWork
-from planty.domain.task import Section, Task
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
 
@@ -62,7 +62,7 @@ async def get_tasks_by_date(
     user_id: UUID,
     not_before: date,
     not_after: date,
-) -> dict[date, list[Task]]:
+) -> TasksByDateResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
         tasks_by_date = await task_service.get_tasks_by_date(
@@ -156,7 +156,7 @@ async def get_sections() -> SectionsListResponse:
 @router.post("/section/shuffle")
 async def shuffle_section(
     request: ShuffleSectionRequest,
-) -> Section:
+) -> SectionResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         section = await section_service.shuffle(request)

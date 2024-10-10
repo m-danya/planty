@@ -40,3 +40,7 @@ async def delete_attachment(s3_session: AioSession, file_key: str) -> None:
     ) as client:
         # assuming that attachmemnt exists
         await client.delete_object(Bucket=settings.aws_attachments_bucket, Key=file_key)
+
+
+def get_attachment_url(s3_file_key: str) -> str:
+    return f"{settings.aws_url}/{settings.aws_attachments_bucket}/{s3_file_key}"

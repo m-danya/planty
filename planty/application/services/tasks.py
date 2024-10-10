@@ -17,6 +17,8 @@ from planty.application.schemas import (
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskMoveRequest,
+    TaskResponse,
+    TasksByDateResponse,
     TaskUpdateRequest,
     SectionsListResponse,
 )
@@ -24,10 +26,12 @@ from planty.application.services.attachments import (
     delete_attachment,
     generate_presigned_post_url,
 )
+from planty.application.services.responses_converter import (
+    convert_to_response,
+)
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
 from planty.domain.task import Attachment, Section, Task
-from planty.config import settings
 
 
 class TaskService:
@@ -36,13 +40,13 @@ class TaskService:
         self._user_repo = uow.user_repo
         self._s3_session = aiobotocore.session.get_session()
 
-    async def update_task(self, task_data: TaskUpdateRequest) -> Task:
-        task = await self._task_repo.get(task_data.id)
+    async def update_task(self, task_data: TaskUpdateRequest) -> TaskResponse:
+        task: Task = await self._task_repo.get(task_data.id)
         task_data = task_data.model_dump(exclude_unset=True)
         for key, value in task_data.items():
             setattr(task, key, value)
         await self._task_repo.update_or_create(task)
-        return task
+        return convert_to_response(task)
 
     async def toggle_task_completed(self, task_id: UUID) -> bool:
         task = await self._task_repo.get(task_id)
@@ -57,7 +61,7 @@ class TaskService:
         user_id: UUID,
         not_before: date,
         not_after: date,
-    ) -> dict[date, list[Task]]:
+    ) -> TasksByDateResponse:
         if not_before > not_after:
             raise IncorrectDateInterval()
         prefiltered_tasks = await self._task_repo.get_tasks_by_due_date(
@@ -65,7 +69,8 @@ class TaskService:
             not_after=not_after,
             user_id=user_id,
         )
-        return multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
+        tasks_by_date = multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
+        return convert_to_response(tasks_by_date)
 
     async def add_attachment(
         self, request: RequestAttachmentUpload
@@ -112,26 +117,11 @@ class SectionService:
 
     async def get_section(self, section_id: UUID) -> SectionResponse:
         section: Section = await self._section_repo.get(section_id)
-        return await self._convert_to_response(section)
+        return convert_to_response(section)
 
     async def get_all_sections(self) -> SectionsListResponse:
         sections: list[Section] = await self._section_repo.get_all()
-        sections: SectionsListResponse = await self._convert_list_to_response(sections)
-        return sections
-
-    async def _convert_to_response(self, section: Section) -> SectionResponse:
-        section = section.model_dump()
-        for task in section.get("tasks", []):
-            for attachment in task.get("attachments", []):
-                attachment["url"] = (
-                    f"{settings.aws_url}/{settings.aws_attachments_bucket}/{attachment['s3_file_key']}"
-                )
-        return SectionResponse(**section)
-
-    async def _convert_list_to_response(
-        self, sections: list[Section]
-    ) -> SectionsListResponse:
-        return [await self._convert_to_response(section) for section in sections]
+        return convert_to_response(sections)
 
     async def create_task(self, task: TaskCreateRequest) -> UUID:
         task = Task(
@@ -171,8 +161,8 @@ class SectionService:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
 
-    async def shuffle(self, request: ShuffleSectionRequest) -> Section:
+    async def shuffle(self, request: ShuffleSectionRequest) -> SectionResponse:
         section = await self._section_repo.get(request.section_id)
         section.shuffle_tasks()
         await self._section_repo.update(section)
-        return section
+        return convert_to_response(section)

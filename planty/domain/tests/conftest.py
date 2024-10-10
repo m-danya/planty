@@ -2,8 +2,13 @@ from typing import Any
 
 import pytest
 
-from planty.domain.task import Section, Task, User
-from planty.infrastructure.models import SectionModel, TaskModel, UserModel
+from planty.domain.task import Attachment, Section, Task, User
+from planty.infrastructure.models import (
+    AttachmentModel,
+    SectionModel,
+    TaskModel,
+    UserModel,
+)
 
 
 @pytest.fixture
@@ -12,10 +17,25 @@ def all_users(users_data: list[dict[str, Any]]) -> list[User]:
 
 
 @pytest.fixture
-def all_tasks(tasks_data: list[dict[str, Any]]) -> list[Task]:
-    # TODO: get attachments from json too and append it here (as in
-    # `all_sections` with tasks)
-    return [TaskModel(**task).to_entity(attachments=[]) for task in tasks_data]
+def all_attachments(attachments_data: list[dict[str, Any]]) -> list[Attachment]:
+    return [
+        AttachmentModel(**attachment).to_entity() for attachment in attachments_data
+    ]
+
+
+@pytest.fixture
+def all_tasks(
+    tasks_data: list[dict[str, Any]], all_attachments: list[Attachment]
+) -> list[Task]:
+    tasks = []
+    for task_data in tasks_data:
+        task = TaskModel(**task_data).to_entity(
+            attachments=[
+                a for a in all_attachments if str(a.task_id) == task_data["id"]
+            ]
+        )
+        tasks.append(task)
+    return tasks
 
 
 @pytest.fixture
@@ -24,8 +44,11 @@ def all_sections(
 ) -> list[Section]:
     sections = []
     for section_data in sections_data:
-        section = SectionModel(**section_data).to_entity(tasks=[])
-        section.tasks = [task for task in all_tasks if task.section_id == section.id]
+        section = SectionModel(**section_data).to_entity(
+            tasks=[
+                task for task in all_tasks if str(task.section_id) == section_data["id"]
+            ]
+        )
         sections.append(section)
     return sections
 

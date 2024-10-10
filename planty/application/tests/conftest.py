@@ -5,7 +5,12 @@ from httpx import ASGITransport, AsyncClient
 
 from planty.config import settings
 from planty.infrastructure.database import Base, engine, raw_async_session_maker
-from planty.infrastructure.models import SectionModel, TaskModel, UserModel
+from planty.infrastructure.models import (
+    AttachmentModel,
+    SectionModel,
+    TaskModel,
+    UserModel,
+)
 from planty.main import app as fastapi_app
 
 
@@ -21,6 +26,7 @@ async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
             (UserModel, "users"),
             (SectionModel, "sections"),
             (TaskModel, "tasks"),
+            (AttachmentModel, "attachments"),
         ]:
             for item in test_data[table_key]:
                 session.add(Model(**item))

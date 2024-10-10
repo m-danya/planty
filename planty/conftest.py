@@ -63,3 +63,10 @@ def sections_data(
     test_data: dict[str, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
     return test_data["sections"]
+
+
+@pytest.fixture(scope="session")
+def attachments_data(
+    test_data: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    return test_data["attachments"]
