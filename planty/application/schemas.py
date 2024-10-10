@@ -1,10 +1,10 @@
-from datetime import date
-from typing import Optional
+from datetime import date, datetime
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
-from planty.domain.task import RecurrenceInfo, Task
+from planty.domain.task import Attachment, RecurrenceInfo
 from planty.utils import generate_uuid, get_today
 
 TASK_CREATE_EXAMPLES = [
@@ -112,7 +112,7 @@ class TaskUpdateRequest(BaseModel):
 
 
 class TaskUpdateResponse(BaseModel):
-    task: Task
+    task: "TaskResponse"
 
 
 class SectionCreateRequest(BaseModel):
@@ -125,3 +125,57 @@ class SectionCreateRequest(BaseModel):
 
 class SectionCreateResponse(BaseModel):
     id: UUID
+
+
+class RequestAttachmentUpload(BaseModel):
+    task_id: UUID
+    aes_key_b64: str
+    aes_iv_b64: str
+
+
+class AttachmentUploadInfo(BaseModel):
+    post_url: str
+    post_fields: dict[str, Any]
+
+
+class RequestAttachmentRemove(BaseModel):
+    task_id: UUID
+    attachment_id: UUID
+
+
+class AttachmentResponse(Attachment):
+    aes_key_b64: str
+    aes_iv_b64: str
+    s3_file_key: str
+    task_id: UUID
+    added_at: datetime
+
+    url: str
+
+
+class TaskResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    section_id: UUID
+    title: str
+    description: Optional[str]
+    content: Optional[str]
+    is_completed: bool
+    added_at: datetime
+    due_to: Optional[date]
+    recurrence: Optional[RecurrenceInfo]
+
+    attachments: list[AttachmentResponse]
+
+
+class SectionResponse(BaseModel):
+    id: UUID
+    title: str
+    parent_id: Optional[UUID]
+    added_at: datetime
+
+    tasks: list[TaskResponse]
+
+
+SectionsListResponse = list[SectionResponse]
+TasksByDateResponse = dict[date, list[TaskResponse]]

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тестирование клиентской загрузки с шифрованием</title>
+</head>
+<body>
+    <h1>Тестирование загрузки с клиентским шифрованием</h1>
+    <form id="uploadForm">
+        <label for="section_id">Section ID:</label>
+        <input type="text" id="section_id" name="section_id" value="a5b2010d-c27c-4f22-be47-828e065f9607" required><br><br>
+
+        <label for="task_id">Task ID:</label>
+        <input type="text" id="task_id" name="task_id" value="8274b67b-13d7-43a1-a9f9-8c47a62c1741" required><br><br>
+        
+        <label for="task_index">Task index:</label>
+        <input type="text" id="task_index" name="task_index" value="2" required><br><br>
+
+        <label for="aes_key_b64">AES Key (Base64):</label>
+        <input type="text" id="aes_key_b64" name="aes_key_b64" value="Xsz2b4BbMx+0DR3A1bJ9cA==" required><br><br>
+
+        <label for="aes_iv_b64">AES IV (Base64):</label>
+        <input type="text" id="aes_iv_b64" name="aes_iv_b64" value="3bH4d5j3b+dvc8YOm3ShAg==" required><br><br>
+
+        <label for="fileInput">Выберите JPG файл:</label>
+        <input type="file" id="fileInput" name="fileInput" accept="image/jpeg" required><br><br>
+
+        <button type="submit">Загрузить зашифрованный файл</button>
+    </form>
+
+    <div id="status"></div>
+
+    <script>
+        async function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function encryptData(key, iv, data) {
+            const cryptoKey = await window.crypto.subtle.importKey(
+                'raw',
+                key,
+                { name: 'AES-CBC' },
+                false,
+                ['encrypt']
+            );
+            const encrypted = await window.crypto.subtle.encrypt(
+                { name: 'AES-CBC', iv: iv },
+                cryptoKey,
+                data
+            );
+            return encrypted;
+        }
+
+        document.getElementById('uploadForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerText = 'Обработка...';
+
+            const task_id = document.getElementById('task_id').value;
+            const aes_key_b64 = document.getElementById('aes_key_b64').value;
+            const aes_iv_b64 = document.getElementById('aes_iv_b64').value;
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                statusDiv.innerText = 'Пожалуйста, выберите файл.';
+                return;
+            }
+
+            try {
+                // Шаг 1: Получение post_url и post_fields
+                const response = await fetch('http://127.0.0.1:8000/api/task/attachment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        task_id: task_id,
+                        aes_key_b64: aes_key_b64,
+                        aes_iv_b64: aes_iv_b64
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error('Ошибка получения информации для загрузки: ' + errorData.detail);
+                }
+
+                const uploadInfo = await response.json();
+                const post_url = uploadInfo.post_url;
+                const post_fields = uploadInfo.post_fields;
+
+                // Шаг 2: Чтение файла как ArrayBuffer
+                const fileArrayBuffer = await file.arrayBuffer();
+
+                // Шаг 3: Декодирование ключа и IV
+                const keyBuffer = await base64ToArrayBuffer(aes_key_b64);
+                const ivBuffer = await base64ToArrayBuffer(aes_iv_b64);
+
+                // Шаг 4: Шифрование данных файла
+                const encryptedData = await encryptData(keyBuffer, ivBuffer, fileArrayBuffer);
+
+                // Шаг 5: Подготовка данных формы для загрузки
+                const formData = new FormData();
+                for (const [key, value] of Object.entries(post_fields)) {
+                    formData.append(key, value);
+                }
+                // Добавление заголовка Content-Disposition
+                formData.append('Content-Disposition', `attachment; filename="${file.name}"`);
+                // Добавление зашифрованного файла
+                const blob = new Blob([encryptedData], { type: 'application/octet-stream' });
+                formData.append('file', blob);
+
+                // Шаг 6: Загрузка зашифрованного файла
+                const uploadResponse = await fetch(post_url, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!uploadResponse.ok) {
+                    throw new Error('Ошибка при загрузке файла.');
+                }
+
+                statusDiv.innerText = 'Файл успешно загружен.';
+
+                // Шаг 7: Получение URL вложения и отображение изображения
+                const section_id = document.getElementById('section_id').value;
+                const task_index = document.getElementById('task_index').value;
+                const taskResponse = await fetch(`http://127.0.0.1:8000/api/section/${section_id}`);
+                if (taskResponse.ok) {
+                    const sectionData = await taskResponse.json()
+                    const taskData = sectionData.tasks[parseInt(task_index)]
+                    console.log(taskData)
+                    if (taskData.attachments && taskData.attachments.length > 0) {
+                        const attachment = taskData.attachments[taskData.attachments.length -1];
+                        const attachmentUrl = attachment.url;
+                        // Получение изображения
+                        const imgResponse = await fetch(attachmentUrl);
+                        if (imgResponse.ok) {
+                            const imgBlob = await imgResponse.blob();
+                            const imgArrayBuffer = await imgBlob.arrayBuffer();
+                            // Расшифровка данных изображения
+                            const decryptedData = await window.crypto.subtle.decrypt(
+                                { name: 'AES-CBC', iv: ivBuffer },
+                                await window.crypto.subtle.importKey(
+                                    'raw',
+                                    keyBuffer,
+                                    { name: 'AES-CBC' },
+                                    false,
+                                    ['decrypt']
+                                ),
+                                imgArrayBuffer
+                            );
+                            // Создание URL и отображение изображения
+                            const decryptedBlob = new Blob([decryptedData], { type: 'image/jpeg' });
+                            const imgURL = URL.createObjectURL(decryptedBlob);
+                            const img = document.createElement('img');
+                            img.src = imgURL;
+                            const successText = document.createElement('p');
+                            successText.textContent = "Файл успешно скачан и расшифрован:"
+                            document.body.appendChild(successText);
+                            document.body.appendChild(img);
+                        } else {
+                            statusDiv.innerText += '\nНе удалось получить загруженное изображение.';
+                        }
+                    } else {
+                        statusDiv.innerText += '\nВ задаче нет вложений.';
+                    }
+                } else {
+                    statusDiv.innerText += '\nНе удалось получить данные задачи.';
+                }
+
+            } catch (error) {
+                console.error(error);
+                statusDiv.innerText = 'Ошибка: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

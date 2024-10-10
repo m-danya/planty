@@ -1,6 +1,12 @@
+import subprocess
 from typing import Any, Optional
+import httpx
 import pytest
 from httpx import AsyncClient
+
+import asyncio
+from typing import AsyncGenerator
+from planty.config import settings
 
 
 # TODO: test task creation with `recurrence`
@@ -33,7 +39,6 @@ async def test_create_task(
 
     if error_detail:
         data = response.json()
-        assert "detail" in data
         assert data["detail"] == error_detail
 
 
@@ -71,8 +76,14 @@ async def test_update_task(
 
     if error_detail:
         data = response.json()
-        assert "detail" in data
         assert data["detail"] == error_detail
+
+
+async def test_get_sections(
+    ac: AsyncClient,
+) -> None:
+    response = await ac.get("/api/sections")
+    assert response.is_success
 
 
 async def test_create_section(
@@ -220,3 +231,160 @@ async def test_get_tasks_by_date(
 
     n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
     assert n_tasks == n_tasks_expected
+
+
+@pytest.fixture(scope="session")
+async def minio_container() -> AsyncGenerator[None, None]:
+    minio_was_started_in_test = False
+    try:
+        result = subprocess.run(
+            "docker compose ps -q minio", shell=True, capture_output=True, text=True
+        )
+        if not result.stdout.strip():
+            subprocess.run(
+                "docker compose up -d minio minio-createbuckets",
+                shell=True,
+                check=True,
+            )
+            minio_was_started_in_test = True
+
+        async with httpx.AsyncClient() as client:
+            for _ in range(10):
+                try:
+                    response = await client.get(
+                        f"{settings.aws_url}/minio/health/ready", timeout=1
+                    )
+                    if response.status_code == 200:
+                        break
+                except httpx.RequestError:
+                    pass
+                await asyncio.sleep(1)
+            else:
+                raise TimeoutError("MinIO container did not become ready in time.")
+
+        yield
+    finally:
+        if minio_was_started_in_test:
+            subprocess.run(
+                "docker compose down",
+                shell=True,
+                check=True,
+            )
+
+
+@pytest.mark.parametrize(
+    "task_id, status_code,error_detail",
+    [
+        ("existing", 200, None),
+        (
+            "f8b057ea-8c3c-4d14-9b95-ef9acbccffa6",  # random UUID
+            404,
+            "There is no task with {'task_id': UUID('f8b057ea-8c3c-4d14-9b95-ef9acbccffa6')}",
+        ),
+    ],
+)
+async def test_add_attachment(
+    task_id: str,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+    tasks_data: list[dict[str, Any]],
+    minio_container: None,
+) -> None:
+    existing_task_data = tasks_data[2]
+    task_id = existing_task_data["id"] if task_id == "existing" else task_id
+
+    request_data = {
+        "task_id": task_id,
+        "aes_key_b64": "someBase64EncodedAESKey==",
+        "aes_iv_b64": "someBase64EncodedIV==",
+    }
+
+    response = await ac.post("/api/task/attachment", json=request_data)
+
+    assert response.status_code == status_code
+
+    if status_code == 200:
+        data = response.json()
+        post_url = data["post_url"]
+        post_fields = data["post_fields"]
+        assert isinstance(post_fields, dict)
+
+    if error_detail:
+        data = response.json()
+        assert data["detail"] == error_detail
+        return
+
+    section_id = existing_task_data["section_id"]
+    response = await ac.get(f"/api/section/{section_id}")
+    task_got = next(t for t in response.json()["tasks"] if t["id"] == task_id)
+    assert len(task_got["attachments"]) == 1
+    assert task_got["attachments"][0]["aes_key_b64"] == request_data["aes_key_b64"]
+    assert task_got["attachments"][0]["aes_iv_b64"] == request_data["aes_iv_b64"]
+    assert task_got["attachments"][0]["s3_file_key"]
+    attachment_id = task_got["attachments"][0]["id"]
+    assert task_got["attachments"][0]["task_id"] == task_id
+    get_url = task_got["attachments"][0]["url"]
+
+    # Try to upload image with given URL
+    response = httpx.post(
+        post_url,
+        data={
+            **post_fields,
+            "Content-Disposition": 'attachment; filename="test_file.txt"',
+        },
+        files={"file": ("filename", b"some content")},
+    )
+    assert response.is_success
+
+    # Try to download it
+    response = httpx.get(get_url)
+    assert response.is_success
+
+    # Remove it
+    response = await ac.delete(f"/api/task/{task_id}/attachment/{attachment_id}")
+    assert response.is_success
+
+    # Verify that it's removed
+    response = httpx.get(get_url)
+    assert not response.is_success
+
+
+@pytest.mark.parametrize(
+    "task_id, attachment_id, status_code, error_detail",
+    [
+        (
+            "f8b057ea-8c3c-4d14-9b95-ef9acbccffa6",  # random UUID
+            "f8b057ea-8c3c-4d14-9b95-ef9acbccffa6",  # random UUID
+            404,
+            "There is no task with {'task_id': UUID('f8b057ea-8c3c-4d14-9b95-ef9acbccffa6')}",
+        ),
+        (
+            "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",  # real task id
+            "f8b057ea-8c3c-4d14-9b95-ef9acbccffa6",  # random UUID
+            404,
+            "There is no attachment with {'id': UUID('f8b057ea-8c3c-4d14-9b95-ef9acbccffa6')}",
+        ),
+        (
+            "de59bdb5-5f91-48dc-a034-246b8f86be25",  # real task id
+            "2bfa26ba-ed8c-4353-adb2-c451957fc3e1",  # real attachment id
+            200,
+            None,
+        ),
+    ],
+)
+async def test_remove_nonexistent_attachment(
+    task_id: str,
+    attachment_id: str,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+    minio_container: None,
+) -> None:
+    response = await ac.delete(f"/api/task/{task_id}/attachment/{attachment_id}")
+    if error_detail:
+        assert not response.is_success
+        data = response.json()
+        assert data["detail"] == error_detail
+        return
+    assert response.is_success

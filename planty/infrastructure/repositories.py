@@ -11,8 +11,13 @@ from planty.application.exceptions import (
     TaskNotFoundException,
     UserNotFoundException,
 )
-from planty.domain.task import Section, Task, User
-from planty.infrastructure.models import SectionModel, TaskModel, UserModel
+from planty.domain.task import Attachment, Section, Task, User
+from planty.infrastructure.models import (
+    AttachmentModel,
+    SectionModel,
+    TaskModel,
+    UserModel,
+)
 
 
 class SQLAlchemyUserRepository:
@@ -43,6 +48,8 @@ class SQLAlchemyTaskRepository:
         self._db_session = db_session
 
     async def add(self, task: Task, index: NonNegativeInt) -> None:
+        # assuming that task can't have attachments when created
+        # (according to `TaskCreateRequest`)
         task_model = TaskModel.from_entity(task, index=index)
         self._db_session.add(task_model)
 
@@ -53,8 +60,12 @@ class SQLAlchemyTaskRepository:
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
             raise TaskNotFoundException(task_id=task_id)
+        return await self.get_entity(task_model)
 
-        return task_model.to_entity()
+    async def get_entity(self, task_model: TaskModel) -> Task:
+        return task_model.to_entity(
+            attachments=await self._get_task_attachments(task_model.id)
+        )
 
     async def update_or_create(
         self,
@@ -93,6 +104,9 @@ class SQLAlchemyTaskRepository:
         if index is not None:
             task_model.index = index
 
+        for i, attachment in enumerate(task.attachments):
+            await self._persist_attachment(attachment, index=i)
+
         self._db_session.add(task_model)
 
     async def get_section_tasks(self, section_id: UUID) -> list[Task]:
@@ -101,9 +115,39 @@ class SQLAlchemyTaskRepository:
         )
         task_models = result.scalars().all()
         return [
-            task_model.to_entity()
+            await self.get_entity(task_model)
             for task_model in sorted(task_models, key=lambda t: t.index)
         ]
+
+    async def _get_task_attachments(self, task_id: UUID) -> list[Attachment]:
+        result = await self._db_session.execute(
+            select(AttachmentModel).where(AttachmentModel.task_id == task_id)
+        )
+        attachment_models = result.scalars().all()
+        return [
+            attachment_model.to_entity()
+            for attachment_model in sorted(attachment_models, key=lambda t: t.index)
+        ]
+
+    async def _persist_attachment(
+        self, attachment: Attachment, index: NonNegativeInt
+    ) -> None:
+        result = await self._db_session.execute(
+            select(AttachmentModel).where(AttachmentModel.id == attachment.id)
+        )
+        attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
+        if attachment_model is not None:
+            # attachment exists -> ok (attachments can't be updated)
+            return
+        attachment_model = AttachmentModel.from_entity(attachment, index=index)
+        self._db_session.add(attachment_model)
+
+    async def delete_attachment(self, attachment: Attachment) -> None:
+        result = await self._db_session.execute(
+            select(AttachmentModel).where(AttachmentModel.id == attachment.id)
+        )
+        attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
+        await self._db_session.delete(attachment_model)
 
     async def get_tasks_by_due_date(
         self, not_before: date, not_after: date, user_id: UUID
@@ -115,7 +159,7 @@ class SQLAlchemyTaskRepository:
             )
         )
         task_models = result.scalars().all()
-        return [task_model.to_entity() for task_model in task_models]
+        return [await self.get_entity(task_model) for task_model in task_models]
 
     async def remove(self, task: Task) -> None:
         result = await self._db_session.execute(

@@ -36,7 +36,7 @@ uvicorn planty.main:app --reload
 
 By default, the SQLite engine is used for persistence, but you can easily switch
 to PostgreSQL: change `DB_TYPE` in `.env` file to `postgresql` and run
-PostgreSQL with `docker compose up -d`.
+the system with `docker compose compose.yaml --profile with-postgres up -d`.
 
 ### Run tests and type checking
 

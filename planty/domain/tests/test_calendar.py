@@ -114,6 +114,7 @@ def test_get_task_recurrence_with_no_recurrence(
     task_with_due_to_and_no_recurrence: Task, not_after: date
 ) -> None:
     task = task_with_due_to_and_no_recurrence
+    assert task.due_to is not None
     recurrences = get_task_recurrences(task, not_after)
     if not_after >= task.due_to:
         assert recurrences == [task.due_to]
@@ -123,7 +124,7 @@ def test_get_task_recurrence_with_no_recurrence(
 
 def test_multiply_tasks_with_recurrences(
     task_from_2001: Task,
-):
+) -> None:
     not_after = date(2002, 12, 31)
     expected_len = 244
     tasks_by_date = multiply_tasks_with_recurrences([task_from_2001], not_after)
