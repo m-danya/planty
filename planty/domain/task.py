@@ -63,6 +63,9 @@ class Task(BaseModel):
     description: Optional[str] = None
     content: Optional[str] = None  # Markdown content
     is_completed: bool = False
+    # TODO: create documentation and move this comment to it:
+    # The archive is mainly for storing completed tasks, but it can also include uncompleted ones
+    is_archived: bool = False
     added_at: datetime = Field(default_factory=get_datetime_now)
 
     due_to: Optional[date] = None
@@ -85,7 +88,7 @@ class Task(BaseModel):
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def mark_completed(self) -> None:
+    def mark_completed(self, auto_archive: bool = True) -> None:
         if self.recurrence is not None:
             assert self.due_to  # only for type checking, it's already validated
             days_delta = timedelta(days=self.recurrence.period)
@@ -95,18 +98,26 @@ class Task(BaseModel):
                 self.due_to += days_delta
         else:
             self.is_completed = True
+            if auto_archive:
+                self.archive()
 
-    def toggle_completed(self) -> None:
+    def toggle_completed(self, auto_archive: bool = True) -> None:
         if self.is_completed:
             self.is_completed = False
         else:
-            self.mark_completed()
+            self.mark_completed(auto_archive=auto_archive)
 
     def add_attachment(self, attachment: "Attachment") -> None:
         self.attachments.append(attachment)
 
     def remove_attachment(self, attachment: "Attachment") -> None:
         self.attachments.remove(attachment)
+
+    def archive(self) -> None:
+        self.is_archived = True
+
+    def unarchive(self) -> None:
+        self.is_archived = False
 
 
 class Section(BaseModel):

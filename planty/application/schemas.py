@@ -63,14 +63,7 @@ class TaskMoveRequest(BaseModel):
 
 class TaskToggleCompletedRequest(BaseModel):
     task_id: UUID
-
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-
-
-class TaskToggleCompletedResponse(BaseModel):
-    is_completed: bool
+    auto_archive: bool = True
 
     model_config = ConfigDict(
         extra="forbid",
@@ -161,6 +154,7 @@ class TaskResponse(BaseModel):
     description: Optional[str]
     content: Optional[str]
     is_completed: bool
+    is_archived: bool
     added_at: datetime
     due_to: Optional[date]
     recurrence: Optional[RecurrenceInfo]
@@ -179,3 +173,5 @@ class SectionResponse(BaseModel):
 
 SectionsListResponse = list[SectionResponse]
 TasksByDateResponse = dict[date, list[TaskResponse]]
+
+ArchivedTasksResponse = list[TaskResponse]

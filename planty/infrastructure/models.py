@@ -21,7 +21,8 @@ class TaskModel(Base):
     title: Mapped[str]
     description: Mapped[Optional[str]]
     is_completed: Mapped[bool]
-    index: Mapped[int]
+    is_archived: Mapped[bool]
+    index: Mapped[int]  # ignored if `is_archived`
 
     due_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
     recurrence_period: Mapped[Optional[int]]
@@ -42,6 +43,7 @@ class TaskModel(Base):
             title=task.title,
             description=task.description,
             is_completed=task.is_completed,
+            is_archived=task.is_archived,
             due_to=task.due_to,
             recurrence_period=task.recurrence.period if task.recurrence else None,
             recurrence_type=task.recurrence.type if task.recurrence else None,
@@ -68,6 +70,7 @@ class TaskModel(Base):
             title=self.title,
             description=self.description,
             is_completed=self.is_completed,
+            is_archived=self.is_archived,
             added_at=self.added_at,
             due_to=self.due_to,
             recurrence=recurrence,

@@ -89,6 +89,7 @@ class SQLAlchemyTaskRepository:
         task_model.title = task.title
         task_model.description = task.description
         task_model.is_completed = task.is_completed
+        task_model.is_archived = task.is_archived
         task_model.added_at = task.added_at
         task_model.due_to = task.due_to
 
@@ -111,7 +112,10 @@ class SQLAlchemyTaskRepository:
 
     async def get_section_tasks(self, section_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
-            select(TaskModel).where(TaskModel.section_id == section_id)
+            select(TaskModel).where(
+                (TaskModel.section_id == section_id)
+                & (TaskModel.is_archived.is_(False))
+            )
         )
         task_models = result.scalars().all()
         return [
@@ -156,7 +160,17 @@ class SQLAlchemyTaskRepository:
             select(TaskModel).where(
                 (TaskModel.user_id == user_id)
                 & TaskModel.due_to.between(not_before, not_after)
+                & (TaskModel.is_archived.is_(False))
             )
+        )
+        task_models = result.scalars().all()
+        return [await self.get_entity(task_model) for task_model in task_models]
+
+    async def get_archived_tasks(self) -> list[Task]:
+        result = await self._db_session.execute(
+            select(TaskModel).where(
+                (TaskModel.is_archived.is_(True))
+            )  # & (TaskModel.user_id == user_id)
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
@@ -168,9 +182,7 @@ class SQLAlchemyTaskRepository:
         task_model = result.scalar_one_or_none()
         if task_model is None:
             raise TaskNotFoundException(task_id=task.id)
-
-        if task_model:
-            await self._db_session.delete(task_model)
+        await self._db_session.delete(task_model)
 
 
 class SQLAlchemySectionRepository:

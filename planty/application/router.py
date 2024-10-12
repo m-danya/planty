@@ -14,9 +14,9 @@ from planty.application.schemas import (
     TaskCreateResponse,
     TaskMoveRequest,
     TaskRemoveRequest,
+    ArchivedTasksResponse,
     TasksByDateResponse,
     TaskToggleCompletedRequest,
-    TaskToggleCompletedResponse,
     TaskUpdateRequest,
     TaskUpdateResponse,
     SectionsListResponse,
@@ -83,12 +83,15 @@ async def move_task(request: TaskMoveRequest) -> None:
 @router.post("/task/toggle_completed")
 async def toggle_task_completed(
     request: TaskToggleCompletedRequest,
-) -> TaskToggleCompletedResponse:
+) -> SectionResponse:
     async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        is_completed = await task_service.toggle_task_completed(request.task_id)
+        section_service = SectionService(uow=uow)
+        section = await section_service.toggle_task_completed(
+            request.task_id,
+            auto_archive=request.auto_archive,  # TODO: move `auto_archive` to user settings?
+        )
         await uow.commit()
-    return TaskToggleCompletedResponse(is_completed=is_completed)
+    return section
 
 
 @router.post(
@@ -124,6 +127,13 @@ async def remove_attachment(task_id: UUID, attachment_id: UUID) -> None:
         await uow.commit()
 
 
+@router.get("/tasks/archived")
+async def get_archived_tasks() -> ArchivedTasksResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        return await task_service.get_archived_tasks()
+
+
 @router.post("/section", status_code=status.HTTP_201_CREATED)
 async def create_section(
     section_data: SectionCreateRequest,
@@ -136,9 +146,7 @@ async def create_section(
 
 
 @router.get("/section/{section_id}")
-async def get_section(
-    section_id: UUID,
-) -> SectionResponse:
+async def get_section(section_id: UUID) -> SectionResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         section = await section_service.get_section(section_id)

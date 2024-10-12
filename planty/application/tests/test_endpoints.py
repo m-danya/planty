@@ -86,6 +86,17 @@ async def test_get_sections(
     assert response.is_success
 
 
+async def test_get_archived_tasks(
+    ac: AsyncClient,
+    tasks_data: list[dict[str, Any]],
+) -> None:
+    response = await ac.get("/api/tasks/archived")
+    assert response.is_success
+    tasks = response.json()
+    expected_tasks_n = sum(task["is_archived"] for task in tasks_data)
+    assert len(tasks) == expected_tasks_n
+
+
 async def test_create_section(
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
@@ -120,7 +131,9 @@ async def test_get_section(
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
-    expected_tasks_n = sum(task["section_id"] == id_ for task in tasks_data)
+    expected_tasks_n = sum(
+        task["section_id"] == id_ for task in tasks_data if not task["is_archived"]
+    )
     assert expected_tasks_n == len(response.json()["tasks"])
 
 
@@ -181,7 +194,14 @@ async def test_toggle_completed_task(
             },
         )
         data = response.json()
-        assert data["is_completed"] is expected_is_completed
+        # Task was auto-archived
+        with pytest.raises(StopIteration):
+            task = next(t for t in data["tasks"] if t["id"] == task_id)
+        response = await ac.get("/api/tasks/archived")
+        task = next(t for t in response.json() if t["id"] == task_id)
+        is_completed = task["is_completed"]
+        assert task["is_archived"]
+        assert is_completed is expected_is_completed
 
 
 @pytest.mark.parametrize(

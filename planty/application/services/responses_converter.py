@@ -1,13 +1,16 @@
 from datetime import date
-from typing import Union, overload
+from typing import Union, cast, overload
 
 from fastapi.encoders import jsonable_encoder
+
+from typing import get_origin, get_args
 
 
 from planty.application.schemas import (
     SectionResponse,
     TaskResponse,
     SectionsListResponse,
+    ArchivedTasksResponse,
     TasksByDateResponse,
 )
 from planty.application.services.attachments import (
@@ -18,9 +21,15 @@ from typing import Any
 
 # NOTE: mypy + singledispatch + overload doesn't work at the same time..
 
-possible_in_types = Union[Task, Section, list[Section], dict[date, list[Task]]]
+possible_in_types = Union[
+    Task, Section, list[Section], dict[date, list[Task]], list[Task]
+]
 possible_out_types = Union[
-    TaskResponse, SectionResponse, SectionsListResponse, TasksByDateResponse
+    TaskResponse,
+    SectionResponse,
+    SectionsListResponse,
+    TasksByDateResponse,
+    ArchivedTasksResponse,
 ]
 
 
@@ -40,30 +49,37 @@ def convert_to_response(obj: list[Section]) -> SectionsListResponse: ...
 def convert_to_response(obj: dict[date, list[Task]]) -> TasksByDateResponse: ...
 
 
+@overload
+def convert_to_response(obj: list[Task]) -> ArchivedTasksResponse: ...
+
+
 def convert_to_response(obj: possible_in_types) -> possible_out_types:
-    if isinstance(obj, Task):
+    if _satisfies(obj, Task):
+        obj = cast(Task, obj)
         task_data = obj.model_dump()
         _adjust_task_dict(task_data)
         return TaskResponse(**task_data)
-    elif isinstance(obj, Section):
+    elif _satisfies(obj, Section):
+        obj = cast(Section, obj)
         section_data = obj.model_dump()
         for task in section_data.get("tasks", []):
             _adjust_task_dict(task)
         return SectionResponse(**section_data)
-    elif isinstance(obj, list) and all(isinstance(item, Section) for item in obj):
-        return [convert_to_response(section) for section in obj]
-    elif isinstance(obj, dict) and all(
-        isinstance(key, date)
-        and isinstance(tasks_list, list)
-        and all(isinstance(t, Task) for t in tasks_list)
-        for key, tasks_list in obj.items()
-    ):
+    elif _satisfies(obj, list[Task]):
+        obj = cast(list[Task], obj)
+        return [convert_to_response(obj_item) for obj_item in obj]
+    elif _satisfies(obj, list[Section]):
+        obj = cast(list[Section], obj)
+        return [convert_to_response(obj_item) for obj_item in obj]
+    elif _satisfies(obj, dict[date, list[Task]]):
+        obj = cast(dict[date, list[Task]], obj)
         tasks_by_date = jsonable_encoder(obj)
         for date_ in tasks_by_date:
             for task in tasks_by_date[date_]:
                 _adjust_task_dict(task)
         tasks_by_date: TasksByDateResponse
         return tasks_by_date
+
     else:
         raise NotImplementedError(
             f"Unsupported type for converting into response schema: {type(obj)}"
@@ -73,3 +89,27 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
 def _adjust_task_dict(task: dict[str, Any]) -> None:
     for attachment in task.get("attachments", []):
         attachment["url"] = get_attachment_url(attachment["s3_file_key"])
+
+
+def _satisfies(obj: Any, type_hint: Any) -> bool:
+    origin = get_origin(type_hint)
+    args = get_args(type_hint)
+
+    if origin is None:
+        return isinstance(obj, type_hint)
+    elif origin is Union:
+        return any(_satisfies(obj, arg) for arg in args)
+    elif origin is list:
+        if not isinstance(obj, list):
+            return False
+        return all(_satisfies(item, args[0]) for item in obj)
+    elif origin is dict:
+        if not isinstance(obj, dict):
+            return False
+        key_type, value_type = args
+        return all(
+            _satisfies(k, key_type) and _satisfies(v, value_type)
+            for k, v in obj.items()
+        )
+    else:
+        raise NotImplementedError("Unexpected generic type")

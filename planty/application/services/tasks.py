@@ -12,6 +12,7 @@ from planty.application.exceptions import (
 from planty.application.schemas import (
     AttachmentUploadInfo,
     RequestAttachmentUpload,
+    ArchivedTasksResponse,
     SectionCreateRequest,
     SectionResponse,
     ShuffleSectionRequest,
@@ -48,14 +49,6 @@ class TaskService:
         await self._task_repo.update_or_create(task)
         return convert_to_response(task)
 
-    async def toggle_task_completed(self, task_id: UUID) -> bool:
-        task = await self._task_repo.get(task_id)
-        if not task:
-            raise TaskNotFoundException(task_id=task_id)
-        task.toggle_completed()
-        await self._task_repo.update_or_create(task)
-        return task.is_completed
-
     async def get_tasks_by_date(
         self,
         user_id: UUID,
@@ -71,6 +64,12 @@ class TaskService:
         )
         tasks_by_date = multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
         return convert_to_response(tasks_by_date)
+
+    async def get_archived_tasks(
+        self,
+    ) -> ArchivedTasksResponse:
+        tasks = await self._task_repo.get_archived_tasks()
+        return convert_to_response(tasks)
 
     async def add_attachment(
         self, request: RequestAttachmentUpload
@@ -160,6 +159,22 @@ class SectionService:
         else:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
+
+    async def toggle_task_completed(
+        self, task_id: UUID, auto_archive: bool
+    ) -> SectionResponse:
+        task = await self._task_repo.get(task_id)
+        section = await self._section_repo.get(task.section_id)
+        if not task:
+            raise TaskNotFoundException(task_id=task_id)
+        task_is_archived_before = task.is_archived
+        task.toggle_completed(auto_archive=auto_archive)
+        if task.is_archived != task_is_archived_before:
+            # "remove" task from section to update others' indices:
+            section.remove_task(task)
+            await self._section_repo.update(section)
+        await self._task_repo.update_or_create(task)
+        return convert_to_response(section)
 
     async def shuffle(self, request: ShuffleSectionRequest) -> SectionResponse:
         section = await self._section_repo.get(request.section_id)
