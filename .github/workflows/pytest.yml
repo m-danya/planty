@@ -16,10 +16,16 @@ jobs:
         with:
           python-version: "3.11"
       #----------------------------------------------
-      #  -----  install & configure poetry  -----
+      #  -----  Set up .env  -----
       #----------------------------------------------
       - name: Set up .env
-        run: cp .env.sample .env
+        run: |
+          cp .env.sample .env
+          python utils/generate_fief_env.py --use-dummy-credentials >> .env
+      #----------------------------------------------
+      #  -----  install & configure poetry  -----
+      #----------------------------------------------
+
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:

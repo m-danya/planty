@@ -1,10 +1,9 @@
+from argparse import ArgumentParser
 import subprocess
 import re
 
-# TODO: run this script in GH actions workflow
 
-
-def run_quickstart():
+def run_quickstart(admin_email, admin_password):
     command = [
         "docker",
         "run",
@@ -24,13 +23,16 @@ def run_quickstart():
         universal_newlines=True,
     )
 
-    admin_email = input("Admin email: ")
-    admin_password = input("Admin password: ")
-
     inputs = f"{admin_email}\n{admin_password}\n{admin_password}\n"
     stdout, _ = process.communicate(inputs)
 
     return stdout
+
+
+def prompt_for_credentials():
+    admin_email = input("Admin email: ")
+    admin_password = input("Admin password: ")
+    return admin_email, admin_password
 
 
 def extract_env_variables(output):
@@ -71,13 +73,23 @@ def extract_env_variables(output):
 
 
 def main():
-    output = run_quickstart()
+    args = parse_args()
+    if args.use_dummy_credentials:
+        admin_email, admin_password = "admin@email.ru", "dummy_password_for_admin_123"
+    else:
+        admin_email, admin_password = prompt_for_credentials()
+    output = run_quickstart(admin_email, admin_password)
     env_vars = extract_env_variables(output)
 
     if env_vars:
-        print("\nGenerated environment variables for your .env file:\n")
         for key, value in env_vars.items():
             print(f"{key}={value}")
+
+
+def parse_args():
+    parser = ArgumentParser()
+    parser.add_argument("--use-dummy-credentials", action="store_true")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
