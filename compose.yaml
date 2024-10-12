@@ -47,6 +47,27 @@ services:
       - ./planty/tests/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql
     profiles: [with-postgres]
 
+  fief-server:
+    # TODO: support production setup too
+    image: ghcr.io/fief-dev/fief:latest
+    ports:
+      - "127.0.0.1:${PLANTY_FIEF_PORT}:${PLANTY_FIEF_PORT}"
+    environment:
+      SECRET: "${PLANTY_FIEF_SECRET}"
+      FIEF_CLIENT_ID: "${PLANTY_FIEF_CLIENT_ID}"
+      FIEF_CLIENT_SECRET: "${PLANTY_FIEF_CLIENT_SECRET}"
+      ENCRYPTION_KEY: "${PLANTY_FIEF_ENCRYPTION_KEY}"
+      PORT: "${PLANTY_FIEF_PORT}"
+      FIEF_DOMAIN: "${PLANTY_FIEF_DOMAIN}"
+      FIEF_MAIN_USER_EMAIL: "${PLANTY_FIEF_MAIN_USER_EMAIL}"
+      FIEF_MAIN_USER_PASSWORD: "${PLANTY_FIEF_MAIN_USER_PASSWORD}"
+      CSRF_COOKIE_SECURE: "${PLANTY_FIEF_CSRF_COOKIE_SECURE}"
+      SESSION_DATA_COOKIE_SECURE: "${PLANTY_FIEF_SESSION_DATA_COOKIE_SECURE}"
+      USER_LOCALE_COOKIE_SECURE: "${PLANTY_FIEF_USER_LOCALE_COOKIE_SECURE}"
+      LOGIN_SESSION_COOKIE_SECURE: "${PLANTY_FIEF_LOGIN_SESSION_COOKIE_SECURE}"
+      SESSION_COOKIE_SECURE: "${PLANTY_FIEF_SESSION_COOKIE_SECURE}"
+      FIEF_ADMIN_SESSION_COOKIE_SECURE: "${PLANTY_FIEF_ADMIN_SESSION_COOKIE_SECURE}"
+
 volumes:
   postgres-volume:
   minio-volume:

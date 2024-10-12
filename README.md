@@ -18,7 +18,13 @@ Prerequisites: Docker (with compose plugin)
 git clone https://github.com/m-danya/planty
 cd planty
 cp .env.sample .env
+```
 
+Run `python utils/generate_fief_env.py` to generate authentication secrets,
+copy-paste outputted lines to your `.env` file.
+
+```
+docker compose up -d --build
 sudo apt install python3.11 python3.11-venv
 python3.11 -m venv venv
 source venv/bin/activate
