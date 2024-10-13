@@ -49,7 +49,7 @@ services:
 
   fief-server:
     # TODO: support production setup too
-    image: ghcr.io/fief-dev/fief:latest
+    image: ghcr.io/fief-dev/fief:0.29.1
     ports:
       - "127.0.0.1:${PLANTY_FIEF_PORT}:${PLANTY_FIEF_PORT}"
     environment:
@@ -67,7 +67,10 @@ services:
       LOGIN_SESSION_COOKIE_SECURE: "${PLANTY_FIEF_LOGIN_SESSION_COOKIE_SECURE}"
       SESSION_COOKIE_SECURE: "${PLANTY_FIEF_SESSION_COOKIE_SECURE}"
       FIEF_ADMIN_SESSION_COOKIE_SECURE: "${PLANTY_FIEF_ADMIN_SESSION_COOKIE_SECURE}"
+    volumes:
+      - fief-volume:/data
 
 volumes:
   postgres-volume:
   minio-volume:
+  fief-volume:

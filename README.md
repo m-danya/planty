@@ -21,7 +21,7 @@ cp .env.sample .env
 ```
 
 Run `python utils/generate_fief_env.py` to generate authentication secrets,
-copy-paste outputted lines to your `.env` file.
+copy-paste outputted lines to your `.env` file. It can take some time.
 
 ```
 docker compose up -d --build
@@ -48,7 +48,7 @@ the system with `docker compose compose.yaml --profile with-postgres up -d`.
 
 ```
 pytest
-mypy .
+mypy planty
 ```
 
 Measuring code coverage:

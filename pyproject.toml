@@ -22,6 +22,7 @@ aiobotocore = "^2.15.1"
 types-aiobotocore = {extras = ["s3"], version = "^2.15.1"}
 docker = "^7.1.0"
 types-docker = "^7.1.0.20240827"
+fief-client = {extras = ["fastapi"], version = "^0.20.0"}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"

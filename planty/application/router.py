@@ -25,7 +25,30 @@ from planty.application.services.tasks import (
     SectionService,
     TaskService,
 )
+from fastapi import Depends
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from fief_client import FiefAsync, FiefUserInfo
+from fief_client.integrations.fastapi import FiefAuth
+from planty.config import settings
+
+
 from planty.application.uow import SqlAlchemyUnitOfWork
+
+
+fief = FiefAsync(
+    f"http://{settings.fief_domain}",
+    settings.fief_client_id,
+    settings.fief_client_secret,
+)
+
+scheme = OAuth2AuthorizationCodeBearer(
+    f"http://{settings.fief_domain}/authorize",
+    f"http://{settings.fief_domain}/api/token",
+    scopes={"openid": "openid", "offline_access": "offline_access"},
+    auto_error=False,
+)
+
+auth = FiefAuth(fief, scheme)
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
 
@@ -154,7 +177,10 @@ async def get_section(section_id: UUID) -> SectionResponse:
 
 
 @router.get("/sections")
-async def get_sections() -> SectionsListResponse:
+async def get_sections(
+    user: FiefUserInfo = Depends(auth.current_user()),
+) -> SectionsListResponse:
+    print(user)
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
         sections = await section_service.get_all_sections()
