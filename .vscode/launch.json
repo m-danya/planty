@@ -1,33 +1,35 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "Backend",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "uvicorn",
-            "args": [
-                "planty.main:app",
-                "--reload",
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Frontend",
-            "runtimeExecutable": "npm",
-            "cwd": "${workspaceFolder}/frontend",
-            "runtimeArgs": [
-                "run",
-                "serve"
-            ],
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Backend",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["planty.main:app", "--reload"],
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      }
+    },
+    {
+      "name": "Frontend (Next.js)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "cwd": "${workspaceFolder}/frontend/nextjs",
+      "runtimeArgs": ["run", "dev"]
+    },
+    {
+      "name": "Frontend Vue",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "cwd": "${workspaceFolder}/frontend/vue",
+      "runtimeArgs": ["run", "serve"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    }
+  ]
 }

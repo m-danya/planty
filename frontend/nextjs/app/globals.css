@@ -1,0 +1,61 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* https://zippystarter.com/tools/shadcn-ui-theme-generator */
+
+:root  {
+  --background: 132 0% 100%;
+  --foreground: 132 0% 10%;
+  --card: 132 0% 100%;
+  --card-foreground: 132 0% 15%;
+  --popover: 132 0% 100%;
+  --popover-foreground: 132 95% 10%;
+  --primary: 132 79% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 132 10% 90%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 94 10% 95%;
+  --muted-foreground: 132 0% 40%;
+  --accent: 94 10% 90%;
+  --accent-foreground: 132 0% 15%;
+  --destructive: 0 50% 50%;
+  --destructive-foreground: 132 0% 100%;
+  --border: 132 20% 82%;
+  --input: 132 20% 50%;
+  --ring: 132 79% 40%;
+  --radius: 0.5rem;
+}
+.dark  {
+  --background: 132 10% 10%;
+  --foreground: 132 0% 100%;
+  --card: 132 0% 10%;
+  --card-foreground: 132 0% 100%;
+  --popover: 132 10% 5%;
+  --popover-foreground: 132 0% 100%;
+  --primary: 132 79% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 132 10% 20%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 94 10% 25%;
+  --muted-foreground: 132 0% 65%;
+  --accent: 94 10% 25%;
+  --accent-foreground: 132 0% 95%;
+  --destructive: 0 50% 50%;
+  --destructive-foreground: 132 0% 100%;
+  --border: 132 20% 50%;
+  --input: 132 20% 50%;
+  --ring: 132 79% 40%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
