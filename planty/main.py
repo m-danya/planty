@@ -5,6 +5,7 @@ from planty.application.router import router as tasks_router
 
 app = FastAPI(
     title="Planty",
+    swagger_ui_parameters={"persistAuthorization": True},
 )
 
 app.include_router(tasks_router)

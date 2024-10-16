@@ -2,6 +2,9 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
+
+
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from pydantic import NonNegativeInt
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -78,12 +81,9 @@ class TaskModel(Base):
         )
 
 
-# TODO: think about auth domain
-class UserModel(Base):
+class UserModel(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "user"
-    id: Mapped[UUID] = mapped_column(GUID, primary_key=True, unique=True)
     added_at: Mapped[datetime] = mapped_column(DateTime)
-    username: Mapped[str] = mapped_column(unique=True)
 
     # sections = relationship("SectionModel", back_populates="user")
     tasks = relationship("TaskModel", back_populates="user")
