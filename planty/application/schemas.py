@@ -1,11 +1,15 @@
 from datetime import date, datetime
 from typing import Any, Optional
 from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
 from planty.domain.task import Attachment, RecurrenceInfo
 from planty.utils import generate_uuid, get_today
+
+from fastapi_users import schemas as fastapi_users_schemas
+
 
 TASK_CREATE_EXAMPLES = [
     {
@@ -175,3 +179,15 @@ SectionsListResponse = list[SectionResponse]
 TasksByDateResponse = dict[date, list[TaskResponse]]
 
 ArchivedTasksResponse = list[TaskResponse]
+
+
+class UserRead(fastapi_users_schemas.BaseUser[uuid.UUID]):
+    pass
+
+
+class UserCreate(fastapi_users_schemas.BaseUserCreate):
+    pass
+
+
+class UserUpdate(fastapi_users_schemas.BaseUserUpdate):
+    pass

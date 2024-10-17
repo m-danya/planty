@@ -2,7 +2,7 @@ from datetime import date
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
+
 
 from planty.application.schemas import (
     RequestAttachmentUpload,
@@ -27,24 +27,15 @@ from planty.application.services.tasks import (
     TaskService,
 )
 from planty.application.uow import SqlAlchemyUnitOfWork
-from fastapi_users.authentication import BearerTransport
 
 
-from sqlalchemy.ext.asyncio import AsyncSession
+from planty.domain.task import User
 
-from planty.infrastructure.database import get_async_session
-from planty.infrastructure.models import UserModel
+
+from planty.application.auth import current_user
 
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
-
-
-# TODO: move somewhere
-async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, UserModel)
-
-
-bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
 
 
 @router.post("/task", status_code=status.HTTP_201_CREATED)
@@ -54,6 +45,12 @@ async def create_task(task_data: TaskCreateRequest) -> TaskCreateResponse:
         task_id = await section_service.create_task(task_data)
         await uow.commit()
         return TaskCreateResponse(id=task_id)
+
+
+# TODO: move to auth router
+@router.get("/me")
+async def test_auth(user: User = Depends(current_user)) -> User:
+    return user
 
 
 # TODO: use query params for DELETE, body must be empty!

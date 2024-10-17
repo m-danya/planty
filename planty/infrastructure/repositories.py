@@ -9,38 +9,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from planty.application.exceptions import (
     SectionNotFoundException,
     TaskNotFoundException,
-    UserNotFoundException,
 )
-from planty.domain.task import Attachment, Section, Task, User
+from planty.domain.task import Attachment, Section, Task
 from planty.infrastructure.models import (
     AttachmentModel,
     SectionModel,
     TaskModel,
-    UserModel,
 )
 
 
 class SQLAlchemyUserRepository:
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
-
-    async def add(self, user: User) -> None:
-        user_model = UserModel.from_entity(user)
-        self._db_session.add(user_model)
-
-    async def get(self, user_id: UUID) -> User:
-        result = await self._db_session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
-        user_model: Optional[UserModel] = result.scalar_one_or_none()
-        if user_model is None:
-            raise UserNotFoundException(user_id=user_id)
-
-        return User(
-            id=user_model.id,
-            username=user_model.username,
-            added_at=user_model.added_at,
-        )
 
 
 class SQLAlchemyTaskRepository:

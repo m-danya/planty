@@ -54,6 +54,11 @@ class Settings(BaseSettings):
                     else f"sqlite+pysqlite:///{self.db_name}.db"
                 )
 
+    auth_secret: str
+
+    # TODO: should the default value be `True`?
+    shutdown_containers_after_test: bool = False
+
     model_config = SettingsConfigDict(
         env_file=".env", extra="ignore", env_prefix="PLANTY_"
     )

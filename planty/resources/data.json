@@ -2,8 +2,12 @@
   "users": [
     {
       "id": "38df4136-36b2-4171-8459-27f411af8323",
-      "username": "test_user",
-      "added_at": "2024-03-28T04:11:17.677Z"
+      "email": "user@example.ru",
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$k1eNeIjFZcxaEsMP1d931g$X32zZKlcoTzQHmFJl5Qo8XhDBQ4vtgQcOM0DFEinr+k",
+      "is_active": 1,
+      "is_superuser": 0,
+      "is_verified": 0
     }
   ],
   "sections": [

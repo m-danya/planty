@@ -1,12 +1,8 @@
-import subprocess
 from typing import Any, Optional
 import httpx
 import pytest
 from httpx import AsyncClient
 
-import asyncio
-from typing import AsyncGenerator
-from planty.config import settings
 
 
 # TODO: test task creation with `recurrence`
@@ -251,45 +247,6 @@ async def test_get_tasks_by_date(
 
     n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
     assert n_tasks == n_tasks_expected
-
-
-@pytest.fixture(scope="session")
-async def minio_container() -> AsyncGenerator[None, None]:
-    minio_was_started_in_test = False
-    try:
-        result = subprocess.run(
-            "docker compose ps -q minio", shell=True, capture_output=True, text=True
-        )
-        if not result.stdout.strip():
-            subprocess.run(
-                "docker compose up -d minio minio-createbuckets",
-                shell=True,
-                check=True,
-            )
-            minio_was_started_in_test = True
-
-        async with httpx.AsyncClient() as client:
-            for _ in range(10):
-                try:
-                    response = await client.get(
-                        f"{settings.aws_url}/minio/health/ready", timeout=1
-                    )
-                    if response.status_code == 200:
-                        break
-                except httpx.RequestError:
-                    pass
-                await asyncio.sleep(1)
-            else:
-                raise TimeoutError("MinIO container did not become ready in time.")
-
-        yield
-    finally:
-        if minio_was_started_in_test:
-            subprocess.run(
-                "docker compose down",
-                shell=True,
-                check=True,
-            )
 
 
 @pytest.mark.parametrize(

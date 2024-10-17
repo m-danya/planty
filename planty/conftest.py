@@ -1,16 +1,15 @@
 import os
+import json
+import pytest
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 # substitute the `PLANTY_MODE` _before_ the Settings object is created.
 os.environ["PLANTY_MODE"] = "TEST"
-import json  # noqa: E402
-from datetime import datetime  # noqa: E402
-from pathlib import Path  # noqa: E402
-from typing import Any  # noqa: E402
-
-import pytest  # noqa: E402
 
 
-# these fixtures are shared across different test sets:
+# These fixtures are shared across different test sets:
 
 
 # supports datetimes copied from dbeaver
