@@ -16,10 +16,15 @@ jobs:
         with:
           python-version: "3.11"
       #----------------------------------------------
-      #  -----  install & configure poetry  -----
+      #  -----  Set up .env  -----
       #----------------------------------------------
       - name: Set up .env
-        run: cp .env.sample .env
+        run: |
+          cp .env.sample .env
+          echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+      #----------------------------------------------
+      #  -----  install & configure poetry  -----
+      #----------------------------------------------
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:

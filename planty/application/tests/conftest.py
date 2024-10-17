@@ -3,7 +3,9 @@ from typing import Any, AsyncGenerator
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from planty.application.auth import current_user
 from planty.config import settings
+from planty.domain.task import User
 from planty.infrastructure.database import Base, engine, raw_async_session_maker
 from planty.infrastructure.models import (
     AttachmentModel,
@@ -38,7 +40,9 @@ async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
 
 
 @pytest.fixture(scope="function")
-async def ac() -> AsyncGenerator[AsyncClient, None]:
+async def ac(test_user: User) -> AsyncGenerator[AsyncClient, None]:
+    # Mock `current_user` with `test_user`:
+    fastapi_app.dependency_overrides[current_user] = lambda: test_user
     async with AsyncClient(
         transport=ASGITransport(app=fastapi_app),  # type: ignore
         base_url="http://test",

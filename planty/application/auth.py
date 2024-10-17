@@ -64,7 +64,10 @@ fastapi_users_obj = FastAPIUsers[UserModel, uuid.UUID](
 )
 
 
+current_user_dependency = fastapi_users_obj.current_user()
+
+
 def current_user(
-    user: UserModel = Depends(fastapi_users_obj.current_user()),
+    user: UserModel = Depends(current_user_dependency),
 ) -> User:
     return user.to_entity()
