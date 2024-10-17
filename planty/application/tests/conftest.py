@@ -39,10 +39,21 @@ async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
         await session.commit()
 
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="function")  # because of the override
 async def ac(test_user: User) -> AsyncGenerator[AsyncClient, None]:
     # Mock `current_user` with `test_user`:
     fastapi_app.dependency_overrides[current_user] = lambda: test_user
+    async with AsyncClient(
+        transport=ASGITransport(app=fastapi_app),  # type: ignore
+        base_url="http://test",
+    ) as ac:
+        yield ac
+
+
+@pytest.fixture(scope="function")  # because of the override
+async def ac_another_user(another_test_user: User) -> AsyncGenerator[AsyncClient, None]:
+    # Mock `current_user` with `another_test_user`:
+    fastapi_app.dependency_overrides[current_user] = lambda: another_test_user
     async with AsyncClient(
         transport=ASGITransport(app=fastapi_app),  # type: ignore
         base_url="http://test",

@@ -11,38 +11,14 @@ from planty.utils import generate_uuid, get_today
 from fastapi_users import schemas as fastapi_users_schemas
 
 
-TASK_CREATE_EXAMPLES = [
-    {
-        "user_id": generate_uuid(),
-        "section_id": generate_uuid(),
-        "title": "Read something interesting",
-        "description": None,
-        "due_to_next": str(get_today()),
-        "due_to_days_period": 1,
-    },
-    {
-        "user_id": generate_uuid(),
-        "section_id": generate_uuid(),
-        "title": "Plant waters",
-        "description": None,
-        "due_to_next": str(get_today()),
-        "due_to_days_period": 3,
-    },
-]
-
-
 class TaskCreateRequest(BaseModel):
-    user_id: UUID
     section_id: UUID
     title: str
     description: Optional[str] = None
     due_to: Optional[date] = None
     recurrence: Optional[RecurrenceInfo] = None
 
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
-    )
+    model_config = ConfigDict(extra="forbid")
 
 
 class TaskCreateResponse(BaseModel):
@@ -98,7 +74,6 @@ mypy.
 
 class TaskUpdateRequest(BaseModel):
     id: UUID
-    user_id: UUID = None  #                       type: ignore
     section_id: UUID = None  #                    type: ignore
     title: str = None  #                          type: ignore
     description: Optional[str] = None
@@ -113,7 +88,6 @@ class TaskUpdateResponse(BaseModel):
 
 
 class SectionCreateRequest(BaseModel):
-    user_id: UUID
     title: str
     parent_id: Optional[UUID] = None
 
@@ -152,7 +126,6 @@ class AttachmentResponse(Attachment):
 
 class TaskResponse(BaseModel):
     id: UUID
-    user_id: UUID
     section_id: UUID
     title: str
     description: Optional[str]

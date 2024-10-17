@@ -18,7 +18,6 @@ async def test_create_task(
     additional_test_data: dict[str, Any],
 ) -> None:
     task_data = {
-        "user_id": str(additional_test_data["tasks"][0]["user_id"]),
         "section_id": str(additional_test_data["tasks"][0]["section_id"]),
         "title": additional_test_data["tasks"][0]["title"],
         "description": additional_test_data["tasks"][0]["description"],
@@ -74,6 +73,21 @@ async def test_update_task(
         assert data["detail"] == error_detail
 
 
+async def test_update_another_user_task(
+    ac_another_user: AsyncClient,
+    tasks_data: list[dict[str, Any]],
+) -> None:
+    existing_task_data = tasks_data[2]
+    task_data = {
+        "id": existing_task_data["id"],
+        "description": "Bravo, Vince",
+    }
+
+    response = await ac_another_user.patch("/api/task", json=task_data)
+
+    assert response.status_code == 403
+
+
 async def test_get_sections(
     ac: AsyncClient,
 ) -> None:
@@ -96,7 +110,9 @@ async def test_create_section(
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
 ) -> None:
-    section_data = additional_test_data["sections"][0]
+    section_data = {
+        "title": str(additional_test_data["sections"][0]["title"]),
+    }
     response = await ac.post("/api/section", json=section_data)
     assert response.status_code == 201
     data = response.json()
@@ -130,6 +146,14 @@ async def test_get_section(
         task["section_id"] == id_ for task in tasks_data if not task["is_archived"]
     )
     assert expected_tasks_n == len(response.json()["tasks"])
+
+
+async def test_get_another_user_section(
+    ac_another_user: AsyncClient,
+) -> None:
+    id_ = "6ff6e896-5da3-46ec-bf66-0a317c5496fa"
+    response = await ac_another_user.get(f"/api/section/{id_}")
+    assert response.status_code == 403
 
 
 @pytest.mark.parametrize(
@@ -173,6 +197,23 @@ async def test_move_task(
         return
 
 
+async def test_move_another_user_task(
+    ac_another_user: AsyncClient,
+) -> None:
+    task_id = "e6a76c36-7dae-47ee-b657-1a0b02ca40df"
+    section_id = "36ea0a4f-0334-464d-8066-aa359ecfdcba"
+    index = 0
+    response = await ac_another_user.post(
+        "/api/task/move",
+        json={
+            "task_id": task_id,
+            "section_to_id": section_id,
+            "index": index,
+        },
+    )
+    assert response.status_code == 403
+
+
 @pytest.mark.parametrize(
     "task_id",
     ["f4186c04-3f2d-4217-a6ed-5c40bc9946d2"],
@@ -199,12 +240,23 @@ async def test_toggle_completed_task(
         assert is_completed is expected_is_completed
 
 
+async def test_mark_completed_another_user_task(
+    ac_another_user: AsyncClient,
+) -> None:
+    task_id = "f4186c04-3f2d-4217-a6ed-5c40bc9946d2"
+    response = await ac_another_user.post(
+        "/api/task/toggle_completed",
+        json={
+            "task_id": task_id,
+        },
+    )
+    assert response.status_code == 403
+
+
 @pytest.mark.parametrize(
-    "user_id, not_before, not_after, n_tasks_expected, status_code, error_detail",
+    "not_before, not_after, n_tasks_expected, status_code, error_detail",
     [
-        # TODO: nonexisting user -> 404
         (
-            "38df4136-36b2-4171-8459-27f411af8323",
             "2001-01-01",
             "2002-12-31",
             244,
@@ -212,7 +264,6 @@ async def test_toggle_completed_task(
             None,
         ),
         (
-            "38df4136-36b2-4171-8459-27f411af8323",
             "2002-12-31",
             "2001-01-01",
             0,
@@ -222,7 +273,6 @@ async def test_toggle_completed_task(
     ],
 )
 async def test_get_tasks_by_date(
-    user_id: str,
     not_before: str,
     not_after: str,
     n_tasks_expected: int,
@@ -233,7 +283,6 @@ async def test_get_tasks_by_date(
     response = await ac.get(
         "/api/task/by_date",
         params={
-            "user_id": user_id,
             "not_before": not_before,
             "not_after": not_after,
         },
@@ -326,6 +375,23 @@ async def test_add_attachment(
     assert not response.is_success
 
 
+async def test_add_attachment_to_another_user_task(
+    ac_another_user: AsyncClient,
+    tasks_data: list[dict[str, Any]],
+) -> None:
+    existing_task_data = tasks_data[2]
+    task_id = existing_task_data["id"]
+
+    request_data = {
+        "task_id": task_id,
+        "aes_key_b64": "someBase64EncodedAESKey==",
+        "aes_iv_b64": "someBase64EncodedIV==",
+    }
+
+    response = await ac_another_user.post("/api/task/attachment", json=request_data)
+    assert response.status_code == 403
+
+
 @pytest.mark.parametrize(
     "task_id, attachment_id, status_code, error_detail",
     [
@@ -349,7 +415,7 @@ async def test_add_attachment(
         ),
     ],
 )
-async def test_remove_nonexistent_attachment(
+async def test_remove_attachment(
     task_id: str,
     attachment_id: str,
     status_code: int,
@@ -364,3 +430,16 @@ async def test_remove_nonexistent_attachment(
         assert data["detail"] == error_detail
         return
     assert response.is_success
+
+
+async def test_remove_attachment_from_another_user_task(
+    ac_another_user: AsyncClient,
+) -> None:
+    task_id = "de59bdb5-5f91-48dc-a034-246b8f86be25"  # real task id
+    attachment_id = "2bfa26ba-ed8c-4353-adb2-c451957fc3e1"  # real attachment id
+
+    response = await ac_another_user.delete(
+        f"/api/task/{task_id}/attachment/{attachment_id}"
+    )
+
+    assert response.status_code == 403

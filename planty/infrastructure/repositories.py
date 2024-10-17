@@ -146,11 +146,11 @@ class SQLAlchemyTaskRepository:
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
 
-    async def get_archived_tasks(self) -> list[Task]:
+    async def get_archived_tasks(self, user_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
             select(TaskModel).where(
-                (TaskModel.is_archived.is_(True))
-            )  # & (TaskModel.user_id == user_id)
+                (TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True))
+            )
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
@@ -184,8 +184,10 @@ class SQLAlchemySectionRepository:
         tasks = await self._task_repo.get_section_tasks(section_id)
         return section_model.to_entity(tasks=tasks)
 
-    async def get_all(self) -> list[Section]:
-        result = await self._db_session.execute(select(SectionModel))
+    async def get_all(self, user_id: UUID) -> list[Section]:
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.user_id == user_id)
+        )
         section_models = result.scalars()
         return [
             section_model.to_entity(

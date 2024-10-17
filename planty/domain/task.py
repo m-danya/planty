@@ -94,6 +94,7 @@ class Task(BaseModel):
 
 class Section(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)
+    user_id: UUID
     title: str
     parent_id: Optional[UUID] = None
     tasks: list[Task]

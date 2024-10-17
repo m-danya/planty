@@ -87,12 +87,12 @@ def attachments_data(
     return test_data["attachments"]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def all_users(users_data: list[dict[str, Any]]) -> list[User]:
     return [UserModel(**user).to_entity() for user in users_data]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def all_attachments(attachments_data: list[dict[str, Any]]) -> list[Attachment]:
     return [
         AttachmentModel(**attachment).to_entity() for attachment in attachments_data
@@ -164,6 +164,13 @@ def another_nonempty_section(all_sections: list[Section]) -> Section:
     return all_sections[0]
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def test_user(all_users: list[User]) -> User:
+    # WARNING: do not modify this object
     return all_users[0]
+
+
+@pytest.fixture(scope="session")
+def another_test_user(all_users: list[User]) -> User:
+    # WARNING: do not modify this object
+    return all_users[1]

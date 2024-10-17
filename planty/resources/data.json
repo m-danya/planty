@@ -8,24 +8,36 @@
       "is_active": 1,
       "is_superuser": 0,
       "is_verified": 0
+    },
+    {
+      "id": "73ca2340-76bd-4abe-b872-7e82a9528c45",
+      "email": "user2@example.ru",
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$E7rjhtAMpgBZQjp886mDoQ$HYwwbXvuAMVfz89VfcuNRqUO1dXvPzzg5KIlqx9tE2c",
+      "is_active": 1,
+      "is_superuser": 0,
+      "is_verified": 0
     }
   ],
   "sections": [
     {
       "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
       "title": "Current tasks",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-03-28T04:11:17.677Z"
     },
     {
       "id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "title": "Tasks for later",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-09-28T04:11:17.677Z"
     },
     {
       "id": "a5b2010d-c27c-4f22-be47-828e065f9607",
       "title": "Chores",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-09-28T04:11:17.677Z"
     }

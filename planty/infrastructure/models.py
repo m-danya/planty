@@ -87,7 +87,7 @@ class UserModel(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "user"
     added_at: Mapped[datetime] = mapped_column(DateTime, default=get_datetime_now)
 
-    # sections = relationship("SectionModel", back_populates="user")
+    sections = relationship("SectionModel", back_populates="user")
     tasks = relationship("TaskModel", back_populates="user")
 
     def to_entity(self) -> User:
@@ -109,15 +109,18 @@ class SectionModel(Base):
     parent_id: Mapped[Optional[GUID]] = mapped_column(
         ForeignKey("section.id"), nullable=True
     )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
     added_at: Mapped[datetime] = mapped_column(DateTime)
 
     tasks = relationship("TaskModel", back_populates="section")
+    user = relationship("UserModel", back_populates="sections")
 
     @classmethod
     def from_entity(cls, section: Section) -> "SectionModel":
         return cls(
             id=section.id,
             title=section.title,
+            user_id=section.user_id,
             parent_id=section.parent_id,
             added_at=section.added_at,
         )
@@ -126,6 +129,7 @@ class SectionModel(Base):
         return Section(
             id=self.id,
             title=self.title,
+            user_id=self.user_id,
             parent_id=self.parent_id,
             tasks=tasks,
         )

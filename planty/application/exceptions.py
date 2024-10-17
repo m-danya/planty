@@ -46,3 +46,8 @@ class AttachmentNotFoundException(EntityNotFoundException):
 class IncorrectDateInterval(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     detail = "Incorrect date interval"
+
+
+class ForbiddenException(PlantyException):
+    status_code = status.HTTP_403_FORBIDDEN
+    detail = "You're not authorized for this"
