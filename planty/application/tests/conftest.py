@@ -48,7 +48,7 @@ async def ac(test_user: User) -> AsyncGenerator[AsyncClient, None]:
     # Mock `current_user` with `test_user`:
     fastapi_app.dependency_overrides[current_user] = lambda: test_user
     async with AsyncClient(
-        transport=ASGITransport(app=fastapi_app),  # type: ignore
+        transport=ASGITransport(app=fastapi_app),
         base_url="http://test",
     ) as ac:
         yield ac
@@ -59,7 +59,7 @@ async def ac_another_user(another_test_user: User) -> AsyncGenerator[AsyncClient
     # Mock `current_user` with `another_test_user`:
     fastapi_app.dependency_overrides[current_user] = lambda: another_test_user
     async with AsyncClient(
-        transport=ASGITransport(app=fastapi_app),  # type: ignore
+        transport=ASGITransport(app=fastapi_app),
         base_url="http://test",
     ) as ac:
         yield ac
