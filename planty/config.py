@@ -1,6 +1,9 @@
 from typing import Literal
+import uuid
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+PARALLEL_DBS_PREFIX = "planty_test_random_"
 
 
 class Settings(BaseSettings):
@@ -27,6 +30,10 @@ class Settings(BaseSettings):
     test_db_name: str
     test_db_pass: str
 
+    # if enabled, run tests with `pytest -n 8`. DOESN'T WORK PROPERLY FOR NOW,
+    # the db name must be generated inside fixture with scope='function'
+    parallel_testing_experimental: bool = False
+
     def get_database_url(
         self, for_alembic: bool = False, for_tests: bool = False
     ) -> str:
@@ -39,6 +46,8 @@ class Settings(BaseSettings):
                     f"{self.test_db_port}/{self.test_db_name}"
                 )
             else:
+                if self.parallel_testing_experimental:
+                    settings.test_db_name = f"{PARALLEL_DBS_PREFIX}{uuid.uuid4()}"
                 return f"sqlite+aiosqlite:///{self.test_db_name}.db"
         else:
             if self.db_type == "postgresql":

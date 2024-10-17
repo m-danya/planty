@@ -6,7 +6,6 @@ import uuid
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
 from planty.domain.task import Attachment, RecurrenceInfo
-from planty.utils import generate_uuid, get_today
 
 from fastapi_users import schemas as fastapi_users_schemas
 
