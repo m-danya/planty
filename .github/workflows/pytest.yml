@@ -21,7 +21,7 @@ jobs:
       - name: Set up .env
         run: |
           cp .env.sample .env
-          echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+          echo "\nPLANTY_AUTH_SECRET=TEST_SECRET" >> .env
       #----------------------------------------------
       #  -----  install & configure poetry  -----
       #----------------------------------------------
