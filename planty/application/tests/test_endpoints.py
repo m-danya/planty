@@ -4,7 +4,6 @@ import pytest
 from httpx import AsyncClient
 
 
-
 # TODO: test task creation with `recurrence`
 @pytest.mark.parametrize(
     "status_code,error_detail",
