@@ -16,10 +16,15 @@ jobs:
         with:
           python-version: "3.11"
       #----------------------------------------------
-      #  -----  install & configure poetry  -----
+      #  -----  Set up .env  -----
       #----------------------------------------------
       - name: Set up .env
-        run: cp .env.sample .env
+        run: |
+          cp .env.sample .env
+          echo "PLANTY_AUTH_SECRET=TEST_SECRET" >> .env
+      #----------------------------------------------
+      #  -----  install & configure poetry  -----
+      #----------------------------------------------
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -59,8 +64,7 @@ jobs:
       - name: Run pytest
         run: |
           source .venv/bin/activate
-          coverage run -m pytest
-          coverage report
+          pytest --cov
       - name: Run mypy
         run: |
           source .venv/bin/activate

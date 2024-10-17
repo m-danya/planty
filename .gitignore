@@ -53,8 +53,6 @@ cover/
 
 prompt.txt
 
-.vscode
-
 # Translations
 *.mo
 *.pot

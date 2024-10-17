@@ -53,6 +53,10 @@ def convert_to_response(obj: dict[date, list[Task]]) -> TasksByDateResponse: ...
 def convert_to_response(obj: list[Task]) -> ArchivedTasksResponse: ...
 
 
+# TODO: think about returning dict without casting to pydantic model:
+# https://github.com/zhanymkanov/fastapi-best-practices?tab=readme-ov-file#fastapi-response-serialization
+
+
 def convert_to_response(obj: possible_in_types) -> possible_out_types:
     if _satisfies(obj, Task):
         obj = cast(Task, obj)
@@ -62,6 +66,7 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
     elif _satisfies(obj, Section):
         obj = cast(Section, obj)
         section_data = obj.model_dump()
+        _adjust_section_dict(section_data)
         for task in section_data.get("tasks", []):
             _adjust_task_dict(task)
         return SectionResponse(**section_data)
@@ -79,7 +84,6 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
                 _adjust_task_dict(task)
         tasks_by_date: TasksByDateResponse
         return tasks_by_date
-
     else:
         raise NotImplementedError(
             f"Unsupported type for converting into response schema: {type(obj)}"
@@ -87,8 +91,13 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
 
 
 def _adjust_task_dict(task: dict[str, Any]) -> None:
+    task.pop("user_id")
     for attachment in task.get("attachments", []):
         attachment["url"] = get_attachment_url(attachment["s3_file_key"])
+
+
+def _adjust_section_dict(section: dict[str, Any]) -> None:
+    section.pop("user_id")
 
 
 def _satisfies(obj: Any, type_hint: Any) -> bool:

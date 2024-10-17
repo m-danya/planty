@@ -1,44 +1,23 @@
 from datetime import date, datetime
 from typing import Any, Optional
 from uuid import UUID
+import uuid
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
 from planty.domain.task import Attachment, RecurrenceInfo
-from planty.utils import generate_uuid, get_today
 
-TASK_CREATE_EXAMPLES = [
-    {
-        "user_id": generate_uuid(),
-        "section_id": generate_uuid(),
-        "title": "Read something interesting",
-        "description": None,
-        "due_to_next": str(get_today()),
-        "due_to_days_period": 1,
-    },
-    {
-        "user_id": generate_uuid(),
-        "section_id": generate_uuid(),
-        "title": "Plant waters",
-        "description": None,
-        "due_to_next": str(get_today()),
-        "due_to_days_period": 3,
-    },
-]
+from fastapi_users import schemas as fastapi_users_schemas
 
 
 class TaskCreateRequest(BaseModel):
-    user_id: UUID
     section_id: UUID
     title: str
     description: Optional[str] = None
     due_to: Optional[date] = None
     recurrence: Optional[RecurrenceInfo] = None
 
-    model_config = ConfigDict(
-        extra="forbid",
-        json_schema_extra={"examples": TASK_CREATE_EXAMPLES},  # type: ignore
-    )
+    model_config = ConfigDict(extra="forbid")
 
 
 class TaskCreateResponse(BaseModel):
@@ -94,7 +73,6 @@ mypy.
 
 class TaskUpdateRequest(BaseModel):
     id: UUID
-    user_id: UUID = None  #                       type: ignore
     section_id: UUID = None  #                    type: ignore
     title: str = None  #                          type: ignore
     description: Optional[str] = None
@@ -109,7 +87,6 @@ class TaskUpdateResponse(BaseModel):
 
 
 class SectionCreateRequest(BaseModel):
-    user_id: UUID
     title: str
     parent_id: Optional[UUID] = None
 
@@ -148,7 +125,6 @@ class AttachmentResponse(Attachment):
 
 class TaskResponse(BaseModel):
     id: UUID
-    user_id: UUID
     section_id: UUID
     title: str
     description: Optional[str]
@@ -175,3 +151,15 @@ SectionsListResponse = list[SectionResponse]
 TasksByDateResponse = dict[date, list[TaskResponse]]
 
 ArchivedTasksResponse = list[TaskResponse]
+
+
+class UserRead(fastapi_users_schemas.BaseUser[uuid.UUID]):
+    pass
+
+
+class UserCreate(fastapi_users_schemas.BaseUserCreate):
+    pass
+
+
+class UserUpdate(fastapi_users_schemas.BaseUserUpdate):
+    pass

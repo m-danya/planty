@@ -9,38 +9,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from planty.application.exceptions import (
     SectionNotFoundException,
     TaskNotFoundException,
-    UserNotFoundException,
 )
-from planty.domain.task import Attachment, Section, Task, User
+from planty.domain.task import Attachment, Section, Task
 from planty.infrastructure.models import (
     AttachmentModel,
     SectionModel,
     TaskModel,
-    UserModel,
 )
 
 
 class SQLAlchemyUserRepository:
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
-
-    async def add(self, user: User) -> None:
-        user_model = UserModel.from_entity(user)
-        self._db_session.add(user_model)
-
-    async def get(self, user_id: UUID) -> User:
-        result = await self._db_session.execute(
-            select(UserModel).where(UserModel.id == user_id)
-        )
-        user_model: Optional[UserModel] = result.scalar_one_or_none()
-        if user_model is None:
-            raise UserNotFoundException(user_id=user_id)
-
-        return User(
-            id=user_model.id,
-            username=user_model.username,
-            added_at=user_model.added_at,
-        )
 
 
 class SQLAlchemyTaskRepository:
@@ -166,11 +146,11 @@ class SQLAlchemyTaskRepository:
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
 
-    async def get_archived_tasks(self) -> list[Task]:
+    async def get_archived_tasks(self, user_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
             select(TaskModel).where(
-                (TaskModel.is_archived.is_(True))
-            )  # & (TaskModel.user_id == user_id)
+                (TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True))
+            )
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
@@ -204,8 +184,10 @@ class SQLAlchemySectionRepository:
         tasks = await self._task_repo.get_section_tasks(section_id)
         return section_model.to_entity(tasks=tasks)
 
-    async def get_all(self) -> list[Section]:
-        result = await self._db_session.execute(select(SectionModel))
+    async def get_all(self, user_id: UUID) -> list[Section]:
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.user_id == user_id)
+        )
         section_models = result.scalars()
         return [
             section_model.to_entity(
