@@ -443,3 +443,17 @@ async def test_remove_attachment_from_another_user_task(
     )
 
     assert response.status_code == 403
+
+
+@pytest.mark.parametrize(
+    "query, n_tasks_expected", [("smth_nonexistent", 0), ("saul", 1), ("watch", 2)]
+)
+async def test_get_tasks_by_search(
+    query: str,
+    n_tasks_expected: int,
+    ac: AsyncClient,
+) -> None:
+    response = await ac.get("/api/task/search", params={"query": query})
+    assert response.status_code == 200
+    tasks = response.json()
+    assert len(tasks) == n_tasks_expected

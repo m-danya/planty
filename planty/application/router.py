@@ -13,6 +13,7 @@ from planty.application.schemas import (
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskCreateResponse,
+    TaskSearchResponse,
     TaskMoveRequest,
     TaskRemoveRequest,
     ArchivedTasksResponse,
@@ -88,6 +89,16 @@ async def get_tasks_by_date(
         )
         await uow.commit()
         return tasks_by_date
+
+
+@router.get("/task/search")
+async def get_tasks_by_search_query(
+    query: str, user: User = Depends(current_user)
+) -> TaskSearchResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        task_service = TaskService(uow=uow)
+        tasks = await task_service.get_tasks_by_search_query(user.id, query)
+        return tasks
 
 
 @router.post("/task/move")

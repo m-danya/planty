@@ -22,6 +22,7 @@ from planty.application.schemas import (
     TaskResponse,
     TasksByDateResponse,
     TaskUpdateRequest,
+    TaskSearchResponse,
     SectionsListResponse,
 )
 from planty.application.services.attachments import (
@@ -72,6 +73,12 @@ class TaskService:
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
         tasks = await self._task_repo.get_archived_tasks(user_id)
+        return convert_to_response(tasks)
+
+    async def get_tasks_by_search_query(
+        self, user_id: UUID, query: str
+    ) -> TaskSearchResponse:
+        tasks = await self._task_repo.search(user_id, query)
         return convert_to_response(tasks)
 
     async def add_attachment(

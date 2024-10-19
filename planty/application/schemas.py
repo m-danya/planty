@@ -151,6 +151,7 @@ SectionsListResponse = list[SectionResponse]
 TasksByDateResponse = dict[date, list[TaskResponse]]
 
 ArchivedTasksResponse = list[TaskResponse]
+TaskSearchResponse = list[TaskResponse]
 
 
 class UserRead(fastapi_users_schemas.BaseUser[uuid.UUID]):

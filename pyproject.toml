@@ -41,7 +41,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 # Do not hide stdout while running tests
-addopts = "-s -v --instafail"
+addopts = "-s -v --instafail --nf"
 filterwarnings = [
     # This's triggered by pytest-asyncio,
     # which calls deprecated asyncio.get_event_loop() method

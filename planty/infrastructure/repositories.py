@@ -103,6 +103,25 @@ class SQLAlchemyTaskRepository:
             for task_model in sorted(task_models, key=lambda t: t.index)
         ]
 
+    async def search(self, user_id: UUID, query: str) -> list[Task]:
+        # TODO: Reimplement search to improve performance. Possible options:
+        # 1) Use PostgreSQL Full-text search ( => deal with SQLite separately.. )
+        # 2) Use Whoosh (add volume for index persistence)
+        # 3) Explore other options..
+
+        query = f"%{query}%"
+
+        query = select(TaskModel).where(
+            (TaskModel.user_id == user_id)
+            & (TaskModel.is_archived.is_(False))
+            & (TaskModel.title.ilike(query) | TaskModel.description.ilike(query))
+        )
+
+        result = await self._db_session.execute(query)
+        task_models = result.scalars().all()
+
+        return [await self.get_entity(task_model) for task_model in task_models]
+
     async def _get_task_attachments(self, task_id: UUID) -> list[Attachment]:
         result = await self._db_session.execute(
             select(AttachmentModel).where(AttachmentModel.task_id == task_id)

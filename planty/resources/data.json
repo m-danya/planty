@@ -100,6 +100,18 @@
       "index": 3
     },
     {
+      "id": "6ba81664-a19c-43f7-8664-93a995bf0962",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "title": "Watch 'BoJack Horseman'",
+      "description": "not urgent",
+      "is_completed": false,
+      "is_archived": false,
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "due_to": null,
+      "index": 4
+    },
+    {
       "id": "295089f4-da6c-4a14-8527-4019d51849d9",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
