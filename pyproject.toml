@@ -22,6 +22,11 @@ aiobotocore = "^2.15.1"
 types-aiobotocore = {extras = ["s3"], version = "^2.15.1"}
 docker = "^7.1.0"
 types-docker = "^7.1.0.20240827"
+fastapi-users = {extras = ["sqlalchemy"], version = "^13.0.0"}
+pytest-xdist = "^3.6.1"
+pytest-instafail = "^0.5.0"
+pytest-randomly = "^3.15.0"
+pytest-cov = "^5.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
@@ -36,13 +41,16 @@ build-backend = "poetry.core.masonry.api"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 # Do not hide stdout while running tests
-addopts = "-s -v"
+addopts = "-s -v --instafail --nf"
 filterwarnings = [
     # This's triggered by pytest-asyncio,
     # which calls deprecated asyncio.get_event_loop() method
     # ref: https://github.com/pytest-dev/pytest-asyncio/issues/757
     "ignore:There is no current event loop",
+    # Ignore DeprecationWarning related to Future.cancel() in anyio/_asyncio.py
+    "ignore:Passing 'msg' argument to (Future|Task).cancel.*:DeprecationWarning",
 ]
+testpaths = ["planty"]
 
 [tool.ruff]
 extend-exclude = ["alembic/versions"]

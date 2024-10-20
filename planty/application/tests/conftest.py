@@ -1,9 +1,18 @@
-from typing import Any, AsyncGenerator
+from pathlib import Path
+from typing import Any, AsyncGenerator, Generator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from planty.application.auth import current_user
 from planty.config import settings
+from planty import config
+from planty.domain.task import User
+from loguru import logger
+import subprocess
+import httpx
+import asyncio
+
 from planty.infrastructure.database import Base, engine, raw_async_session_maker
 from planty.infrastructure.models import (
     AttachmentModel,
@@ -34,10 +43,71 @@ async def prepare_database(test_data: dict[str, list[dict[str, Any]]]) -> None:
         await session.commit()
 
 
-@pytest.fixture(scope="function")
-async def ac() -> AsyncGenerator[AsyncClient, None]:
+@pytest.fixture(scope="function")  # because of the override
+async def ac(test_user: User) -> AsyncGenerator[AsyncClient, None]:
+    # Mock `current_user` with `test_user`:
+    fastapi_app.dependency_overrides[current_user] = lambda: test_user
     async with AsyncClient(
-        transport=ASGITransport(app=fastapi_app),  # type: ignore
+        transport=ASGITransport(app=fastapi_app),
         base_url="http://test",
     ) as ac:
         yield ac
+
+
+@pytest.fixture(scope="function")  # because of the override
+async def ac_another_user(another_test_user: User) -> AsyncGenerator[AsyncClient, None]:
+    # Mock `current_user` with `another_test_user`:
+    fastapi_app.dependency_overrides[current_user] = lambda: another_test_user
+    async with AsyncClient(
+        transport=ASGITransport(app=fastapi_app),
+        base_url="http://test",
+    ) as ac:
+        yield ac
+
+
+@pytest.fixture(scope="session")
+async def minio_container() -> AsyncGenerator[None, None]:
+    minio_was_started_in_test = False
+    try:
+        result = subprocess.run(
+            "docker compose ps -q minio", shell=True, capture_output=True, text=True
+        )
+        if not result.stdout.strip():
+            subprocess.run(
+                "docker compose up -d minio minio-createbuckets",
+                shell=True,
+                check=True,
+            )
+            minio_was_started_in_test = True
+
+        async with httpx.AsyncClient() as client:
+            for _ in range(10):
+                try:
+                    response = await client.get(
+                        f"{settings.aws_url}/minio/health/ready", timeout=1
+                    )
+                    if response.status_code == 200:
+                        break
+                except httpx.RequestError:
+                    pass
+                await asyncio.sleep(1)
+            else:
+                raise TimeoutError("MinIO container did not become ready in time.")
+
+        yield
+    finally:
+        if minio_was_started_in_test and settings.shutdown_containers_after_test:
+            subprocess.run(
+                "docker compose down",
+                shell=True,
+                check=True,
+            )
+
+
+@pytest.fixture(scope="session")
+def clean_parallel_dbs() -> Generator[None, None, None]:
+    yield
+    if settings.parallel_testing_experimental:
+        for db_file in Path.cwd().glob(f"{config.PARALLEL_DBS_PREFIX}*.db"):
+            logger.info(f"Removing temporary db {db_file}")
+            db_file.unlink()

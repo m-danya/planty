@@ -1,20 +1,20 @@
 {
-    "users": [],
-    "sections": [
-        {
-            "title": "Tasks for later",
-            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-            "parent_id": null
-        }
-    ],
-    "tasks": [
-        {
-            "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-            "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
-            "title": "Go to the gym",
-            "description": "💪🏻",
-            "is_completed": false,
-            "added_at": "2024-03-28T04:11:17.677Z"
-        }
-    ]
+  "users": [],
+  "sections": [
+    {
+      "title": "Tasks for later",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": null
+    }
+  ],
+  "tasks": [
+    {
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "title": "Go to the gym",
+      "description": "💪🏻",
+      "is_completed": false,
+      "added_at": "2024-03-28T04:11:17.677Z"
+    }
+  ]
 }

@@ -1,15 +1,12 @@
 from datetime import date, datetime, timedelta
 import random
-from typing import Annotated, Any, Optional
+from typing import Any, Optional
 from uuid import UUID
 
 from pydantic import (
     BaseModel,
-    ConfigDict,
     Field,
     NonNegativeInt,
-    RootModel,
-    field_validator,
     model_validator,
 )
 
@@ -17,35 +14,10 @@ from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
 from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
 
-UsernameType = Annotated[str, Field(min_length=3, max_length=50)]
-
-
-class Username(RootModel[UsernameType]):
-    root: UsernameType
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Username) and self.root == other.root
-
-    def __hash__(self) -> int:
-        return hash(self.root)
-
-    @field_validator("root")
-    @classmethod
-    def validate_username(cls, s: str) -> str:
-        for c in s:
-            if not (c.isalnum() or c == "_"):
-                raise ValueError(f"Symbol '{c}' is not allowed in username")
-        return s
-
-    def __str__(self) -> str:
-        return str(self.root)
-
-    model_config = ConfigDict(frozen=True)
-
 
 class User(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)
-    username: Username
+    email: str
     added_at: datetime = Field(default_factory=get_datetime_now)
 
 
@@ -122,6 +94,7 @@ class Task(BaseModel):
 
 class Section(BaseModel):
     id: UUID = Field(default_factory=generate_uuid)
+    user_id: UUID
     title: str
     parent_id: Optional[UUID] = None
     tasks: list[Task]

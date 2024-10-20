@@ -1,7 +1,5 @@
 {
-    "python.testing.pytestArgs": [
-        "planty"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": ["planty"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

@@ -2,13 +2,18 @@ from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
+
+from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from pydantic import NonNegativeInt
 from sqlalchemy import Date, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from fastapi_users_db_sqlalchemy.access_token import (
+    SQLAlchemyBaseAccessTokenTableUUID,
+)
 from planty.domain.task import Attachment, RecurrenceInfo, Section, Task, User
 from planty.infrastructure.database import Base
 from planty.infrastructure.utils import GUID  # type: ignore
+from planty.utils import get_datetime_now
 
 
 class TaskModel(Base):
@@ -78,30 +83,23 @@ class TaskModel(Base):
         )
 
 
-# TODO: think about auth domain
-class UserModel(Base):
+class UserModel(SQLAlchemyBaseUserTableUUID, Base):
     __tablename__ = "user"
-    id: Mapped[UUID] = mapped_column(GUID, primary_key=True, unique=True)
-    added_at: Mapped[datetime] = mapped_column(DateTime)
-    username: Mapped[str] = mapped_column(unique=True)
+    added_at: Mapped[datetime] = mapped_column(DateTime, default=get_datetime_now)
 
-    # sections = relationship("SectionModel", back_populates="user")
+    sections = relationship("SectionModel", back_populates="user")
     tasks = relationship("TaskModel", back_populates="user")
-
-    @classmethod
-    def from_entity(cls, user: User) -> "UserModel":
-        return cls(
-            id=user.id,
-            username=str(user.username),
-            added_at=user.added_at,
-        )
 
     def to_entity(self) -> User:
         return User(
             id=self.id,
-            username=self.username,
+            email=self.email,
             added_at=self.added_at,
         )
+
+
+class AccessTokenModel(SQLAlchemyBaseAccessTokenTableUUID, Base):
+    __tablename__ = "access_token"
 
 
 class SectionModel(Base):
@@ -111,15 +109,18 @@ class SectionModel(Base):
     parent_id: Mapped[Optional[GUID]] = mapped_column(
         ForeignKey("section.id"), nullable=True
     )
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
     added_at: Mapped[datetime] = mapped_column(DateTime)
 
     tasks = relationship("TaskModel", back_populates="section")
+    user = relationship("UserModel", back_populates="sections")
 
     @classmethod
     def from_entity(cls, section: Section) -> "SectionModel":
         return cls(
             id=section.id,
             title=section.title,
+            user_id=section.user_id,
             parent_id=section.parent_id,
             added_at=section.added_at,
         )
@@ -128,6 +129,7 @@ class SectionModel(Base):
         return Section(
             id=self.id,
             title=self.title,
+            user_id=self.user_id,
             parent_id=self.parent_id,
             tasks=tasks,
         )

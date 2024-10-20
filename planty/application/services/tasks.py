@@ -6,6 +6,7 @@ import aiobotocore.session
 
 from planty.application.exceptions import (
     AttachmentNotFoundException,
+    ForbiddenException,
     IncorrectDateInterval,
     TaskNotFoundException,
 )
@@ -21,6 +22,7 @@ from planty.application.schemas import (
     TaskResponse,
     TasksByDateResponse,
     TaskUpdateRequest,
+    TaskSearchResponse,
     SectionsListResponse,
 )
 from planty.application.services.attachments import (
@@ -41,8 +43,12 @@ class TaskService:
         self._user_repo = uow.user_repo
         self._s3_session = aiobotocore.session.get_session()
 
-    async def update_task(self, task_data: TaskUpdateRequest) -> TaskResponse:
+    async def update_task(
+        self, user_id: UUID, task_data: TaskUpdateRequest
+    ) -> TaskResponse:
         task: Task = await self._task_repo.get(task_data.id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         task_data = task_data.model_dump(exclude_unset=True)
         for key, value in task_data.items():
             setattr(task, key, value)
@@ -65,16 +71,22 @@ class TaskService:
         tasks_by_date = multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
         return convert_to_response(tasks_by_date)
 
-    async def get_archived_tasks(
-        self,
-    ) -> ArchivedTasksResponse:
-        tasks = await self._task_repo.get_archived_tasks()
+    async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
+        tasks = await self._task_repo.get_archived_tasks(user_id)
+        return convert_to_response(tasks)
+
+    async def get_tasks_by_search_query(
+        self, user_id: UUID, query: str
+    ) -> TaskSearchResponse:
+        tasks = await self._task_repo.search(user_id, query)
         return convert_to_response(tasks)
 
     async def add_attachment(
-        self, request: RequestAttachmentUpload
+        self, user_id: UUID, request: RequestAttachmentUpload
     ) -> AttachmentUploadInfo:
         task = await self._task_repo.get(request.task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         post_url, post_fields, file_key = await generate_presigned_post_url(
             self._s3_session
         )
@@ -89,8 +101,12 @@ class TaskService:
         await self._task_repo.update_or_create(task)
         return AttachmentUploadInfo(post_url=post_url, post_fields=post_fields)
 
-    async def remove_attachment(self, task_id: UUID, attachment_id: UUID) -> None:
+    async def remove_attachment(
+        self, user_id: UUID, task_id: UUID, attachment_id: UUID
+    ) -> None:
         task = await self._task_repo.get(task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         try:
             attachment: Attachment = next(
                 a for a in task.attachments if a.id == attachment_id
@@ -109,22 +125,26 @@ class SectionService:
         self._section_repo = uow.section_repo
         self._task_repo = uow.task_repo
 
-    async def add(self, section_data: SectionCreateRequest) -> Section:
-        section = Section(title=section_data.title, parent_id=None, tasks=[])
+    async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
+        section = Section(
+            user_id=user_id, title=section_data.title, parent_id=None, tasks=[]
+        )
         await self._section_repo.add(section)
         return section
 
-    async def get_section(self, section_id: UUID) -> SectionResponse:
+    async def get_section(self, user_id: UUID, section_id: UUID) -> SectionResponse:
         section: Section = await self._section_repo.get(section_id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
         return convert_to_response(section)
 
-    async def get_all_sections(self) -> SectionsListResponse:
-        sections: list[Section] = await self._section_repo.get_all()
+    async def get_all_sections(self, user_id: UUID) -> SectionsListResponse:
+        sections: list[Section] = await self._section_repo.get_all(user_id)
         return convert_to_response(sections)
 
-    async def create_task(self, task: TaskCreateRequest) -> UUID:
+    async def create_task(self, user_id: UUID, task: TaskCreateRequest) -> UUID:
         task = Task(
-            user_id=task.user_id,
+            user_id=user_id,
             section_id=task.section_id,
             title=task.title,
             is_completed=False,
@@ -136,15 +156,19 @@ class SectionService:
         await self._section_repo.update(section)
         return task.id
 
-    async def remove_task(self, task_id: UUID) -> None:
+    async def remove_task(self, user_id: UUID, task_id: UUID) -> None:
         task = await self._task_repo.get(task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         section = await self._section_repo.get(task.section_id)
         task = section.remove_task(task)
         await self._task_repo.remove(task)
         await self._section_repo.update(section)
 
-    async def move_task(self, request: TaskMoveRequest) -> None:
+    async def move_task(self, user_id: UUID, request: TaskMoveRequest) -> None:
         task = await self._task_repo.get(request.task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         section_from = await self._section_repo.get(task.section_id)
         same_section = request.section_to_id == section_from.id
         if same_section:
@@ -161,9 +185,11 @@ class SectionService:
             await self._section_repo.update(section_to)
 
     async def toggle_task_completed(
-        self, task_id: UUID, auto_archive: bool
+        self, user_id: UUID, task_id: UUID, auto_archive: bool
     ) -> SectionResponse:
         task = await self._task_repo.get(task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
         section = await self._section_repo.get(task.section_id)
         if not task:
             raise TaskNotFoundException(task_id=task_id)
@@ -176,8 +202,12 @@ class SectionService:
         await self._task_repo.update_or_create(task)
         return convert_to_response(section)
 
-    async def shuffle(self, request: ShuffleSectionRequest) -> SectionResponse:
+    async def shuffle(
+        self, user_id: UUID, request: ShuffleSectionRequest
+    ) -> SectionResponse:
         section = await self._section_repo.get(request.section_id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
         section.shuffle_tasks()
         await self._section_repo.update(section)
         return convert_to_response(section)
