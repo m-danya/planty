@@ -19,7 +19,7 @@ import {
 
 import { siGithub } from "simple-icons";
 
-import { NavFavorites } from "@/components/nav-favorites";
+import { NavSections } from "@/components/nav-sections";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
 import { TeamSwitcher } from "@/components/team-switcher";
@@ -82,9 +82,24 @@ const data = {
   ],
   favorites: [
     {
-      name: "Current tasks",
+      name: "Section with subsections",
       url: "#",
       emoji: "📝",
+      children: [
+        {
+          name: "Section with subsections",
+          url: "#",
+          emoji: "📝",
+          children: [
+            {
+              name: "Section with subsections",
+              url: "#",
+              emoji: "📝",
+              children: [{ name: "Current tasks", url: "#", emoji: "📝" }],
+            },
+          ],
+        },
+      ],
     },
     {
       name: "Sometime later",
@@ -103,7 +118,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>
-        <NavFavorites favorites={data.favorites} />
+        <NavSections sections={data.favorites} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarRail />
