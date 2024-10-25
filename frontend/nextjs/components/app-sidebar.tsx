@@ -23,14 +23,9 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { Logo } from "@/components/logo";
 
 const data = {
-  teams: [
-    {
-      name: "Name Surname",
-      logo: User,
-    },
-  ],
   navMain: [
     {
       title: "Search",
@@ -121,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar className="border-r-0" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <Logo />
         <NavMain items={data.navMain} />
       </SidebarHeader>
       <SidebarContent>
