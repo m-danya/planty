@@ -1,29 +1,22 @@
 "use client";
 
-import * as React from "react";
 import {
-  AudioWaveform,
-  Blocks,
+  Archive,
   Calendar,
-  Command,
-  Home,
-  Inbox,
-  MessageCircleQuestion,
   Search,
   Settings2,
   Sparkles,
-  Origami,
-  Trash2,
-  Archive,
+  User,
 } from "lucide-react";
+import * as React from "react";
 
 import { siGithub } from "simple-icons";
 
-import { NavSections } from "@/components/nav-sections";
 import { NavMain } from "@/components/nav-main";
 import { NavSecondary } from "@/components/nav-secondary";
-import { TeamSwitcher } from "@/components/team-switcher";
+import { NavSections } from "@/components/nav-sections";
 import { SimpleIcon } from "@/components/simple-icon";
+import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -34,9 +27,8 @@ import {
 const data = {
   teams: [
     {
-      name: "Dunder Mifflin",
-      logo: Origami,
-      plan: "free",
+      name: "Name Surname",
+      logo: User,
     },
   ],
   navMain: [
@@ -51,16 +43,9 @@ const data = {
       icon: Sparkles,
     },
     {
-      title: "Inbox",
-      url: "#",
-      icon: Inbox,
-      badge: "10",
-    },
-    {
       title: "Calendar",
       url: "#",
       icon: Calendar,
-      badge: "10",
     },
   ],
   navSecondary: [
@@ -82,29 +67,51 @@ const data = {
   ],
   favorites: [
     {
-      name: "Section with subsections",
+      name: "Inbox",
+      url: "#",
+      emoji: "📩",
+    },
+    {
+      name: "Current tasks",
       url: "#",
       emoji: "📝",
-      children: [
-        {
-          name: "Section with subsections",
-          url: "#",
-          emoji: "📝",
-          children: [
-            {
-              name: "Section with subsections",
-              url: "#",
-              emoji: "📝",
-              children: [{ name: "Current tasks", url: "#", emoji: "📝" }],
-            },
-          ],
-        },
-      ],
+    },
+    {
+      name: "Projects",
+      url: "#",
+      emoji: "🎯",
     },
     {
       name: "Sometime later",
       url: "#",
-      emoji: "📚",
+      emoji: "📝",
+      children: [
+        {
+          name: "Duties",
+          url: "#",
+          emoji: "💼",
+        },
+        {
+          name: "Programming",
+          url: "#",
+          emoji: "💻",
+        },
+        {
+          name: "Music",
+          url: "#",
+          emoji: "🎸",
+        },
+        {
+          name: "Would be great to do",
+          url: "#",
+          emoji: "🦄",
+        },
+      ],
+    },
+    {
+      name: "Waiting for others",
+      url: "#",
+      emoji: "⌛",
     },
   ],
   workspaces: [],

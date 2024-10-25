@@ -1,12 +1,12 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { NavActions } from "@/components/nav-actions";
+import { TaskList } from "@/components/tasks/task-list";
 import {
   Breadcrumb,
   BreadcrumbItem,
   BreadcrumbList,
   BreadcrumbPage,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
@@ -38,7 +38,8 @@ export default function Page() {
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 px-4 py-10">
-          <div className="mx-auto h-full w-full max-w-3xl rounded-xl bg-muted/50" />
+          <TaskList />
+          {/* <div className="mx-auto h-full w-full max-w-3xl rounded-xl bg-muted/50" /> */}
         </div>
       </SidebarInset>
     </SidebarProvider>

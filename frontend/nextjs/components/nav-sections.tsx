@@ -54,7 +54,10 @@ function Tree({ item }) {
 
   return (
     <SidebarMenuItem key={item.name}>
-      <Collapsible className="group/collapsible [&[data-state=open]>div>button>svg:first-child]:rotate-90">
+      <Collapsible
+        className="group/collapsible [&[data-state=open]>div>button>svg:first-child]:rotate-90"
+        defaultOpen={true}
+      >
         <div className="flex items-center">
           <CollapsibleTrigger asChild>
             <SidebarMenuButton>
