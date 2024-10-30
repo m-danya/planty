@@ -14,14 +14,13 @@
       }
     },
     {
+      "name": "Frontend (Next.js)",
       "type": "node",
       "request": "launch",
-      "name": "Frontend",
       "runtimeExecutable": "npm",
       "cwd": "${workspaceFolder}/frontend",
-      "runtimeArgs": ["run", "serve"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal"
     }
   ]
 }
