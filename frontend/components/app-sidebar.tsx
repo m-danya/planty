@@ -60,56 +60,6 @@ const data = {
       icon: () => <SimpleIcon icon={siGithub} />,
     },
   ],
-  favorites: [
-    {
-      name: "Inbox",
-      url: "#",
-      emoji: "📩",
-    },
-    {
-      name: "Current tasks",
-      url: "#",
-      emoji: "📝",
-    },
-    {
-      name: "Projects",
-      url: "#",
-      emoji: "🎯",
-    },
-    {
-      name: "Sometime later",
-      url: "#",
-      emoji: "📝",
-      children: [
-        {
-          name: "Duties",
-          url: "#",
-          emoji: "💼",
-        },
-        {
-          name: "Programming",
-          url: "#",
-          emoji: "💻",
-        },
-        {
-          name: "Music",
-          url: "#",
-          emoji: "🎸",
-        },
-        {
-          name: "Would be great to do",
-          url: "#",
-          emoji: "🦄",
-        },
-      ],
-    },
-    {
-      name: "Waiting for others",
-      url: "#",
-      emoji: "⌛",
-    },
-  ],
-  workspaces: [],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

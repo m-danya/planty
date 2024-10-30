@@ -21,15 +21,29 @@
   ],
   "sections": [
     {
+      "id": "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+      "title": "📩 Inbox",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": null,
+      "added_at": "2024-03-28T04:11:17.677Z"
+    },
+    {
       "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
-      "title": "Current tasks",
+      "title": "📝 Current tasks",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": null,
+      "added_at": "2024-03-28T04:11:17.677Z"
+    },
+    {
+      "id": "f28a4518-eac3-4d60-86a7-f279801c2a3f",
+      "title": "🎯 Projects",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-03-28T04:11:17.677Z"
     },
     {
       "id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
-      "title": "Tasks for later",
+      "title": "📒 Sometime later",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-09-28T04:11:17.677Z"
@@ -37,6 +51,41 @@
     {
       "id": "a5b2010d-c27c-4f22-be47-828e065f9607",
       "title": "Chores",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+      "added_at": "2024-09-28T04:11:17.677Z"
+    },
+    {
+      "id": "6754b40e-aa0d-4b0d-9dba-4d15c751b270",
+      "title": "💼 Duties",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+      "added_at": "2024-09-28T04:11:17.677Z"
+    },
+    {
+      "id": "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
+      "title": "💻 Programming",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+      "added_at": "2024-09-28T04:11:17.677Z"
+    },
+    {
+      "id": "f05b7527-8173-4d14-a1bd-49aaba743247",
+      "title": "🎸 Music",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+      "added_at": "2024-09-28T04:11:17.677Z"
+    },
+    {
+      "id": "9eb24997-5801-49f9-9562-9a59961fcee5",
+      "title": "🦄 Would be great to do",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+      "added_at": "2024-09-28T04:11:17.677Z"
+    },
+    {
+      "id": "b9547aee-cba5-418e-b450-7914e44c9231",
+      "title": "⌛ Waiting for others",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-09-28T04:11:17.677Z"
