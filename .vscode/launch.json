@@ -18,18 +18,9 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "cwd": "${workspaceFolder}/frontend/nextjs",
-      "runtimeArgs": ["run", "dev"]
-    },
-    {
-      "name": "Frontend Vue",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "cwd": "${workspaceFolder}/frontend/vue",
-      "runtimeArgs": ["run", "serve"],
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen"
+      "cwd": "${workspaceFolder}/frontend",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal"
     }
   ]
 }
