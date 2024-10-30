@@ -2,7 +2,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from planty.application.router import router as tasks_router
-from planty.application.auth import fastapi_users_obj, auth_backend
+from planty.application.auth import (
+    fastapi_users_obj,
+    cookie_auth_backend,
+)
 from planty.application.schemas import UserCreate, UserRead
 
 app = FastAPI(
@@ -13,7 +16,7 @@ app = FastAPI(
 app.include_router(tasks_router)
 
 app.include_router(
-    fastapi_users_obj.get_auth_router(auth_backend),
+    fastapi_users_obj.get_auth_router(cookie_auth_backend),
     prefix="/auth/db",
     tags=["auth"],
 )

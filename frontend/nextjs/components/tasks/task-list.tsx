@@ -67,6 +67,7 @@ export function TaskList() {
 
   return (
     <DndContext
+      id="dnd-context-for-task-list"
       sensors={dndSensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
@@ -79,7 +80,7 @@ export function TaskList() {
             </div>
             <div className="flex flex-col py-4">
               {tasks.map((task) => (
-                <>
+                <div key={task.id}>
                   <div>
                     <Task
                       task={task}
@@ -87,7 +88,7 @@ export function TaskList() {
                     />
                   </div>
                   <hr className="border-gray-200 dark:border-white" />
-                </>
+                </div>
               ))}
             </div>
           </div>

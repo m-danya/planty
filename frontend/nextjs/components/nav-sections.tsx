@@ -17,22 +17,18 @@ import {
 } from "@/components/ui/sidebar";
 import React from "react";
 
-export function NavSections({
-  sections,
-}: {
-  sections: {
-    name: string;
-    url: string;
-    emoji: string;
-    children?: any[];
-  }[];
-}) {
+import { useSections } from "@/hooks/use-sections";
+
+export function NavSections() {
+  const { sections, isLoading, isError } = useSections();
+  if (isLoading) return <p>Loading sections...</p>;
+  if (isError) return <p>Failed to load sections.</p>;
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
       <SidebarGroupLabel>Sections</SidebarGroupLabel>
       <SidebarMenu>
         {sections.map((item) => (
-          <Tree key={item.name} item={item} />
+          <Tree key={item.title} item={item} />
         ))}
       </SidebarMenu>
     </SidebarGroup>
@@ -44,7 +40,7 @@ function Tree({ item }) {
 
   if (!hasChildren) {
     return (
-      <SidebarMenuItem key={item.name}>
+      <SidebarMenuItem key={item.title}>
         <SidebarMenuButton asChild>
           <TreeElement item={item} />
         </SidebarMenuButton>
@@ -53,7 +49,7 @@ function Tree({ item }) {
   }
 
   return (
-    <SidebarMenuItem key={item.name}>
+    <SidebarMenuItem key={item.title}>
       <Collapsible
         className="group/collapsible [&[data-state=open]>div>button>svg:first-child]:rotate-90"
         defaultOpen={true}
@@ -63,14 +59,14 @@ function Tree({ item }) {
             <SidebarMenuButton>
               <ChevronRight className="transition-transform" />
               <span>{item.emoji}</span>
-              <span>{item.name}</span>
+              <span>{item.title}</span>
             </SidebarMenuButton>
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
           <SidebarMenuSub className="w-fit">
             {item.children.map((child) => (
-              <Tree key={child.name} item={child} />
+              <Tree key={child.title} item={child} />
             ))}
           </SidebarMenuSub>
         </CollapsibleContent>
@@ -80,8 +76,7 @@ function Tree({ item }) {
 }
 
 const TreeElement = React.forwardRef(({ item, ...props }, ref) => (
-  <a ref={ref} href={item.url} title={item.name} {...props}>
-    <span>{item.emoji}</span>
-    <span>{item.name}</span>
+  <a ref={ref} href={`/section/${item.id}`} title={item.title} {...props}>
+    <span>{item.title}</span>
   </a>
 ));
