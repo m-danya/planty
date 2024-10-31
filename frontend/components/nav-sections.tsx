@@ -36,7 +36,7 @@ export function NavSections() {
 }
 
 function Tree({ item }) {
-  const hasChildren = item.children && item.children.length > 0;
+  const hasChildren = item.subsections && item.subsections.length > 0;
 
   if (!hasChildren) {
     return (
@@ -65,7 +65,7 @@ function Tree({ item }) {
         </div>
         <CollapsibleContent>
           <SidebarMenuSub className="w-fit">
-            {item.children.map((child) => (
+            {item.subsections.map((child) => (
               <Tree key={child.title} item={child} />
             ))}
           </SidebarMenuSub>

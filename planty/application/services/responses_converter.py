@@ -67,8 +67,6 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
         obj = cast(Section, obj)
         section_data = obj.model_dump()
         _adjust_section_dict(section_data)
-        for task in section_data.get("tasks", []):
-            _adjust_task_dict(task)
         return SectionResponse(**section_data)
     elif _satisfies(obj, list[Task]):
         obj = cast(list[Task], obj)
@@ -98,6 +96,10 @@ def _adjust_task_dict(task: dict[str, Any]) -> None:
 
 def _adjust_section_dict(section: dict[str, Any]) -> None:
     section.pop("user_id")
+    for task in section.get("tasks", []):
+        _adjust_task_dict(task)
+    for subsection in section.get("subsections", []):
+        _adjust_section_dict(subsection)
 
 
 def _satisfies(obj: Any, type_hint: Any) -> bool:

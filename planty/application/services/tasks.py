@@ -126,10 +126,20 @@ class SectionService:
         self._task_repo = uow.task_repo
 
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
+        if parent_id := section_data.parent_id:
+            parent_section = await self.get_section(user_id, parent_id)
+            # add to the end of parent section:
+            index = await self._section_repo.count_subsections(parent_section.id)
+        else:
+            index = 0
         section = Section(
-            user_id=user_id, title=section_data.title, parent_id=None, tasks=[]
+            user_id=user_id,
+            title=section_data.title,
+            parent_id=section_data.parent_id,
+            tasks=[],
+            subsections=[],
         )
-        await self._section_repo.add(section)
+        await self._section_repo.add(section, index=index)
         return section
 
     async def get_section(self, user_id: UUID, section_id: UUID) -> SectionResponse:
@@ -139,7 +149,11 @@ class SectionService:
         return convert_to_response(section)
 
     async def get_all_sections(self, user_id: UUID) -> SectionsListResponse:
-        sections: list[Section] = await self._section_repo.get_all(user_id)
+        sections: list[Section] = await self._section_repo.get_all_without_tasks(
+            user_id
+        )
+        # TODO: remove tasks=[] from this schema to avoid confusion! use new
+        # schema, e.g. "SectionSummary"
         return convert_to_response(sections)
 
     async def create_task(self, user_id: UUID, task: TaskCreateRequest) -> UUID:

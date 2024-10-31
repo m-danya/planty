@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     NonNegativeInt,
     model_validator,
@@ -15,19 +16,25 @@ from planty.utils import generate_uuid, get_datetime_now
 from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
 
 
-class User(BaseModel):
+class Entity(BaseModel):
+    # domain entities must ALWAYS be valid
+    # (use smth like `delay_validation` otherwise)
+    model_config = ConfigDict(validate_assignment=True)
+
+
+class User(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     email: str
     added_at: datetime = Field(default_factory=get_datetime_now)
 
 
-class RecurrenceInfo(BaseModel):
+class RecurrenceInfo(Entity):
     period: int
     type: RecurrencePeriodType
     flexible_mode: bool  # like an exclamation mark in Todoist
 
 
-class Task(BaseModel):
+class Task(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     section_id: UUID
@@ -92,19 +99,27 @@ class Task(BaseModel):
         self.is_archived = False
 
 
-class Section(BaseModel):
+class Section(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     title: str
     parent_id: Optional[UUID] = None
-    tasks: list[Task]
     added_at: datetime = Field(default_factory=get_datetime_now)
+
+    tasks: list[Task]  # can be loaded or not
+    subsections: list["Section"]  # can be loaded or not
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.id == other.id
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    # @model_validator(mode="after")
+    # def check_only_leaf_can_have_tasks(self) -> "Section":
+    #     if self.subsections and self.tasks:
+    #         raise SomePlantyDomainExeception(...)
+    #     return self
 
     def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None) -> None:
         if index is None:
@@ -134,7 +149,7 @@ class Section(BaseModel):
         random.shuffle(self.tasks)
 
 
-class Attachment(BaseModel):
+class Attachment(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     aes_key_b64: str
     aes_iv_b64: str

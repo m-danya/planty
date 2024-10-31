@@ -144,6 +144,7 @@ class SectionResponse(BaseModel):
     parent_id: Optional[UUID]
     added_at: datetime
 
+    subsections: list["SectionResponse"]
     tasks: list[TaskResponse]
 
 

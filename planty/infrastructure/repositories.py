@@ -82,6 +82,7 @@ class SQLAlchemyTaskRepository:
             task_model.recurrence_type = task.recurrence.type
             task_model.flexible_recurrence_mode = task.recurrence.flexible_mode
 
+        # update index if it's meant to be updated
         if index is not None:
             task_model.index = index
 
@@ -189,8 +190,8 @@ class SQLAlchemySectionRepository:
         self._db_session = db_session
         self._task_repo = task_repo
 
-    async def add(self, section: Section) -> None:
-        section_model = SectionModel.from_entity(section)
+    async def add(self, section: Section, index: NonNegativeInt) -> None:
+        section_model = SectionModel.from_entity(section, index=index)
         self._db_session.add(section_model)
 
     async def get(self, section_id: UUID) -> Section:
@@ -201,21 +202,50 @@ class SQLAlchemySectionRepository:
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
         tasks = await self._task_repo.get_section_tasks(section_id)
-        return section_model.to_entity(tasks=tasks)
+        return section_model.to_entity(tasks=tasks, subsections=[])
 
-    async def get_all(self, user_id: UUID) -> list[Section]:
+    async def get_all_without_tasks(self, user_id: UUID) -> list[Section]:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.user_id == user_id)
         )
-        section_models = result.scalars()
-        return [
-            section_model.to_entity(
-                tasks=await self._task_repo.get_section_tasks(section_model.id)
-            )
+        section_models = list(result.scalars().all())
+        top_level_sections = self.get_sections_tree(section_models)
+        return top_level_sections
+
+    @staticmethod
+    def get_sections_tree(
+        section_models: list[SectionModel], return_as_tree: bool = True
+    ) -> list[Section]:
+        # TODO: extract to generic function for other entities
+        section_models.sort(key=lambda s: s.index)
+        # TODO: use delay_validation here
+        id_to_section: dict[UUID, Section] = {
+            section_model.id: section_model.to_entity(tasks=[], subsections=[])
             for section_model in section_models
-        ]
+        }
+        top_level_sections = []
+        all_sections = []
+        for section in id_to_section.values():
+            if (parent_id := section.parent_id) is None:
+                top_level_sections.append(section)
+            else:
+                parent_section = id_to_section[parent_id]
+                parent_section.subsections.append(section)
+            all_sections.append(section)
+        if return_as_tree:
+            return top_level_sections
+        else:
+            return all_sections
 
-    async def update_without_tasks(self, section: Section) -> None:
+    async def count_subsections(self, section_id: UUID) -> int:
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.parent_id == section_id)
+        )
+        return len(result.all())
+
+    async def update(
+        self, section: Section, index: Optional[NonNegativeInt] = None
+    ) -> None:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.id == section.id)
         )
@@ -226,20 +256,12 @@ class SQLAlchemySectionRepository:
         section_model.title = section.title
         section_model.parent_id = section.parent_id
 
-        self._db_session.add(section_model)
+        # update index if it's meant to be updated
+        if index is not None:
+            section_model.index = index
 
-    async def update(self, section: Section) -> None:
+        # Tasks can be loaded or not, it doesn't matter
         # Warning: does not update any excluded tasks from section.tasks
-        result = await self._db_session.execute(
-            select(SectionModel).where(SectionModel.id == section.id)
-        )
-        section_model: Optional[SectionModel] = result.scalar_one_or_none()
-        if section_model is None:
-            raise SectionNotFoundException(section_id=section.id)
-
-        section_model.title = section.title
-        section_model.parent_id = section.parent_id
-
         for i, task in enumerate(section.tasks):
             await self._task_repo.update_or_create(task, index=i)
 
