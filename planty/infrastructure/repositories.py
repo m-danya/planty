@@ -194,7 +194,11 @@ class SQLAlchemySectionRepository:
         section_model = SectionModel.from_entity(section, index=index)
         self._db_session.add(section_model)
 
-    async def get(self, section_id: UUID) -> Section:
+    async def get(
+        self,
+        section_id: UUID,
+        with_direct_subsections: bool = False,
+    ) -> Section:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.id == section_id)
         )
@@ -202,7 +206,22 @@ class SQLAlchemySectionRepository:
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
         tasks = await self._task_repo.get_section_tasks(section_id)
-        return section_model.to_entity(tasks=tasks, subsections=[])
+        subsections = []
+        if with_direct_subsections:
+            subsection_models = (
+                (
+                    await self._db_session.execute(
+                        select(SectionModel).where(SectionModel.id == section_id)
+                    )
+                )
+                .scalars()
+                .all()
+            )
+            direct_subsections = [
+                s.to_entity(tasks=[], subsections=[]) for s in subsection_models
+            ]
+            subsections = direct_subsections
+        return section_model.to_entity(tasks=tasks, subsections=subsections)
 
     async def get_all_without_tasks(self, user_id: UUID) -> list[Section]:
         result = await self._db_session.execute(

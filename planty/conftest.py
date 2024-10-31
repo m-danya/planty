@@ -191,7 +191,12 @@ def nonempty_section(all_sections: list[Section]) -> Section:
 
 
 @pytest.fixture
-def another_nonempty_section(all_sections: list[Section]) -> Section:
+def section_sometimes_later(all_sections: list[Section]) -> Section:
+    return _find_by_id(all_sections, UUID("36ea0a4f-0334-464d-8066-aa359ecfdcba"))
+
+
+@pytest.fixture
+def section_current_tasks(all_sections: list[Section]) -> Section:
     return _find_by_id(all_sections, UUID("6ff6e896-5da3-46ec-bf66-0a317c5496fa"))
 
 

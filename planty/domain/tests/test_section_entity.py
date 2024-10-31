@@ -2,7 +2,12 @@ from typing import Optional
 from contextlib import AbstractContextManager, nullcontext as does_not_raise
 import pytest
 from planty.domain.task import Section, Task
-from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
+from planty.domain.exceptions import (
+    MovingSectionIndexError,
+    RemovingSectionFromWrongSectionError,
+    RemovingTaskFromWrongSectionError,
+    MovingTaskIndexError,
+)
 
 
 @pytest.mark.parametrize(
@@ -61,7 +66,7 @@ def test_remove_task_from_wrong_section(
     task = nonperiodic_task
     assert task.section_id != section.id
 
-    with pytest.raises(RemovingFromWrongSectionError):
+    with pytest.raises(RemovingTaskFromWrongSectionError):
         section.remove_task(task)
 
 
@@ -95,14 +100,13 @@ def test_move_task_to_the_same_section(
         (1, 2, False, None),
         (2, 2, False, None),
         (3, 2, False, None),
-        (2, 1, False, None),
         (1, 327, False, pytest.raises(MovingTaskIndexError)),
-        (1, 1, True, pytest.raises(RemovingFromWrongSectionError)),
+        (1, 1, True, pytest.raises(RemovingTaskFromWrongSectionError)),
     ],
 )
 def test_move_task_to_the_another_section(
     nonempty_section: Section,
-    another_nonempty_section: Section,
+    section_current_tasks: Section,
     index_from_move: int,
     index_to_move: int,
     expected_raises: Optional[AbstractContextManager[None]],
@@ -112,9 +116,9 @@ def test_move_task_to_the_another_section(
     if not expected_raises:
         expected_raises = does_not_raise()
 
-    assert nonempty_section != another_nonempty_section
+    assert nonempty_section != section_current_tasks
     section_to = nonempty_section
-    section_from = another_nonempty_section
+    section_from = section_current_tasks
 
     task = (section_from if not mistakenly_swap else section_to).tasks[index_from_move]
 
@@ -134,6 +138,71 @@ def test_move_task_to_the_another_section(
     assert section_from_task_ids_before - {task.id} == section_from_task_ids_after
 
     assert section_to.tasks[index_to_move] == task
+
+
+@pytest.mark.parametrize(
+    "index_from_move, index_to_move, mistakenly_swap, expected_raises",
+    [
+        (0, 0, False, None),
+        (1, 0, False, None),
+        (2, 0, False, None),
+        (0, 1, False, None),
+        (1, 1, False, None),
+        (2, 1, False, None),
+        # TODO: add tests with root section (from and to), think about broken
+        # indices in "virtual root section"'s children.. reorder other tasks
+        # manually or add fake root section for each user..
+        (1, 327, False, pytest.raises(MovingSectionIndexError)),
+        (1, 1, True, pytest.raises(RemovingSectionFromWrongSectionError)),
+    ],
+)
+def test_move_section_to_another_section(
+    section_sometimes_later: Section,
+    section_current_tasks: Section,
+    index_from_move: int,
+    index_to_move: int,
+    expected_raises: Optional[AbstractContextManager[None]],
+    mistakenly_swap: bool,
+) -> None:
+    assert len(section_current_tasks.subsections) >= 2
+    assert len(section_sometimes_later.subsections) >= 4
+
+    raises_exception = bool(expected_raises)
+    if not expected_raises:
+        expected_raises = does_not_raise()
+
+    assert section_sometimes_later != section_current_tasks
+
+    section_from = section_sometimes_later
+    section_to = section_current_tasks
+
+    section = section_from.subsections[index_from_move]
+
+    if mistakenly_swap:
+        section_to, section_from = section_from, section_to
+
+    section_to_subsections_ids_before = {s.id for s in section_to.subsections}
+    section_from_subsections_ids_before = {s.id for s in section_from.subsections}
+
+    with expected_raises:
+        Section.move_section(section, section_from, section_to, index_to_move)
+
+    if raises_exception:
+        return
+
+    section_to_subsections_ids_after = {s.id for s in section_to.subsections}
+    section_from_subsections_ids_after = {s.id for s in section_from.subsections}
+
+    assert (
+        section_to_subsections_ids_before | {section.id}
+        == section_to_subsections_ids_after
+    )
+    assert (
+        section_from_subsections_ids_before - {section.id}
+        == section_from_subsections_ids_after
+    )
+
+    assert section_to.subsections[index_to_move] == section
 
 
 def test_shuffle_tasks(nonempty_section: Section) -> None:

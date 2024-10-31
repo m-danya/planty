@@ -13,7 +13,12 @@ from pydantic import (
 
 from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
-from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
+from planty.domain.exceptions import (
+    MovingSectionIndexError,
+    RemovingSectionFromWrongSectionError,
+    RemovingTaskFromWrongSectionError,
+    MovingTaskIndexError,
+)
 
 
 class Entity(BaseModel):
@@ -131,7 +136,7 @@ class Section(Entity):
 
     def remove_task(self, task: Task) -> Task:
         if task.section_id != self.id:
-            raise RemovingFromWrongSectionError()
+            raise RemovingTaskFromWrongSectionError()
         self.tasks = [t for t in self.tasks if t.id != task.id]
         return task
 
@@ -144,6 +149,38 @@ class Section(Entity):
     ) -> None:
         task_to_move = section_from.remove_task(task_to_move)
         section_to.insert_task(task_to_move, index)
+
+    def insert_subsection(
+        self, subsection: "Section", index: Optional[NonNegativeInt] = None
+    ) -> None:
+        if index is None:
+            index = len(self.subsections)
+        if index > len(self.subsections):
+            raise MovingSectionIndexError()
+        subsection.parent_id = self.id
+        self.subsections.insert(index, subsection)
+
+    def remove_subsection(self, subsection: "Section") -> "Section":
+        if subsection.parent_id != self.id:
+            raise RemovingSectionFromWrongSectionError()
+        self.subsections = [s for s in self.subsections if s.id != subsection.id]
+        return subsection
+
+    @staticmethod
+    def move_section(
+        section: "Section",
+        section_from: Optional["Section"],
+        section_to: Optional["Section"],
+        index: NonNegativeInt,
+    ) -> None:
+        # section === subsection (every section is a subsection)
+        if section_from is not None:
+            subsection = section_from.remove_subsection(section)
+
+        if section_to is not None:
+            section_to.insert_subsection(subsection, index)
+        else:
+            section.parent_id = None
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)

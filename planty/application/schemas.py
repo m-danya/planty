@@ -10,51 +10,45 @@ from planty.domain.task import Attachment, RecurrenceInfo
 from fastapi_users import schemas as fastapi_users_schemas
 
 
-class TaskCreateRequest(BaseModel):
+class Schema(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class TaskCreateRequest(Schema):
     section_id: UUID
     title: str
     description: Optional[str] = None
     due_to: Optional[date] = None
     recurrence: Optional[RecurrenceInfo] = None
 
-    model_config = ConfigDict(extra="forbid")
 
-
-class TaskCreateResponse(BaseModel):
+class TaskCreateResponse(Schema):
     id: UUID
 
-    model_config = ConfigDict(extra="forbid")
 
-
-class TaskRemoveRequest(BaseModel):
+class TaskRemoveRequest(Schema):
     task_id: UUID
 
 
-class TaskMoveRequest(BaseModel):
+class TaskMoveRequest(Schema):
     task_id: UUID
     section_to_id: UUID
     index: NonNegativeInt
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
+
+class SectionMoveRequest(Schema):
+    section_id: UUID
+    to_parent_id: Optional[UUID]
+    index: NonNegativeInt
 
 
-class TaskToggleCompletedRequest(BaseModel):
+class TaskToggleCompletedRequest(Schema):
     task_id: UUID
     auto_archive: bool = True
 
-    model_config = ConfigDict(
-        extra="forbid",
-    )
 
-
-class ShuffleSectionRequest(BaseModel):
+class ShuffleSectionRequest(Schema):
     section_id: UUID
-
-    model_config = ConfigDict(
-        extra="forbid",
-    )
 
 
 """
@@ -71,7 +65,7 @@ mypy.
 """
 
 
-class TaskUpdateRequest(BaseModel):
+class TaskUpdateRequest(Schema):
     id: UUID
     section_id: UUID = None  #                    type: ignore
     title: str = None  #                          type: ignore
@@ -79,36 +73,32 @@ class TaskUpdateRequest(BaseModel):
     due_to_next: Optional[date] = None
     due_to_days_period: Optional[int] = None
 
-    model_config = ConfigDict(extra="forbid")
 
-
-class TaskUpdateResponse(BaseModel):
+class TaskUpdateResponse(Schema):
     task: "TaskResponse"
 
 
-class SectionCreateRequest(BaseModel):
+class SectionCreateRequest(Schema):
     title: str
     parent_id: Optional[UUID] = None
 
-    model_config = ConfigDict(extra="forbid")
 
-
-class SectionCreateResponse(BaseModel):
+class SectionCreateResponse(Schema):
     id: UUID
 
 
-class RequestAttachmentUpload(BaseModel):
+class RequestAttachmentUpload(Schema):
     task_id: UUID
     aes_key_b64: str
     aes_iv_b64: str
 
 
-class AttachmentUploadInfo(BaseModel):
+class AttachmentUploadInfo(Schema):
     post_url: str
     post_fields: dict[str, Any]
 
 
-class RequestAttachmentRemove(BaseModel):
+class RequestAttachmentRemove(Schema):
     task_id: UUID
     attachment_id: UUID
 
@@ -123,7 +113,7 @@ class AttachmentResponse(Attachment):
     url: str
 
 
-class TaskResponse(BaseModel):
+class TaskResponse(Schema):
     id: UUID
     section_id: UUID
     title: str
@@ -138,7 +128,7 @@ class TaskResponse(BaseModel):
     attachments: list[AttachmentResponse]
 
 
-class SectionResponse(BaseModel):
+class SectionResponse(Schema):
     id: UUID
     title: str
     parent_id: Optional[UUID]

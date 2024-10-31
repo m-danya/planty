@@ -197,6 +197,55 @@ async def test_move_task(
         return
 
 
+@pytest.mark.parametrize(
+    "section_id,section_to,index,status_code,error_detail",
+    [
+        (
+            "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            0,  # move to the beginning
+            200,
+            None,
+        ),
+        (
+            "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            123,  # move to an incorrect index
+            422,
+            "The section can't be moved to the specified index",
+        ),
+        # NOT IMPLEMENTED YET
+        # (
+        #     "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+        #     None,  # move to root section
+        #     2,
+        #     200,
+        #     None,
+        # ),
+    ],
+)
+async def test_move_section(
+    section_id: str,
+    section_to: str,
+    index: int,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+) -> None:
+    response = await ac.post(
+        "/api/section/move",
+        json={
+            "section_id": section_id,
+            "to_parent_id": section_to,
+            "index": index,
+        },
+    )
+    assert response.status_code == status_code
+    if not response.is_success:
+        assert response.json()["detail"] == error_detail
+        return
+
+
 async def test_move_another_user_task(
     ac_another_user: AsyncClient,
 ) -> None:

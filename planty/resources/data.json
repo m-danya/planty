@@ -37,6 +37,21 @@
       "index": 1
     },
     {
+      "id": "febd1d82-b872-4b67-a15b-961b9aa24ed6",
+      "title": "Today",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "index": 0
+    },{
+      "id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
+      "title": "This week",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "index": 1
+    },
+    {
       "id": "f28a4518-eac3-4d60-86a7-f279801c2a3f",
       "title": "🎯 Projects",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
