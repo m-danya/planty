@@ -112,6 +112,7 @@ async def test_create_section(
 ) -> None:
     section_data = {
         "title": str(additional_test_data["sections"][0]["title"]),
+        "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
     }
     response = await ac.post("/api/section", json=section_data)
     assert response.status_code == 201
@@ -506,3 +507,13 @@ async def test_get_tasks_by_search(
     assert response.status_code == 200
     tasks = response.json()
     assert len(tasks) == n_tasks_expected
+
+
+async def test_root_section_is_created(ac: AsyncClient) -> None:
+    # this test ensures that `UserManager.on_after_register` doesn't crash
+    user_data = {
+        "email": "new_user@example.com",
+        "password": "string",
+    }
+    response = await ac.post("/auth/register", json=user_data)
+    assert response.is_success

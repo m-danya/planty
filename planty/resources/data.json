@@ -21,18 +21,34 @@
   ],
   "sections": [
     {
-      "id": "7e98e010-9d89-4dd2-be8e-773808e1ad85",
-      "title": "📩 Inbox",
+      "id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+      "title": "[System] Root section",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-03-28T04:11:17.677Z",
       "index": 0
     },
     {
-      "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
-      "title": "📝 Current tasks",
-      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "id": "15dc3a23-8518-4a6a-a5a1-3bceb8c2b78a",
+      "title": "[System] Root section",
+      "user_id": "73ca2340-76bd-4abe-b872-7e82a9528c45",
       "parent_id": null,
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "index": 0
+    },
+    {
+      "id": "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+      "title": "📩  Inbox",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "index": 0
+    },
+    {
+      "id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "title": "📝  Current tasks",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-03-28T04:11:17.677Z",
       "index": 1
     },
@@ -43,7 +59,8 @@
       "parent_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
       "added_at": "2024-03-28T04:11:17.677Z",
       "index": 0
-    },{
+    },
+    {
       "id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "This week",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
@@ -53,31 +70,31 @@
     },
     {
       "id": "f28a4518-eac3-4d60-86a7-f279801c2a3f",
-      "title": "🎯 Projects",
+      "title": "🎯  Projects",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "parent_id": null,
+      "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-03-28T04:11:17.677Z",
       "index": 2
     },
     {
       "id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
-      "title": "📒 Sometime later",
+      "title": "📒  Sometime later",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "parent_id": null,
+      "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-09-28T04:11:17.677Z",
       "index": 3
     },
     {
       "id": "b9547aee-cba5-418e-b450-7914e44c9231",
-      "title": "⌛ Waiting for others",
+      "title": "⌛  Waiting for others",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "parent_id": null,
+      "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-09-28T04:11:17.677Z",
       "index": 4
     },
     {
       "id": "a5b2010d-c27c-4f22-be47-828e065f9607",
-      "title": "Chores",
+      "title": "🧹  Chores",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
@@ -85,7 +102,7 @@
     },
     {
       "id": "6754b40e-aa0d-4b0d-9dba-4d15c751b270",
-      "title": "💼 Duties",
+      "title": "💼  Duties",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
@@ -93,7 +110,7 @@
     },
     {
       "id": "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
-      "title": "💻 Programming",
+      "title": "💻  Programming",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
@@ -101,7 +118,7 @@
     },
     {
       "id": "f05b7527-8173-4d14-a1bd-49aaba743247",
-      "title": "🎸 Music",
+      "title": "🎸  Music",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
@@ -109,7 +126,7 @@
     },
     {
       "id": "9eb24997-5801-49f9-9562-9a59961fcee5",
-      "title": "🦄 Would be great to do",
+      "title": "🦄  Would be great to do",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",

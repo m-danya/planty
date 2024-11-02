@@ -108,7 +108,7 @@ class Section(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     title: str
-    parent_id: Optional[UUID] = None
+    parent_id: Optional[UUID]  # is None <=> it's the *root section* for this user
     added_at: datetime = Field(default_factory=get_datetime_now)
 
     tasks: list[Task]  # can be loaded or not
@@ -119,6 +119,25 @@ class Section(Entity):
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    def is_root_section(self) -> bool:
+        return self.parent_id is None
+
+    @classmethod
+    def create_root_section(cls, user_id: UUID) -> "Section":
+        # *Root section* is a system object that helps unify the structure of
+        # the user sections tree. With the root tree, we can easily rely on the
+        # parent section to sort its subsections. Without the root tree, we
+        # would have to sort the first-level sections with separate logics.
+        #
+        # Root section is invisible to user and protected from changes.
+        return cls(
+            user_id=user_id,
+            title="[System] Root section",
+            parent_id=None,
+            tasks=[],
+            subsections=[],
+        )
 
     # @model_validator(mode="after")
     # def check_only_leaf_can_have_tasks(self) -> "Section":

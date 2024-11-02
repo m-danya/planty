@@ -261,3 +261,8 @@ class SectionService:
         section.shuffle_tasks()
         await self._section_repo.update(section)
         return convert_to_response(section)
+
+    async def create_root_section(self, user_id: UUID) -> Section:
+        section = Section.create_root_section(user_id)
+        await self._section_repo.add(section, index=0)
+        return section

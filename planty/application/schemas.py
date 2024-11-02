@@ -38,7 +38,7 @@ class TaskMoveRequest(Schema):
 
 class SectionMoveRequest(Schema):
     section_id: UUID
-    to_parent_id: Optional[UUID]
+    to_parent_id: UUID
     index: NonNegativeInt
 
 
@@ -67,8 +67,7 @@ mypy.
 
 class TaskUpdateRequest(Schema):
     id: UUID
-    section_id: UUID = None  #                    type: ignore
-    title: str = None  #                          type: ignore
+    title: str = None  # type: ignore
     description: Optional[str] = None
     due_to_next: Optional[date] = None
     due_to_days_period: Optional[int] = None
@@ -80,7 +79,7 @@ class TaskUpdateResponse(Schema):
 
 class SectionCreateRequest(Schema):
     title: str
-    parent_id: Optional[UUID] = None
+    parent_id: UUID
 
 
 class SectionCreateResponse(Schema):
