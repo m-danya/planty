@@ -103,11 +103,12 @@ const TreeElement = React.forwardRef<
     },
     ref
   ) => {
+    const displayFullIdent = !withChevron && withIdentIfNoChevron;
+    const displayMiniIdent = !withChevron && !withIdentIfNoChevron;
     const mainContent = (
       <div className="flex items-center">
-        {!withChevron && withIdentIfNoChevron && (
-          <div className="w-5 flex justify-left" />
-        )}
+        {displayFullIdent && <div className="w-5 flex justify-left" />}
+        {displayMiniIdent && <div className="w-2.5 flex justify-left" />}
         {withChevron && (
           <div className="w-5 flex justify-left">
             <ChevronRight className="transition-transform w-4 group-data-[state=open]:rotate-90" />
