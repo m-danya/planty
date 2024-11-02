@@ -521,5 +521,5 @@ async def test_root_section_is_created(ac: AsyncClient) -> None:
         "email": "new_user@example.com",
         "password": "string",
     }
-    response = await ac.post("/auth/register", json=user_data)
+    response = await ac.post("/api/auth/register", json=user_data)
     assert response.is_success

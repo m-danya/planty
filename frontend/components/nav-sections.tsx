@@ -19,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
 
 import { useSections } from "@/hooks/use-sections";
+import Link from "next/link";
 
 export function NavSections() {
   const { sections, rootSectionId, isLoading, isError } = useSections();
@@ -123,7 +124,7 @@ const TreeElement = React.forwardRef<
       return mainContent;
     } else {
       return (
-        <a
+        <Link
           ref={ref}
           href={`/section/${item.id}`}
           title={item.title}
@@ -131,7 +132,7 @@ const TreeElement = React.forwardRef<
           className=""
         >
           {mainContent}
-        </a>
+        </Link>
       );
     }
   }

@@ -6,7 +6,7 @@ from planty.application.auth import (
     fastapi_users_obj,
     cookie_auth_backend,
 )
-from planty.application.schemas import UserCreate, UserRead
+from planty.application.schemas import UserCreate, UserRead, UserUpdate
 
 app = FastAPI(
     title="Planty",
@@ -17,13 +17,19 @@ app.include_router(tasks_router)
 
 app.include_router(
     fastapi_users_obj.get_auth_router(cookie_auth_backend),
-    prefix="/auth/db",
+    prefix="/api/auth",
     tags=["auth"],
 )
 
 app.include_router(
     fastapi_users_obj.get_register_router(UserRead, UserCreate),
-    prefix="/auth",
+    prefix="/api/auth",
+    tags=["auth"],
+)
+
+app.include_router(
+    fastapi_users_obj.get_users_router(UserRead, UserUpdate),
+    prefix="/api/auth",
     tags=["auth"],
 )
 

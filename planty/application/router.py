@@ -51,12 +51,6 @@ async def create_task(
         return TaskCreateResponse(id=task_id)
 
 
-# TODO: move to auth router
-@router.get("/me")
-async def test_auth(user: User = Depends(current_user)) -> User:
-    return user
-
-
 # TODO: use query params for DELETE, body must be empty!
 @router.delete("/task")
 async def remove_task(

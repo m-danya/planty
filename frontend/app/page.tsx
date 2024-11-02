@@ -1,20 +1,27 @@
+"use client";
 import { AppSidebar } from "@/components/app-sidebar";
-import { NavActions } from "@/components/nav-actions";
 import { TaskList } from "@/components/tasks/task-list";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import useUser from "@/hooks/use-user";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Page() {
+  const router = useRouter();
+  const { user, loading, loggedIn, mutate } = useUser();
+
+  useEffect(() => {
+    console.log(user, loading, loggedIn, mutate);
+    if (!loggedIn) {
+      router.push("/login");
+    }
+  }, [loggedIn]);
+  if (!loggedIn) return "";
+
   return (
     <SidebarProvider>
       <AppSidebar />
