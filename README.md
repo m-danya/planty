@@ -35,6 +35,14 @@ pytest; cp planty_test.db planty.db
 uvicorn planty.main:app --reload
 ```
 
+To start the frontend, run the following commands:
+
+```
+cd frontend
+npm i
+npm run dev
+```
+
 ### Switching between database engines
 
 By default, the SQLite engine is used for persistence, but you can easily switch
