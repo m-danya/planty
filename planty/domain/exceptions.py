@@ -32,3 +32,11 @@ class RemovingSectionFromWrongSectionError(PlantyException):
     @property
     def _detail(self) -> str:
         return "This section doesn't belong to this section"
+
+
+class ChangingRootSectionError(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "The root section can't be modified"

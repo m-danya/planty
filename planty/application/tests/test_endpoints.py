@@ -215,14 +215,20 @@ async def test_move_task(
             422,
             "The section can't be moved to the specified index",
         ),
-        # NOT IMPLEMENTED YET
-        # (
-        #     "7e98e010-9d89-4dd2-be8e-773808e1ad85",
-        #     None,  # move to root section
-        #     2,
-        #     200,
-        #     None,
-        # ),
+        (
+            "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move inside the root section
+            0,
+            200,
+            None,
+        ),
+        (
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move the root section itself
+            "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+            2,
+            422,
+            "The root section can't be modified",
+        ),
     ],
 )
 async def test_move_section(

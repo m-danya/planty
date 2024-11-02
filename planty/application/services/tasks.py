@@ -35,6 +35,7 @@ from planty.application.services.responses_converter import (
 )
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
+from planty.domain.exceptions import ChangingRootSectionError
 from planty.domain.task import Attachment, Section, Task
 
 
@@ -126,6 +127,9 @@ class SectionService:
         self._section_repo = uow.section_repo
         self._task_repo = uow.task_repo
 
+    # TODO: when writing "update_section" don't forget to raise
+    # ChangingRootSectionError if root section is being updated
+
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
         if parent_id := section_data.parent_id:
             parent_section = await self.get_section(user_id, parent_id)
@@ -204,35 +208,28 @@ class SectionService:
         section = await self._section_repo.get(request.section_id)
         if section.user_id != user_id:
             raise ForbiddenException()
-        if request.to_parent_id is None:
-            section_to = None
-        else:
-            section_to = await self._section_repo.get(
-                request.to_parent_id, with_direct_subsections=True
-            )
-            if section_to.user_id != user_id:
-                raise ForbiddenException()
+        if section.is_root():
+            raise ChangingRootSectionError()
+        assert section.parent_id  # (because it's not root, assert for type checking)
+        section_to = await self._section_repo.get(
+            request.to_parent_id, with_direct_subsections=True
+        )
+        if section_to.user_id != user_id:
+            raise ForbiddenException()
         same_section = request.to_parent_id == section.parent_id
         if same_section:
             section_from = section_to
         else:
-            if section.parent_id:
-                section_from = await self._section_repo.get(section.parent_id)
-            else:
-                section_from = None
-        if section_from is None or section_to is None:
-            raise NotImplementedError("Moving root sections is not implemented yet")
+            section_from = await self._section_repo.get(section.parent_id)
+
         Section.move_section(section, section_from, section_to, request.index)
 
         await self._section_repo.update(section)
         if same_section:
-            if section_from:
-                await self._section_repo.update(section_from)
+            await self._section_repo.update(section_from)
         else:
-            if section_from:
-                await self._section_repo.update(section_from)
-            if section_to:
-                await self._section_repo.update(section_to)
+            await self._section_repo.update(section_from)
+            await self._section_repo.update(section_to)
 
     async def toggle_task_completed(
         self, user_id: UUID, task_id: UUID, auto_archive: bool

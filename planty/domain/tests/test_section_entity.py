@@ -149,9 +149,6 @@ def test_move_task_to_the_another_section(
         (0, 1, False, None),
         (1, 1, False, None),
         (2, 1, False, None),
-        # TODO: add tests with root section (from and to), think about broken
-        # indices in "virtual root section"'s children.. reorder other tasks
-        # manually or add fake root section for each user..
         (1, 327, False, pytest.raises(MovingSectionIndexError)),
         (1, 1, True, pytest.raises(RemovingSectionFromWrongSectionError)),
     ],

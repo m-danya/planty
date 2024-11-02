@@ -120,7 +120,7 @@ class Section(Entity):
     def __hash__(self) -> int:
         return hash(self.id)
 
-    def is_root_section(self) -> bool:
+    def is_root(self) -> bool:
         return self.parent_id is None
 
     @classmethod
@@ -188,18 +188,13 @@ class Section(Entity):
     @staticmethod
     def move_section(
         section: "Section",
-        section_from: Optional["Section"],
-        section_to: Optional["Section"],
+        section_from: "Section",
+        section_to: "Section",
         index: NonNegativeInt,
     ) -> None:
         # section === subsection (every section is a subsection)
-        if section_from is not None:
-            subsection = section_from.remove_subsection(section)
-
-        if section_to is not None:
-            section_to.insert_subsection(subsection, index)
-        else:
-            section.parent_id = None
+        subsection = section_from.remove_subsection(section)
+        section_to.insert_subsection(subsection, index)
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)
