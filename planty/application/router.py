@@ -9,6 +9,7 @@ from planty.application.schemas import (
     AttachmentUploadInfo,
     SectionCreateRequest,
     SectionCreateResponse,
+    SectionMoveRequest,
     SectionResponse,
     ShuffleSectionRequest,
     TaskCreateRequest,
@@ -189,6 +190,16 @@ async def get_section(
         section_service = SectionService(uow=uow)
         section = await section_service.get_section(user.id, section_id)
         return section
+
+
+@router.post("/section/move")
+async def move_section(
+    request: SectionMoveRequest, user: User = Depends(current_user)
+) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        await section_service.move_section(user.id, request)
+        await uow.commit()
 
 
 @router.get("/sections")

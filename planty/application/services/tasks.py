@@ -15,6 +15,7 @@ from planty.application.schemas import (
     RequestAttachmentUpload,
     ArchivedTasksResponse,
     SectionCreateRequest,
+    SectionMoveRequest,
     SectionResponse,
     ShuffleSectionRequest,
     TaskCreateRequest,
@@ -34,6 +35,7 @@ from planty.application.services.responses_converter import (
 )
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
+from planty.domain.exceptions import ChangingRootSectionError
 from planty.domain.task import Attachment, Section, Task
 
 
@@ -125,11 +127,24 @@ class SectionService:
         self._section_repo = uow.section_repo
         self._task_repo = uow.task_repo
 
+    # TODO: when writing "update_section" don't forget to raise
+    # ChangingRootSectionError if root section is being updated
+
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
+        if parent_id := section_data.parent_id:
+            parent_section = await self.get_section(user_id, parent_id)
+            # add to the end of parent section:
+            index = await self._section_repo.count_subsections(parent_section.id)
+        else:
+            index = 0
         section = Section(
-            user_id=user_id, title=section_data.title, parent_id=None, tasks=[]
+            user_id=user_id,
+            title=section_data.title,
+            parent_id=section_data.parent_id,
+            tasks=[],
+            subsections=[],
         )
-        await self._section_repo.add(section)
+        await self._section_repo.add(section, index=index)
         return section
 
     async def get_section(self, user_id: UUID, section_id: UUID) -> SectionResponse:
@@ -139,7 +154,11 @@ class SectionService:
         return convert_to_response(section)
 
     async def get_all_sections(self, user_id: UUID) -> SectionsListResponse:
-        sections: list[Section] = await self._section_repo.get_all(user_id)
+        sections: list[Section] = await self._section_repo.get_all_without_tasks(
+            user_id
+        )
+        # TODO: remove tasks=[] from this schema to avoid confusion! use new
+        # schema, e.g. "SectionSummary"
         return convert_to_response(sections)
 
     async def create_task(self, user_id: UUID, task: TaskCreateRequest) -> UUID:
@@ -184,6 +203,34 @@ class SectionService:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
 
+    async def move_section(self, user_id: UUID, request: SectionMoveRequest) -> None:
+        # move `section` from `section_from` to `section to` with given `index``
+        section = await self._section_repo.get(request.section_id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        if section.is_root():
+            raise ChangingRootSectionError()
+        assert section.parent_id  # (because it's not root, assert for type checking)
+        section_to = await self._section_repo.get(
+            request.to_parent_id, with_direct_subsections=True
+        )
+        if section_to.user_id != user_id:
+            raise ForbiddenException()
+        same_section = request.to_parent_id == section.parent_id
+        if same_section:
+            section_from = section_to
+        else:
+            section_from = await self._section_repo.get(section.parent_id)
+
+        Section.move_section(section, section_from, section_to, request.index)
+
+        await self._section_repo.update(section)
+        if same_section:
+            await self._section_repo.update(section_from)
+        else:
+            await self._section_repo.update(section_from)
+            await self._section_repo.update(section_to)
+
     async def toggle_task_completed(
         self, user_id: UUID, task_id: UUID, auto_archive: bool
     ) -> SectionResponse:
@@ -211,3 +258,8 @@ class SectionService:
         section.shuffle_tasks()
         await self._section_repo.update(section)
         return convert_to_response(section)
+
+    async def create_root_section(self, user_id: UUID) -> Section:
+        section = Section.create_root_section(user_id)
+        await self._section_repo.add(section, index=0)
+        return section

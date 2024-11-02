@@ -1,7 +1,5 @@
-# Planty
-
 <p align="center">
-    <img src="./imgs/planty.png" height="200px">
+    <img src="./imgs/logo_vert.png" height="200px">
 </p>
 
 > "I have <i>plenty</i> things to do!"

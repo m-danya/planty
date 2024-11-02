@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     NonNegativeInt,
     model_validator,
@@ -12,22 +13,33 @@ from pydantic import (
 
 from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
-from planty.domain.exceptions import RemovingFromWrongSectionError, MovingTaskIndexError
+from planty.domain.exceptions import (
+    MovingSectionIndexError,
+    RemovingSectionFromWrongSectionError,
+    RemovingTaskFromWrongSectionError,
+    MovingTaskIndexError,
+)
 
 
-class User(BaseModel):
+class Entity(BaseModel):
+    # domain entities must ALWAYS be valid
+    # (use smth like `delay_validation` otherwise)
+    model_config = ConfigDict(validate_assignment=True)
+
+
+class User(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     email: str
     added_at: datetime = Field(default_factory=get_datetime_now)
 
 
-class RecurrenceInfo(BaseModel):
+class RecurrenceInfo(Entity):
     period: int
     type: RecurrencePeriodType
     flexible_mode: bool  # like an exclamation mark in Todoist
 
 
-class Task(BaseModel):
+class Task(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     section_id: UUID
@@ -92,19 +104,46 @@ class Task(BaseModel):
         self.is_archived = False
 
 
-class Section(BaseModel):
+class Section(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     title: str
-    parent_id: Optional[UUID] = None
-    tasks: list[Task]
+    parent_id: Optional[UUID]  # is None <=> it's the *root section* for this user
     added_at: datetime = Field(default_factory=get_datetime_now)
+
+    tasks: list[Task]  # can be loaded or not
+    subsections: list["Section"]  # can be loaded or not
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.id == other.id
 
     def __hash__(self) -> int:
         return hash(self.id)
+
+    def is_root(self) -> bool:
+        return self.parent_id is None
+
+    @classmethod
+    def create_root_section(cls, user_id: UUID) -> "Section":
+        # *Root section* is a system object that helps unify the structure of
+        # the user sections tree. With the root tree, we can easily rely on the
+        # parent section to sort its subsections. Without the root tree, we
+        # would have to sort the first-level sections with separate logics.
+        #
+        # Root section is invisible to user and protected from changes.
+        return cls(
+            user_id=user_id,
+            title="[System] Root section",
+            parent_id=None,
+            tasks=[],
+            subsections=[],
+        )
+
+    # @model_validator(mode="after")
+    # def check_only_leaf_can_have_tasks(self) -> "Section":
+    #     if self.subsections and self.tasks:
+    #         raise SomePlantyDomainExeception(...)
+    #     return self
 
     def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None) -> None:
         if index is None:
@@ -116,7 +155,7 @@ class Section(BaseModel):
 
     def remove_task(self, task: Task) -> Task:
         if task.section_id != self.id:
-            raise RemovingFromWrongSectionError()
+            raise RemovingTaskFromWrongSectionError()
         self.tasks = [t for t in self.tasks if t.id != task.id]
         return task
 
@@ -130,11 +169,38 @@ class Section(BaseModel):
         task_to_move = section_from.remove_task(task_to_move)
         section_to.insert_task(task_to_move, index)
 
+    def insert_subsection(
+        self, subsection: "Section", index: Optional[NonNegativeInt] = None
+    ) -> None:
+        if index is None:
+            index = len(self.subsections)
+        if index > len(self.subsections):
+            raise MovingSectionIndexError()
+        subsection.parent_id = self.id
+        self.subsections.insert(index, subsection)
+
+    def remove_subsection(self, subsection: "Section") -> "Section":
+        if subsection.parent_id != self.id:
+            raise RemovingSectionFromWrongSectionError()
+        self.subsections = [s for s in self.subsections if s.id != subsection.id]
+        return subsection
+
+    @staticmethod
+    def move_section(
+        section: "Section",
+        section_from: "Section",
+        section_to: "Section",
+        index: NonNegativeInt,
+    ) -> None:
+        # section === subsection (every section is a subsection)
+        subsection = section_from.remove_subsection(section)
+        section_to.insert_subsection(subsection, index)
+
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)
 
 
-class Attachment(BaseModel):
+class Attachment(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     aes_key_b64: str
     aes_iv_b64: str

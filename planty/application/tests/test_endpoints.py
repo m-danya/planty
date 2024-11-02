@@ -112,6 +112,7 @@ async def test_create_section(
 ) -> None:
     section_data = {
         "title": str(additional_test_data["sections"][0]["title"]),
+        "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
     }
     response = await ac.post("/api/section", json=section_data)
     assert response.status_code == 201
@@ -188,6 +189,61 @@ async def test_move_task(
         json={
             "task_id": task_id,
             "section_to_id": section_id,
+            "index": index,
+        },
+    )
+    assert response.status_code == status_code
+    if not response.is_success:
+        assert response.json()["detail"] == error_detail
+        return
+
+
+@pytest.mark.parametrize(
+    "section_id,section_to,index,status_code,error_detail",
+    [
+        (
+            "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            0,  # move to the beginning
+            200,
+            None,
+        ),
+        (
+            "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            123,  # move to an incorrect index
+            422,
+            "The section can't be moved to the specified index",
+        ),
+        (
+            "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move inside the root section
+            0,
+            200,
+            None,
+        ),
+        (
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move the root section itself
+            "7e98e010-9d89-4dd2-be8e-773808e1ad85",
+            2,
+            422,
+            "The root section can't be modified",
+        ),
+    ],
+)
+async def test_move_section(
+    section_id: str,
+    section_to: str,
+    index: int,
+    status_code: int,
+    error_detail: Optional[str],
+    ac: AsyncClient,
+) -> None:
+    response = await ac.post(
+        "/api/section/move",
+        json={
+            "section_id": section_id,
+            "to_parent_id": section_to,
             "index": index,
         },
     )
@@ -457,3 +513,13 @@ async def test_get_tasks_by_search(
     assert response.status_code == 200
     tasks = response.json()
     assert len(tasks) == n_tasks_expected
+
+
+async def test_root_section_is_created(ac: AsyncClient) -> None:
+    # this test ensures that `UserManager.on_after_register` doesn't crash
+    user_data = {
+        "email": "new_user@example.com",
+        "password": "string",
+    }
+    response = await ac.post("/auth/register", json=user_data)
+    assert response.is_success

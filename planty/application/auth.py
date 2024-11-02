@@ -22,6 +22,15 @@ from planty.domain.task import User
 from planty.infrastructure.database import get_async_session
 from planty.infrastructure.models import AccessTokenModel, UserModel
 
+# Cookie/token lifetime is 10 years. This is intentional to avoid relogin
+# torture when the token expires. Token can be invalidated in case of
+# passord/cookie leakage, cause it's stored in the db.
+#
+# (TODO: consider using refresh tokens when they will be supported by
+# fastapi-users: https://github.com/fastapi-users/fastapi-users/discussions/350
+# and set lifetime to a shorter period without requiring user to relogin)
+TOKEN_LIFETIME = 60 * 60 * 24 * 365 * 10
+
 
 async def get_user_db(
     session: AsyncSession = Depends(get_async_session),
@@ -40,10 +49,10 @@ def get_database_strategy(
         get_access_token_db
     ),
 ) -> DatabaseStrategy[Any, Any, Any]:
-    return DatabaseStrategy(access_token_db, lifetime_seconds=3600)
+    return DatabaseStrategy(access_token_db, lifetime_seconds=TOKEN_LIFETIME)
 
 
-cookie_transport = CookieTransport(cookie_max_age=3600)
+cookie_transport = CookieTransport(cookie_max_age=TOKEN_LIFETIME)
 
 
 cookie_auth_backend = AuthenticationBackend(

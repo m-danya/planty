@@ -1,3 +1,4 @@
+from copy import deepcopy
 import os
 import json
 from uuid import UUID
@@ -11,6 +12,7 @@ from typing import Any, Protocol, TypeVar
 os.environ["PLANTY_MODE"] = "TEST"
 
 from planty.domain.task import Attachment, Section, Task, User  # noqa: E402
+from planty.infrastructure.repositories import SQLAlchemySectionRepository  # noqa: E402
 from planty.infrastructure.models import (  # noqa: E402
     AttachmentModel,
     SectionModel,
@@ -51,9 +53,10 @@ def _load_json_with_data(filename: str) -> dict[str, Any]:
                 if column == "index":
                     # Prevent forgetting to change index in json
                     idx = row[column]
-                    assert (
-                        idx == last_idx + 1 or idx == 0
-                    ), f"Unexpected index in entity with id {row['id']}"
+                    assert idx == last_idx + 1 or idx == 0, (
+                        f"Unexpected index in entity with id {row['id']} "
+                        "(NOTE: this is just a heuristic)"
+                    )
                     last_idx = idx
 
     # TODO: make this dict immutable to prevent accidental modification
@@ -88,13 +91,26 @@ def attachments_data(
     return test_data["attachments"]
 
 
+def _patch_models_data(models_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    # models_data must not be modified
+    models_data = deepcopy(models_data)
+
+    for data in models_data:
+        for key in data:
+            if key == "id" or key.endswith("_id") and data[key]:
+                data[key] = UUID(data[key])
+    return models_data
+
+
 @pytest.fixture(scope="session")
 def all_users(users_data: list[dict[str, Any]]) -> list[User]:
+    users_data = _patch_models_data(users_data)
     return [UserModel(**user).to_entity() for user in users_data]
 
 
 @pytest.fixture(scope="session")
 def all_attachments(attachments_data: list[dict[str, Any]]) -> list[Attachment]:
+    attachments_data = _patch_models_data(attachments_data)
     return [
         AttachmentModel(**attachment).to_entity() for attachment in attachments_data
     ]
@@ -104,6 +120,7 @@ def all_attachments(attachments_data: list[dict[str, Any]]) -> list[Attachment]:
 def all_tasks(
     tasks_data: list[dict[str, Any]], all_attachments: list[Attachment]
 ) -> list[Task]:
+    tasks_data = _patch_models_data(tasks_data)
     tasks = []
     for task_data in tasks_data:
         task = TaskModel(**task_data).to_entity(
@@ -119,14 +136,16 @@ def all_tasks(
 def all_sections(
     sections_data: list[dict[str, Any]], all_tasks: list[Task]
 ) -> list[Section]:
-    sections = []
-    for section_data in sections_data:
-        section = SectionModel(**section_data).to_entity(
-            tasks=[
-                task for task in all_tasks if str(task.section_id) == section_data["id"]
-            ]
-        )
-        sections.append(section)
+    sections_data = _patch_models_data(sections_data)
+    models = [SectionModel(**section_data) for section_data in sections_data]
+
+    sections = SQLAlchemySectionRepository.get_sections_tree(
+        models, return_as_tree=False
+    )
+
+    for section in sections:
+        section.tasks = [task for task in all_tasks if task.section_id == section.id]
+
     return sections
 
 
@@ -172,7 +191,12 @@ def nonempty_section(all_sections: list[Section]) -> Section:
 
 
 @pytest.fixture
-def another_nonempty_section(all_sections: list[Section]) -> Section:
+def section_sometimes_later(all_sections: list[Section]) -> Section:
+    return _find_by_id(all_sections, UUID("36ea0a4f-0334-464d-8066-aa359ecfdcba"))
+
+
+@pytest.fixture
+def section_current_tasks(all_sections: list[Section]) -> Section:
     return _find_by_id(all_sections, UUID("6ff6e896-5da3-46ec-bf66-0a317c5496fa"))
 
 

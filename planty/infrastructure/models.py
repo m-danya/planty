@@ -112,26 +112,30 @@ class SectionModel(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
     added_at: Mapped[datetime] = mapped_column(DateTime)
 
+    index: Mapped[int]  # ordering inside parent
+
     tasks = relationship("TaskModel", back_populates="section")
     user = relationship("UserModel", back_populates="sections")
 
     @classmethod
-    def from_entity(cls, section: Section) -> "SectionModel":
+    def from_entity(cls, section: Section, index: NonNegativeInt) -> "SectionModel":
         return cls(
             id=section.id,
             title=section.title,
             user_id=section.user_id,
             parent_id=section.parent_id,
             added_at=section.added_at,
+            index=index,
         )
 
-    def to_entity(self, tasks: list[Task]) -> Section:
+    def to_entity(self, tasks: list[Task], subsections: list[Section]) -> Section:
         return Section(
             id=self.id,
             title=self.title,
             user_id=self.user_id,
             parent_id=self.parent_id,
             tasks=tasks,
+            subsections=subsections,
         )
 
 
