@@ -22,7 +22,9 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async () => {
+  const handleLogin = async (e) => {
+    e?.preventDefault();
+
     try {
       const body = new URLSearchParams();
       body.append("username", email || "");
@@ -45,12 +47,7 @@ export function LoginForm() {
       }
 
       await mutate();
-
-      if (typeof window !== "undefined" && window.history.length > 1) {
-        router.back();
-      } else {
-        router.push("/");
-      }
+      router.push("/");
     } catch (error) {
       console.error("An unexpected error occurred:", error);
       alert("An unexpected error occurred");
@@ -80,7 +77,7 @@ export function LoginForm() {
 
       await mutate();
 
-      handleLogin();
+      handleLogin(null);
     } catch (error) {
       console.error("An unexpected error occurred:", error);
       alert("An unexpected error occurred");
@@ -93,46 +90,52 @@ export function LoginForm() {
         <CardTitle className="text-2xl">Login or Sign Up</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="user@example.ru"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-              {/* <Link href="#" className="ml-auto inline-block text-sm underline">
+        <form onSubmit={handleLogin}>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="user@example.ru"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center">
+                <Label htmlFor="password">Password</Label>
+                {/* <Link href="#" className="ml-auto inline-block text-sm underline">
                 Forgot your password?
               </Link> */}
+              </div>
+              <Input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Button type="submit" className="w-full">
+              Login
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleRegister}
+            >
+              Sign up
+            </Button>
           </div>
-          <Button type="button" className="w-full" onClick={handleLogin}>
-            Login
-          </Button>
-          <Button variant="outline" className="w-full" onClick={handleRegister}>
-            Sign up
-          </Button>
-        </div>
-        {/* <div className="mt-4 text-center text-sm">
+          {/* <div className="mt-4 text-center text-sm">
           Don&apos;t have an account?{" "}
           <Link href="#" className="underline">
             Sign up
           </Link>
         </div> */}
+        </form>
       </CardContent>
     </Card>
   );
