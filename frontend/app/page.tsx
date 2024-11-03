@@ -6,21 +6,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import useUser from "@/hooks/use-user";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
 export default function Page() {
-  const router = useRouter();
-  const { user, loading, loggedIn, mutate } = useUser();
-
-  useEffect(() => {
-    console.log(user, loading, loggedIn, mutate);
-    if (!loggedIn) {
-      router.push("/login");
-    }
-  }, [loggedIn]);
-  if (!loggedIn) return "";
+  const { mutate: mutateAuth } = useAuthRedirect();
 
   return (
     <SidebarProvider>

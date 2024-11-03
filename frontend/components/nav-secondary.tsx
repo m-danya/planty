@@ -1,5 +1,4 @@
 import React from "react";
-import { type LucideIcon } from "lucide-react";
 
 import {
   SidebarGroup,
@@ -9,6 +8,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+
+import { UserProfile } from "./user-profile";
 
 export function NavSecondary({
   items,
@@ -36,6 +37,10 @@ export function NavSecondary({
               {item.badge && <SidebarMenuBadge>{item.badge}</SidebarMenuBadge>}
             </SidebarMenuItem>
           ))}
+
+          <UserProfile />
+          {/* <SidebarMenuItem key="user-profile-sidebar">
+          {/* </SidebarMenuItem> */}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>
