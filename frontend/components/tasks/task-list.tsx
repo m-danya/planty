@@ -1,6 +1,7 @@
 "use client";
 
 import { Task } from "@/components/tasks/task";
+import { useSection } from "@/hooks/use-section";
 import {
   DndContext,
   closestCenter,
@@ -17,22 +18,10 @@ import {
 } from "@dnd-kit/sortable";
 import { useState } from "react";
 
-const exampleTasks = [
-  { id: 1, name: "Watch 'BoJack Horseman'", isCompleted: true },
-  {
-    id: 2,
-    name: "Task with description",
-    description: "some description here",
-    isCompleted: true,
-  },
-  { id: 3, name: "Clean the house" },
-  { id: 4, name: "Some completed archived task" },
-  { id: 5, name: "Go to the gym", description: "💪🏻💪🏻💪🏻" },
-  { id: 6, name: "A task with date", date: "2024-12-28" },
-];
+export function TaskList({sectionId} : {sectionId: string}) {
+  const { section, isLoading, isError } = useSection(sectionId);
+  const [tasks, setTasks] = useState(section?.tasks || []);
 
-export function TaskList() {
-  const [tasks, setTasks] = useState(exampleTasks);
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
     useSensor(KeyboardSensor, {
@@ -63,6 +52,9 @@ export function TaskList() {
         return arrayMove(tasks, oldIndex, newIndex);
       });
     }
+  }
+  if (!section) {
+    return "Loading..";
   }
 
   return (

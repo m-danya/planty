@@ -33,7 +33,7 @@ export function Task({ task, handleToggleTaskCompleted }) {
               })
             }
           />
-          <div className="flex flex-col items-center">{task.name}</div>
+          <div className="flex flex-col items-center">{task.title}</div>
         </div>
         {task.description && (
           <div className="ml-9 text-gray-400 pt-0.5">{task.description}</div>
