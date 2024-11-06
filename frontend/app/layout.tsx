@@ -36,7 +36,7 @@ export default function RootLayout({
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
       <body>
-        <MainSidebarWrapper>{children}</MainSidebarWrapper>
+        {children}
       </body>
     </html>
   );
