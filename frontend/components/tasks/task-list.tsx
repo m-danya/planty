@@ -3,8 +3,8 @@
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -16,11 +16,20 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export function TaskList({sectionId} : {sectionId: string}) {
+export function TaskList({ sectionId }: { sectionId: string }) {
   const { section, isLoading, isError } = useSection(sectionId);
-  const [tasks, setTasks] = useState(section?.tasks || []);
+  const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
+    id: index,
+  }));
+  const [tasks, setTasks] = useState(tasksFillers);
+
+  useEffect(() => {
+    if (section?.tasks) {
+      setTasks(section.tasks);
+    }
+  }, [section]);
 
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
@@ -53,9 +62,6 @@ export function TaskList({sectionId} : {sectionId: string}) {
       });
     }
   }
-  if (!section) {
-    return "Loading..";
-  }
 
   return (
     <DndContext
@@ -76,6 +82,7 @@ export function TaskList({sectionId} : {sectionId: string}) {
                   <div>
                     <Task
                       task={task}
+                      skeleton={isLoading}
                       handleToggleTaskCompleted={handleToggleTaskCompleted}
                     />
                   </div>
