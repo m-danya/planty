@@ -1,5 +1,6 @@
 "use client";
 
+import { moveTask } from "@/app/services/taskService";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
@@ -50,16 +51,27 @@ export function TaskList({ sectionId }: { sectionId: string }) {
     );
   }
 
-  function handleDragEnd(event) {
+  async function handleDragEnd(event) {
     const { active, over } = event;
+    const oldIndex = tasks.findIndex((task) => task.id === active.id);
+    const newIndex = tasks.findIndex((task) => task.id === over.id);
 
     if (active.id !== over.id) {
       setTasks((tasks) => {
-        const oldIndex = tasks.findIndex((task) => task.id === active.id);
-        const newIndex = tasks.findIndex((task) => task.id === over.id);
-
         return arrayMove(tasks, oldIndex, newIndex);
       });
+      const moveTaskData = {
+        task_id: active.id,
+        section_to_id: sectionId,
+        index: newIndex,
+      };
+      try {
+        const result = await moveTask(moveTaskData);
+        console.log("Task moved successfully:", result);
+      } catch (error) {
+        console.error("Failed to move task:", error);
+        console.log("Failed to move task");
+      }
     }
   }
 
