@@ -163,11 +163,11 @@ class SectionService:
         return convert_to_response(section)
 
     async def get_all_sections(
-        self, user_id: UUID, as_tree: bool
+        self, user_id: UUID, leaves_only: bool
     ) -> SectionsListResponse:
         sections: list[Section] = await self._section_repo.get_all_without_tasks(
             user_id,
-            as_tree=as_tree,
+            leaves_only=leaves_only,
         )
         # TODO: remove tasks=[] from this schema to avoid confusion! use new
         # schema, e.g. "SectionSummary"

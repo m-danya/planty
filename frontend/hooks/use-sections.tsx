@@ -1,18 +1,20 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/fetcher";
 
-export const useSections = ({ asTree = true }: { asTree?: boolean } = {}) => {
+export const useSections = ({
+  leavesOnly = false,
+}: { leavesOnly?: boolean } = {}) => {
   const { data, error, isLoading } = useSWR(
-    `/api/sections?as_tree=${asTree}`,
+    `/api/sections?leaves_only=${leavesOnly}`,
     fetcher
   );
   let rootSectionId;
   let sections;
-  if (asTree) {
+  if (leavesOnly) {
+    sections = data;
+  } else {
     rootSectionId = data?.[0]?.id;
     sections = data?.[0]?.subsections;
-  } else {
-    sections = data;
   }
   return {
     sections: sections,

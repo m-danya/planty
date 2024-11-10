@@ -30,7 +30,7 @@ export function MoveTaskToSectionForm({
   afterSubmit: () => void;
 }) {
   const { sections, isLoading, isError } = useSections({
-    asTree: false,
+    leavesOnly: true,
   });
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
