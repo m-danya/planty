@@ -132,7 +132,11 @@ class SectionService:
 
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
         if parent_id := section_data.parent_id:
-            parent_section = await self.get_section(user_id, parent_id)
+            parent_section = await self._section_repo.get(
+                parent_id, with_direct_subsections=True
+            )
+            if parent_section.user_id != user_id:
+                raise ForbiddenException()
             # add to the end of parent section:
             index = await self._section_repo.count_subsections(parent_section.id)
         else:
@@ -143,7 +147,12 @@ class SectionService:
             parent_id=section_data.parent_id,
             tasks=[],
             subsections=[],
+            has_subsections=False,
+            has_tasks=False,
         )
+        parent_section.insert_subsection(
+            section, index
+        )  # this line checks constraints of parent_section
         await self._section_repo.add(section, index=index)
         return section
 
@@ -153,9 +162,12 @@ class SectionService:
             raise ForbiddenException()
         return convert_to_response(section)
 
-    async def get_all_sections(self, user_id: UUID) -> SectionsListResponse:
+    async def get_all_sections(
+        self, user_id: UUID, leaves_only: bool
+    ) -> SectionsListResponse:
         sections: list[Section] = await self._section_repo.get_all_without_tasks(
-            user_id
+            user_id,
+            leaves_only=leaves_only,
         )
         # TODO: remove tasks=[] from this schema to avoid confusion! use new
         # schema, e.g. "SectionSummary"

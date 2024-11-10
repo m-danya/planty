@@ -26,6 +26,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": null,
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": true,
       "index": 0
     },
     {
@@ -34,6 +36,8 @@
       "user_id": "73ca2340-76bd-4abe-b872-7e82a9528c45",
       "parent_id": null,
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 0
     },
     {
@@ -42,6 +46,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 0
     },
     {
@@ -50,6 +56,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": true,
       "index": 1
     },
     {
@@ -58,6 +66,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 0
     },
     {
@@ -66,6 +76,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": true,
+      "has_subsections": false,
       "index": 1
     },
     {
@@ -74,6 +86,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-03-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": true,
       "index": 2
     },
     {
@@ -82,6 +96,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": true,
       "index": 3
     },
     {
@@ -90,6 +106,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 4
     },
     {
@@ -98,6 +116,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": true,
+      "has_subsections": false,
       "index": 0
     },
     {
@@ -106,6 +126,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 1
     },
     {
@@ -114,6 +136,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 2
     },
     {
@@ -122,6 +146,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 3
     },
     {
@@ -130,6 +156,8 @@
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "parent_id": "36ea0a4f-0334-464d-8066-aa359ecfdcba",
       "added_at": "2024-09-28T04:11:17.677Z",
+      "has_tasks": false,
+      "has_subsections": false,
       "index": 4
     }
   ],
@@ -137,7 +165,7 @@
     {
       "id": "0c6865ac-6bba-4837-8d48-6a057d4b12bf",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "Read something interesting",
       "description": "not urgent",
       "is_completed": false,
@@ -152,7 +180,7 @@
     {
       "id": "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "Watch 'Breaking Bad'",
       "description": "not urgent",
       "is_completed": true,
@@ -166,7 +194,7 @@
     {
       "id": "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "Watch 'Better Call Saul'",
       "description": "not urgent",
       "is_completed": false,
@@ -178,7 +206,7 @@
     {
       "id": "7874f13d-ef4b-4fbd-87a8-db6bbf407976",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "Go to the gym",
       "description": null,
       "is_completed": false,
@@ -193,7 +221,7 @@
     {
       "id": "6ba81664-a19c-43f7-8664-93a995bf0962",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
-      "section_id": "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+      "section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
       "title": "Watch 'BoJack Horseman'",
       "description": "not urgent",
       "is_completed": false,

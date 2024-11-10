@@ -6,19 +6,25 @@ from httpx import AsyncClient
 
 # TODO: test task creation with `recurrence`
 @pytest.mark.parametrize(
-    "status_code,error_detail",
+    "section_id, status_code, error_detail",
     [
-        (201, None),
+        ("febd1d82-b872-4b67-a15b-961b9aa24ed6", 201, None),
+        (
+            "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
+            422,
+            "Section can't have both tasks and subsections",
+        ),
     ],
 )
 async def test_create_task(
+    section_id: str,
     status_code: int,
     error_detail: Optional[str],
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
 ) -> None:
     task_data = {
-        "section_id": str(additional_test_data["tasks"][0]["section_id"]),
+        "section_id": section_id,
         "title": additional_test_data["tasks"][0]["title"],
         "description": additional_test_data["tasks"][0]["description"],
     }
@@ -106,16 +112,35 @@ async def test_get_archived_tasks(
     assert len(tasks) == expected_tasks_n
 
 
+@pytest.mark.parametrize(
+    "parent_id, status_code, error_detail",
+    [
+        ("0d966845-254b-4b5c-b8a7-8d34dcd3d527", 201, None),
+        (
+            "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            422,
+            "Section can't have both tasks and subsections",
+        ),
+    ],
+)
 async def test_create_section(
+    parent_id: str,
+    status_code: int,
+    error_detail: Optional[str],
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
 ) -> None:
     section_data = {
         "title": str(additional_test_data["sections"][0]["title"]),
-        "parent_id": "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+        "parent_id": parent_id,
     }
     response = await ac.post("/api/section", json=section_data)
-    assert response.status_code == 201
+    print(response.json())
+    assert response.status_code == status_code
+    if not response.is_success:
+        assert response.json()["detail"] == error_detail
+        return
+
     data = response.json()
     assert "id" in data
 
@@ -162,10 +187,17 @@ async def test_get_another_user_section(
     [
         (
             "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
-            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            "b9547aee-cba5-418e-b450-7914e44c9231",
             0,  # move to the beginning of empty section
             200,
             None,
+        ),
+        (
+            "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            0,
+            422,
+            "Section can't have both tasks and subsections",
         ),
         (
             "e6a76c36-7dae-47ee-b657-1a0b02ca40df",
@@ -213,7 +245,7 @@ async def test_move_task(
             "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
             123,  # move to an incorrect index
             422,
-            "The section can't be moved to the specified index",
+            "The section can't be placed at the specified index",
         ),
         (
             "7e98e010-9d89-4dd2-be8e-773808e1ad85",

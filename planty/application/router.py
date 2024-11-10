@@ -197,10 +197,14 @@ async def move_section(
 
 
 @router.get("/sections")
-async def get_sections(user: User = Depends(current_user)) -> SectionsListResponse:
+async def get_sections(
+    user: User = Depends(current_user), leaves_only: bool = True
+) -> SectionsListResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         section_service = SectionService(uow=uow)
-        sections = await section_service.get_all_sections(user.id)
+        sections = await section_service.get_all_sections(
+            user.id, leaves_only=leaves_only
+        )
         return sections
 
 

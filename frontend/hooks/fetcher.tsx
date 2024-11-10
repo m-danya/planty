@@ -1,9 +1,12 @@
-export const fetcher = async (url: string) => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    const error = new Error(`Error fetching ${url}: ${response.statusText}`);
-    (error as any).status = response.status;
-    throw error;
-  }
-  return response.json();
-};
+import axios from "axios";
+
+export const fetcher = (url: string) =>
+  axios
+    .get(url)
+    .then((res) => res.data)
+    .catch((error) => {
+      if (error.response && error.response.status !== 401) {
+        alert(`An error occurred while fetching ${url}: ${error.message}`);
+      }
+      throw error;
+    });

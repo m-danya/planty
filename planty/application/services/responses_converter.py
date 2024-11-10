@@ -96,6 +96,8 @@ def _adjust_task_dict(task: dict[str, Any]) -> None:
 
 def _adjust_section_dict(section: dict[str, Any]) -> None:
     section.pop("user_id")
+    section.pop("has_tasks")
+    section.pop("has_subsections")
     for task in section.get("tasks", []):
         _adjust_task_dict(task)
     for subsection in section.get("subsections", []):

@@ -1,6 +1,5 @@
 "use client";
 import { AppSidebar } from "@/components/app-sidebar";
-import { TaskList } from "@/components/tasks/task-list";
 import {
   SidebarInset,
   SidebarProvider,
@@ -8,9 +7,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
-export default function Page() {
+export function MainSidebarWrapper({ children }) {
   const { mutate: mutateAuth } = useAuthRedirect();
-
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -21,10 +19,7 @@ export default function Page() {
           </div>
           <div className="ml-auto px-3">{/* <NavActions /> */}</div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 px-4 py-10">
-          <TaskList />
-          {/* <div className="mx-auto h-full w-full max-w-3xl rounded-xl bg-muted/50" /> */}
-        </div>
+        <div className="flex flex-1 flex-col gap-4 px-4 py-10">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   );

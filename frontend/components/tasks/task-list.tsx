@@ -1,9 +1,11 @@
 "use client";
 
+import { moveTask } from "@/app/services/taskService";
 import { Task } from "@/components/tasks/task";
+import { useSection } from "@/hooks/use-section";
 import {
-  DndContext,
   closestCenter,
+  DndContext,
   KeyboardSensor,
   PointerSensor,
   useSensor,
@@ -15,24 +17,26 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-const exampleTasks = [
-  { id: 1, name: "Watch 'BoJack Horseman'", isCompleted: true },
-  {
-    id: 2,
-    name: "Task with description",
-    description: "some description here",
-    isCompleted: true,
-  },
-  { id: 3, name: "Clean the house" },
-  { id: 4, name: "Some completed archived task" },
-  { id: 5, name: "Go to the gym", description: "💪🏻💪🏻💪🏻" },
-  { id: 6, name: "A task with date", date: "2024-12-28" },
-];
+export function TaskList({ sectionId }: { sectionId: string }) {
+  const {
+    section,
+    isLoading,
+    isError,
+    mutate: mutateSection,
+  } = useSection(sectionId);
+  const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
+    id: index,
+  }));
+  const [tasks, setTasks] = useState(tasksFillers);
 
-export function TaskList() {
-  const [tasks, setTasks] = useState(exampleTasks);
+  useEffect(() => {
+    if (section?.tasks) {
+      setTasks(section.tasks);
+    }
+  }, [section]);
+
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
     useSensor(KeyboardSensor, {
@@ -52,16 +56,27 @@ export function TaskList() {
     );
   }
 
-  function handleDragEnd(event) {
+  async function handleDragEnd(event) {
     const { active, over } = event;
+    const oldIndex = tasks.findIndex((task) => task.id === active.id);
+    const newIndex = tasks.findIndex((task) => task.id === over.id);
 
     if (active.id !== over.id) {
       setTasks((tasks) => {
-        const oldIndex = tasks.findIndex((task) => task.id === active.id);
-        const newIndex = tasks.findIndex((task) => task.id === over.id);
-
         return arrayMove(tasks, oldIndex, newIndex);
       });
+      const moveTaskData = {
+        task_id: active.id,
+        section_to_id: sectionId,
+        index: newIndex,
+      };
+      try {
+        const result = await moveTask(moveTaskData);
+        console.log("Task moved successfully:", result);
+      } catch (error) {
+        console.error("Failed to move task:", error);
+        console.log("Failed to move task");
+      }
     }
   }
 
@@ -84,7 +99,9 @@ export function TaskList() {
                   <div>
                     <Task
                       task={task}
+                      skeleton={isLoading}
                       handleToggleTaskCompleted={handleToggleTaskCompleted}
+                      mutateSection={mutateSection}
                     />
                   </div>
                   <hr className="border-gray-200 dark:border-white" />

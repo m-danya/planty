@@ -43,6 +43,13 @@ npm i
 npm run dev
 ```
 
+Use [nvm](https://github.com/nvm-sh/nvm) to manage nodejs versions:
+
+```
+nvm install --lts 20
+nvm use --lts 20
+```
+
 ### Switching between database engines
 
 By default, the SQLite engine is used for persistence, but you can easily switch

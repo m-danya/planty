@@ -139,8 +139,8 @@ def all_sections(
     sections_data = _patch_models_data(sections_data)
     models = [SectionModel(**section_data) for section_data in sections_data]
 
-    sections = SQLAlchemySectionRepository.get_sections_tree(
-        models, return_as_tree=False
+    sections = SQLAlchemySectionRepository.construct_sections_tree(
+        models, return_flat=True
     )
 
     for section in sections:
@@ -156,57 +156,62 @@ class HasId(Protocol):
 T = TypeVar("T", bound=HasId)
 
 
-def _find_by_id(all_entities: list[T], id_: UUID) -> T:
+def find_entity_by_id(all_entities: list[T], id_: UUID) -> T:
     return next(entity for entity in all_entities if entity.id == id_)
 
 
 @pytest.fixture
 def nonperiodic_task(all_tasks: list[Task]) -> Task:
-    return _find_by_id(all_tasks, UUID("f4186c04-3f2d-4217-a6ed-5c40bc9946d2"))
+    return find_entity_by_id(all_tasks, UUID("f4186c04-3f2d-4217-a6ed-5c40bc9946d2"))
 
 
 @pytest.fixture
 def everyday_task(all_tasks: list[Task]) -> Task:
-    return _find_by_id(all_tasks, UUID("0c6865ac-6bba-4837-8d48-6a057d4b12bf"))
+    return find_entity_by_id(all_tasks, UUID("0c6865ac-6bba-4837-8d48-6a057d4b12bf"))
 
 
 @pytest.fixture
 def flexible_recurrence_task(all_tasks: list[Task]) -> Task:
-    return _find_by_id(all_tasks, UUID("7874f13d-ef4b-4fbd-87a8-db6bbf407976"))
+    return find_entity_by_id(all_tasks, UUID("7874f13d-ef4b-4fbd-87a8-db6bbf407976"))
 
 
 @pytest.fixture
 def task_from_2001(all_tasks: list[Task]) -> Task:
-    return _find_by_id(all_tasks, UUID("fe03f915-a5d8-4b4a-9ee6-93dacb2bf08e"))
+    return find_entity_by_id(all_tasks, UUID("fe03f915-a5d8-4b4a-9ee6-93dacb2bf08e"))
 
 
 @pytest.fixture
 def task_with_due_to_and_no_recurrence(all_tasks: list[Task]) -> Task:
-    return _find_by_id(all_tasks, UUID("2c5f3244-ec03-4ddd-b78c-cc4ab5db4d42"))
+    return find_entity_by_id(all_tasks, UUID("2c5f3244-ec03-4ddd-b78c-cc4ab5db4d42"))
 
 
 @pytest.fixture
-def nonempty_section(all_sections: list[Section]) -> Section:
-    return _find_by_id(all_sections, UUID("a5b2010d-c27c-4f22-be47-828e065f9607"))
+def chores_section(all_sections: list[Section]) -> Section:
+    return find_entity_by_id(all_sections, UUID("a5b2010d-c27c-4f22-be47-828e065f9607"))
 
 
 @pytest.fixture
 def section_sometimes_later(all_sections: list[Section]) -> Section:
-    return _find_by_id(all_sections, UUID("36ea0a4f-0334-464d-8066-aa359ecfdcba"))
+    return find_entity_by_id(all_sections, UUID("36ea0a4f-0334-464d-8066-aa359ecfdcba"))
 
 
 @pytest.fixture
 def section_current_tasks(all_sections: list[Section]) -> Section:
-    return _find_by_id(all_sections, UUID("6ff6e896-5da3-46ec-bf66-0a317c5496fa"))
+    return find_entity_by_id(all_sections, UUID("6ff6e896-5da3-46ec-bf66-0a317c5496fa"))
+
+
+@pytest.fixture
+def section_this_week(all_sections: list[Section]) -> Section:
+    return find_entity_by_id(all_sections, UUID("090eda97-dd2d-45bb-baa0-7814313e5a38"))
 
 
 @pytest.fixture(scope="session")
 def test_user(all_users: list[User]) -> User:
     # WARNING: do not modify this object
-    return _find_by_id(all_users, UUID("38df4136-36b2-4171-8459-27f411af8323"))
+    return find_entity_by_id(all_users, UUID("38df4136-36b2-4171-8459-27f411af8323"))
 
 
 @pytest.fixture(scope="session")
 def another_test_user(all_users: list[User]) -> User:
     # WARNING: do not modify this object
-    return _find_by_id(all_users, UUID("73ca2340-76bd-4abe-b872-7e82a9528c45"))
+    return find_entity_by_id(all_users, UUID("73ca2340-76bd-4abe-b872-7e82a9528c45"))

@@ -211,7 +211,7 @@ class SQLAlchemySectionRepository:
             subsection_models = (
                 (
                     await self._db_session.execute(
-                        select(SectionModel).where(SectionModel.id == section_id)
+                        select(SectionModel).where(SectionModel.parent_id == section_id)
                     )
                 )
                 .scalars()
@@ -223,19 +223,28 @@ class SQLAlchemySectionRepository:
             subsections = direct_subsections
         return section_model.to_entity(tasks=tasks, subsections=subsections)
 
-    async def get_all_without_tasks(self, user_id: UUID) -> list[Section]:
+    async def get_all_without_tasks(
+        self, user_id: UUID, leaves_only: bool
+    ) -> list[Section]:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.user_id == user_id)
         )
         section_models = list(result.scalars().all())
-        top_level_sections = self.get_sections_tree(section_models)
-        return top_level_sections
+        if leaves_only:
+            return [
+                model.to_entity(tasks=[], subsections=[])
+                for model in section_models
+                if not model.has_subsections
+            ]
+        else:
+            return self.construct_sections_tree(section_models)
 
     @staticmethod
-    def get_sections_tree(
-        section_models: list[SectionModel], return_as_tree: bool = True
+    def construct_sections_tree(
+        section_models: list[SectionModel], return_flat: bool = False
     ) -> list[Section]:
         # TODO: extract to generic function for other entities
+        # TODO: sort using SQL in repository instead
         section_models.sort(key=lambda s: s.index)
         # TODO: use delay_validation here
         id_to_section: dict[UUID, Section] = {
@@ -251,10 +260,10 @@ class SQLAlchemySectionRepository:
                 parent_section = id_to_section[parent_id]
                 parent_section.subsections.append(section)
             all_sections.append(section)
-        if return_as_tree:
-            return top_level_sections
-        else:
+        if return_flat:
             return all_sections
+        else:
+            return top_level_sections
 
     async def count_subsections(self, section_id: UUID) -> int:
         result = await self._db_session.execute(
@@ -274,6 +283,9 @@ class SQLAlchemySectionRepository:
 
         section_model.title = section.title
         section_model.parent_id = section.parent_id
+
+        section_model.has_tasks = section.has_tasks
+        section_model.has_subsections = section.has_subsections
 
         # update index if it's meant to be updated
         if index is not None:
