@@ -117,6 +117,9 @@ class SectionModel(Base):
     tasks = relationship("TaskModel", back_populates="section")
     user = relationship("UserModel", back_populates="sections")
 
+    has_tasks: Mapped[bool]
+    has_subsections: Mapped[bool]
+
     @classmethod
     def from_entity(cls, section: Section, index: NonNegativeInt) -> "SectionModel":
         return cls(
@@ -126,6 +129,8 @@ class SectionModel(Base):
             parent_id=section.parent_id,
             added_at=section.added_at,
             index=index,
+            has_tasks=section.has_tasks,
+            has_subsections=section.has_subsections,
         )
 
     def to_entity(self, tasks: list[Task], subsections: list[Section]) -> Section:
@@ -136,6 +141,8 @@ class SectionModel(Base):
             parent_id=self.parent_id,
             tasks=tasks,
             subsections=subsections,
+            has_tasks=self.has_tasks,
+            has_subsections=self.has_subsections,
         )
 
 

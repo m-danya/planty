@@ -132,7 +132,11 @@ class SectionService:
 
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
         if parent_id := section_data.parent_id:
-            parent_section = await self.get_section(user_id, parent_id)
+            parent_section = await self._section_repo.get(
+                parent_id, with_direct_subsections=True
+            )
+            if parent_section.user_id != user_id:
+                raise ForbiddenException()
             # add to the end of parent section:
             index = await self._section_repo.count_subsections(parent_section.id)
         else:
@@ -143,7 +147,12 @@ class SectionService:
             parent_id=section_data.parent_id,
             tasks=[],
             subsections=[],
+            has_subsections=False,
+            has_tasks=False,
         )
+        parent_section.insert_subsection(
+            section, index
+        )  # this line checks constraints of parent_section
         await self._section_repo.add(section, index=index)
         return section
 

@@ -211,7 +211,7 @@ class SQLAlchemySectionRepository:
             subsection_models = (
                 (
                     await self._db_session.execute(
-                        select(SectionModel).where(SectionModel.id == section_id)
+                        select(SectionModel).where(SectionModel.parent_id == section_id)
                     )
                 )
                 .scalars()

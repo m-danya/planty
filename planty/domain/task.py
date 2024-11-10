@@ -14,10 +14,11 @@ from pydantic import (
 from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
 from planty.domain.exceptions import (
-    MovingSectionIndexError,
+    MisplaceSectionIndexError,
     RemovingSectionFromWrongSectionError,
     RemovingTaskFromWrongSectionError,
     MovingTaskIndexError,
+    SectionCantBothHaveTasksAndSubsection,
 )
 
 
@@ -114,6 +115,28 @@ class Section(Entity):
     tasks: list[Task]  # can be loaded or not
     subsections: list["Section"]  # can be loaded or not
 
+    # These flags are required for validation. They allow checking validity
+    # without actually loading all the data (tasks and subsections) in all usecases.
+    has_tasks: bool
+    has_subsections: bool
+
+    @model_validator(mode="after")
+    def check_flags(self) -> "Section":
+        if self.has_tasks and self.has_subsections:
+            raise SectionCantBothHaveTasksAndSubsection()
+
+        # if tasks are loaded, check the flag, just in case:
+        if self.tasks and not self.has_tasks:
+            raise ValueError(
+                f"Programming error: `has_tasks` flag is set incorrectly for section {self.id}"
+            )
+        # if subsections are loaded, check the flag, just in case:
+        if self.subsections and not self.has_subsections:
+            raise ValueError(
+                f"Programming error: `has_subsections` flag is set incorrectly for section {self.id}"
+            )
+        return self
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Section) and self.id == other.id
 
@@ -137,13 +160,19 @@ class Section(Entity):
             parent_id=None,
             tasks=[],
             subsections=[],
+            has_tasks=False,
+            has_subsections=False,
         )
 
-    # @model_validator(mode="after")
-    # def check_only_leaf_can_have_tasks(self) -> "Section":
-    #     if self.subsections and self.tasks:
-    #         raise SomePlantyDomainExeception(...)
-    #     return self
+    def _update_has_tasks_flag(self) -> None:
+        # 1) This method must always be called when `self.tasks` are changed
+        # 2) This method must be called only when `self.tasks` are loaded
+        self.has_tasks = bool(self.tasks)
+
+    def _update_has_subsections_flag(self) -> None:
+        # 1) This method must always be called when `self.subsections` are changed
+        # 2) This method must be called only when `self.subsections` are loaded
+        self.has_subsections = bool(self.subsections)
 
     def insert_task(self, task: Task, index: Optional[NonNegativeInt] = None) -> None:
         if index is None:
@@ -152,11 +181,13 @@ class Section(Entity):
             raise MovingTaskIndexError()
         task.section_id = self.id
         self.tasks.insert(index, task)
+        self._update_has_tasks_flag()
 
     def remove_task(self, task: Task) -> Task:
         if task.section_id != self.id:
             raise RemovingTaskFromWrongSectionError()
         self.tasks = [t for t in self.tasks if t.id != task.id]
+        self._update_has_tasks_flag()
         return task
 
     @staticmethod
@@ -168,6 +199,8 @@ class Section(Entity):
     ) -> None:
         task_to_move = section_from.remove_task(task_to_move)
         section_to.insert_task(task_to_move, index)
+        section_from._update_has_tasks_flag()
+        section_to._update_has_tasks_flag()
 
     def insert_subsection(
         self, subsection: "Section", index: Optional[NonNegativeInt] = None
@@ -175,14 +208,16 @@ class Section(Entity):
         if index is None:
             index = len(self.subsections)
         if index > len(self.subsections):
-            raise MovingSectionIndexError()
+            raise MisplaceSectionIndexError()
         subsection.parent_id = self.id
         self.subsections.insert(index, subsection)
+        self._update_has_subsections_flag()
 
     def remove_subsection(self, subsection: "Section") -> "Section":
         if subsection.parent_id != self.id:
             raise RemovingSectionFromWrongSectionError()
         self.subsections = [s for s in self.subsections if s.id != subsection.id]
+        self._update_has_subsections_flag()
         return subsection
 
     @staticmethod
@@ -195,6 +230,8 @@ class Section(Entity):
         # section === subsection (every section is a subsection)
         subsection = section_from.remove_subsection(section)
         section_to.insert_subsection(subsection, index)
+        section_from._update_has_subsections_flag()
+        section_to._update_has_subsections_flag()
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)

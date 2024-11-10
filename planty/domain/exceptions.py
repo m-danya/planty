@@ -10,12 +10,12 @@ class MovingTaskIndexError(PlantyException):
         return "The task can't be moved to the specified index"
 
 
-class MovingSectionIndexError(PlantyException):
+class MisplaceSectionIndexError(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 
     @property
     def _detail(self) -> str:
-        return "The section can't be moved to the specified index"
+        return "The section can't be placed at the specified index"
 
 
 class RemovingTaskFromWrongSectionError(PlantyException):
@@ -40,3 +40,11 @@ class ChangingRootSectionError(PlantyException):
     @property
     def _detail(self) -> str:
         return "The root section can't be modified"
+
+
+class SectionCantBothHaveTasksAndSubsection(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "Section can't have both tasks and subsections"
