@@ -20,7 +20,12 @@ import {
 import { useEffect, useState } from "react";
 
 export function TaskList({ sectionId }: { sectionId: string }) {
-  const { section, isLoading, isError } = useSection(sectionId);
+  const {
+    section,
+    isLoading,
+    isError,
+    mutate: mutateSection,
+  } = useSection(sectionId);
   const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
     id: index,
   }));
@@ -96,6 +101,7 @@ export function TaskList({ sectionId }: { sectionId: string }) {
                       task={task}
                       skeleton={isLoading}
                       handleToggleTaskCompleted={handleToggleTaskCompleted}
+                      mutateSection={mutateSection}
                     />
                   </div>
                   <hr className="border-gray-200 dark:border-white" />

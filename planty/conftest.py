@@ -139,9 +139,7 @@ def all_sections(
     sections_data = _patch_models_data(sections_data)
     models = [SectionModel(**section_data) for section_data in sections_data]
 
-    sections = SQLAlchemySectionRepository.get_sections_tree(
-        models, return_as_tree=False
-    )
+    sections = SQLAlchemySectionRepository.get_sections_tree(models, as_tree=False)
 
     for section in sections:
         section.tasks = [task for task in all_tasks if task.section_id == section.id]
