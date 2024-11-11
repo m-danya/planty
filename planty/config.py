@@ -1,5 +1,4 @@
 from typing import Literal
-import uuid
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -27,12 +26,8 @@ class Settings(BaseSettings):
     test_db_host: str
     test_db_port: int
     test_db_user: str
-    test_db_name: str
+    test_db_name: str  # isn't used for sqlite (hardcoded to :memory:)
     test_db_pass: str
-
-    # if enabled, run tests with `pytest -n 8`. DOESN'T WORK PROPERLY FOR NOW,
-    # the db name must be generated inside fixture with scope='function'
-    parallel_testing_experimental: bool = False
 
     def get_database_url(
         self, for_alembic: bool = False, for_tests: bool = False
@@ -46,9 +41,13 @@ class Settings(BaseSettings):
                     f"{self.test_db_port}/{self.test_db_name}"
                 )
             else:
-                if self.parallel_testing_experimental:
-                    settings.test_db_name = f"{PARALLEL_DBS_PREFIX}{uuid.uuid4()}"
-                return f"sqlite+aiosqlite:///{self.test_db_name}.db"
+                # Uncomment to get database with sample data
+                # return f"sqlite+aiosqlite:///{self.test_db_name}.db"
+
+                # In-memory database. Make sure to use one connection (do not
+                # disable connection pooling), as `?cache=shared` doesn't seem to
+                # work here (set poolclass to NullPull and tests will fail)
+                return "sqlite+aiosqlite:///:memory:?cache=shared"
         else:
             if self.db_type == "postgresql":
                 return (

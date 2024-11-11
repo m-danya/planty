@@ -1,14 +1,11 @@
-from pathlib import Path
-from typing import Any, AsyncGenerator, Generator
+from typing import Any, AsyncGenerator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
 from planty.application.auth import current_user
 from planty.config import settings
-from planty import config
 from planty.domain.task import User
-from loguru import logger
 import subprocess
 import httpx
 import asyncio
@@ -102,12 +99,3 @@ async def minio_container() -> AsyncGenerator[None, None]:
                 shell=True,
                 check=True,
             )
-
-
-@pytest.fixture(scope="session")
-def clean_parallel_dbs() -> Generator[None, None, None]:
-    yield
-    if settings.parallel_testing_experimental:
-        for db_file in Path.cwd().glob(f"{config.PARALLEL_DBS_PREFIX}*.db"):
-            logger.info(f"Removing temporary db {db_file}")
-            db_file.unlink()

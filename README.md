@@ -27,7 +27,8 @@ poetry install
 # alembic upgrade head
 
 # Alembic migrations are not being maintained yet due to a high pace of changes
-# during initial development. To get correct db from tests, run this:
+# during initial development. To get db with sample data from tests, uncomment a
+# line in `config.py` to avoid using in-memory db for tests and run this:
 pytest; cp planty_test.db planty.db
 
 # (backend is not dockerized yet)

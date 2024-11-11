@@ -1,6 +1,6 @@
 from typing import Any, AsyncGenerator
 
-from sqlalchemy import NullPool, event
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
@@ -8,13 +8,11 @@ from planty.config import settings
 
 if settings.mode == "TEST":
     database_url = settings.get_database_url(for_tests=True)
-    database_params = {"poolclass": NullPool}
 else:
     database_url = settings.get_database_url()
-    database_params = {}
 
 
-engine = create_async_engine(database_url, **database_params)
+engine = create_async_engine(database_url)
 
 
 # Enable foreign key checks for SQLite
