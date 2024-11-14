@@ -1,4 +1,4 @@
-import { moveTask } from "@/app/services/taskService";
+import { Api, SectionResponse } from "@/api/Api";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -32,6 +32,7 @@ export function MoveTaskToSectionForm({
   const { sections, isLoading, isError } = useSections({
     leavesOnly: true,
   });
+  const api = new Api().api;
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {},
@@ -39,17 +40,16 @@ export function MoveTaskToSectionForm({
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    const moveTaskData = {
-      task_id: taskId,
-      section_to_id: values.sectionId,
-      index: 0, // TODO: pass None to move to the end of section
-    };
     try {
-      const result = await moveTask(moveTaskData);
+      const result = await api.moveTaskApiTaskMovePost({
+        task_id: taskId,
+        section_to_id: values.sectionId,
+        index: 0, // TODO: pass None to move to the end of section
+      });
       console.log("Task moved successfully:", result);
     } catch (error) {
       console.error("Failed to move task:", error);
-      console.log("Failed to move task");
+      alert("Failed to move task");
     }
     afterSubmit();
   }
@@ -75,7 +75,7 @@ export function MoveTaskToSectionForm({
                 </FormControl>
                 <SelectContent>
                   {!isLoading &&
-                    sections.map((section) => (
+                    sections?.map((section: SectionResponse) => (
                       <SelectItem value={section.id} key={section.id}>
                         {section.title}
                       </SelectItem>

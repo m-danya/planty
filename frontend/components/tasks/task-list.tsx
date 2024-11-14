@@ -1,6 +1,6 @@
 "use client";
 
-import { moveTask, updateTask } from "@/app/services/taskService";
+import { Api } from "@/api/Api";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
@@ -30,6 +30,7 @@ export function TaskList({ sectionId }: { sectionId: string }) {
     id: index,
   }));
   const [tasks, setTasks] = useState(tasksFillers);
+  const api = new Api().api;
 
   useEffect(() => {
     if (section?.tasks) {
@@ -65,16 +66,17 @@ export function TaskList({ sectionId }: { sectionId: string }) {
       setTasks((tasks) => {
         return arrayMove(tasks, oldIndex, newIndex);
       });
-      const moveTaskData = {
-        task_id: active.id,
-        section_to_id: sectionId,
-        index: newIndex,
-      };
+
       try {
-        const result = await moveTask(moveTaskData);
+        const result = await api.moveTaskApiTaskMovePost({
+          task_id: active.id,
+          section_to_id: sectionId,
+          index: newIndex,
+        });
         console.log("Task moved successfully:", result);
       } catch (error) {
         console.error("Failed to move task:", error);
+        alert("Failed to move task");
       }
     }
   }
@@ -87,10 +89,17 @@ export function TaskList({ sectionId }: { sectionId: string }) {
     due_to_days_period?: number;
   }) {
     try {
-      const result = await updateTask(updateTaskData);
+      const result = await api.updateTaskApiTaskPatch({
+        id: updateTaskData.id,
+        title: updateTaskData.title,
+        description: updateTaskData.description,
+        due_to_next: updateTaskData.due_to_next,
+        due_to_days_period: updateTaskData.due_to_days_period,
+      });
       console.log("Task edited successfully:", result);
     } catch (error) {
       console.error("Failed to edit task:", error);
+      alert("Error while editing task");
     }
     mutateSection();
   }

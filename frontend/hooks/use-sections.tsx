@@ -1,10 +1,11 @@
 import useSWR from "swr";
 import { fetcher } from "@/hooks/fetcher";
+import { SectionResponse } from "@/api/Api";
 
 export const useSections = ({
   leavesOnly = false,
 }: { leavesOnly?: boolean } = {}) => {
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading } = useSWR<SectionResponse[]>(
     `/api/sections?leaves_only=${leavesOnly}`,
     fetcher
   );
