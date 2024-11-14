@@ -15,3 +15,20 @@ export async function moveTask(taskData: {
     throw error;
   }
 }
+
+export async function updateTask(updateTaskData: {
+  id: string;
+  title?: string;
+  description?: string;
+  due_to_next?: string;
+  due_to_days_period?: number;
+}) {
+  try {
+    const response = await axios.patch("/api/task", updateTaskData);
+    return response.data;
+  } catch (error) {
+    alert("Error while updating task, check the console for logs");
+    console.error("Error while updating task:", error);
+    throw error;
+  }
+}

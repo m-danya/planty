@@ -1,6 +1,6 @@
 "use client";
 
-import { moveTask } from "@/app/services/taskService";
+import { moveTask, updateTask } from "@/app/services/taskService";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
@@ -75,9 +75,24 @@ export function TaskList({ sectionId }: { sectionId: string }) {
         console.log("Task moved successfully:", result);
       } catch (error) {
         console.error("Failed to move task:", error);
-        console.log("Failed to move task");
       }
     }
+  }
+
+  async function handleTaskEdit(updateTaskData: {
+    id: string;
+    title?: string;
+    description?: string;
+    due_to_next?: string;
+    due_to_days_period?: number;
+  }) {
+    try {
+      const result = await updateTask(updateTaskData);
+      console.log("Task edited successfully:", result);
+    } catch (error) {
+      console.error("Failed to edit task:", error);
+    }
+    mutateSection();
   }
 
   return (
@@ -102,6 +117,7 @@ export function TaskList({ sectionId }: { sectionId: string }) {
                       skeleton={isLoading}
                       handleToggleTaskCompleted={handleToggleTaskCompleted}
                       mutateSection={mutateSection}
+                      handleTaskEdit={handleTaskEdit}
                     />
                   </div>
                   <hr className="border-gray-200 dark:border-white" />

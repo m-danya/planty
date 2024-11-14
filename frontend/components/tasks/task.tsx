@@ -13,6 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { MoveRight, X } from "lucide-react";
@@ -24,17 +28,30 @@ export function Task({
   handleToggleTaskCompleted,
   skeleton,
   mutateSection,
+  handleTaskEdit,
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: task.id });
 
-  const [dialogIsOpen, setDialogOpen] = useState(false);
+  const [moveTaskDialogIsOpen, setMoveTaskDialogIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const [editedDescription, setEditedDescription] = useState(task.description);
 
   const dndStyle = {
     transform: CSS.Translate.toString(transform),
     transition,
   };
-  // TODO; extract skeleton?
+
+  const handleFinishChangingTask = () => {
+    handleTaskEdit({
+      id: task.id,
+      title: editedTitle,
+      description: editedDescription,
+    });
+    setIsEditing(false);
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -45,7 +62,12 @@ export function Task({
     >
       <ContextMenu key={`${task.id}_context_menu`}>
         <ContextMenuTrigger>
-          <div className="py-3.5 px-2 text-small">
+          <div
+            className="py-3.5 px-2 text-small"
+            onClick={() => {
+              setIsEditing(true);
+            }}
+          >
             <div className="flex items-center justify-start w-full">
               {skeleton && (
                 <div className="mx-2 rounded-full bg-gray-100 h-5 w-5"></div>
@@ -81,7 +103,7 @@ export function Task({
             <div
               className="flex items-center gap-x-2"
               onClick={() => {
-                setDialogOpen(true);
+                setMoveTaskDialogIsOpen(true);
               }}
             >
               <MoveRight />
@@ -96,9 +118,11 @@ export function Task({
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenu>
+
+      {/* Move Task Dialog */}
       <Dialog
-        open={dialogIsOpen}
-        onOpenChange={setDialogOpen}
+        open={moveTaskDialogIsOpen}
+        onOpenChange={setMoveTaskDialogIsOpen}
         key={`${task.id}_section_dialog`}
       >
         <DialogContent>
@@ -110,9 +134,46 @@ export function Task({
             taskId={task.id}
             afterSubmit={() => {
               mutateSection();
-              setDialogOpen(false);
+              setMoveTaskDialogIsOpen(false);
             }}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Task Dialog */}
+      <Dialog
+        open={isEditing}
+        onOpenChange={setIsEditing}
+        key={`${task.id}_edit_dialog`}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Task</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleFinishChangingTask}>Save</Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
