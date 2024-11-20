@@ -85,16 +85,14 @@ export function TaskList({ sectionId }: { sectionId: string }) {
     id: string;
     title?: string;
     description?: string;
-    due_to_next?: string;
-    due_to_days_period?: number;
+    due_to?: string;
   }) {
     try {
       const result = await api.updateTaskApiTaskPatch({
         id: updateTaskData.id,
         title: updateTaskData.title,
         description: updateTaskData.description,
-        due_to_next: updateTaskData.due_to_next,
-        due_to_days_period: updateTaskData.due_to_days_period,
+        due_to: updateTaskData.due_to,
       });
       console.log("Task edited successfully:", result);
     } catch (error) {

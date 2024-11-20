@@ -280,10 +280,8 @@ export interface TaskUpdateRequest {
   title?: string;
   /** Description */
   description?: string | null;
-  /** Due To Next */
-  due_to_next?: string | null;
-  /** Due To Days Period */
-  due_to_days_period?: number | null;
+  /** Due To */
+  due_to?: string | null;
 }
 
 /** TaskUpdateResponse */

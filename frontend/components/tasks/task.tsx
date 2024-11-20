@@ -19,10 +19,27 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoveRight, X } from "lucide-react";
+import { MoveRight, X, CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { MoveTaskToSectionForm } from "./move-task-to-section-form";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
+import {
+  format,
+  isToday,
+  isYesterday,
+  isTomorrow,
+  isThisWeek,
+  isSameYear,
+  parseISO,
+  startOfDay,
+  isAfter,
+} from "date-fns";
 export function Task({
   task,
   handleToggleTaskCompleted,
@@ -37,6 +54,11 @@ export function Task({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
   const [editedDescription, setEditedDescription] = useState(task.description);
+  const [editedDueTo, setEditedDueTo] = useState<Date | null>(
+    task.due_to ? new Date(task.due_to) : null
+  );
+
+  const clearDate = () => setEditedDueTo(null);
 
   const dndStyle = {
     transform: CSS.Translate.toString(transform),
@@ -48,9 +70,12 @@ export function Task({
       id: task.id,
       title: editedTitle,
       description: editedDescription,
+      due_to: editedDueTo ? format(editedDueTo, "yyyy-MM-dd") : null,
     });
     setIsEditing(false);
   };
+
+  const taskDueTo = task.due_to && parseISO(task.due_to);
 
   return (
     <div
@@ -88,7 +113,10 @@ export function Task({
                 <div className="h-4 flex-none w-32 bg-gray-100 rounded"></div>
               )}
               {!skeleton && (
-                <div className="flex flex-col items-center">{task.title}</div>
+                <div className="flex flex-col items-start">
+                  <div>{task.title}</div>
+                  {task.due_to && <DateLabel date={taskDueTo} />}
+                </div>
               )}
             </div>
             {!skeleton && task.description && (
@@ -167,6 +195,41 @@ export function Task({
                 onChange={(e) => setEditedDescription(e.target.value)}
               />
             </div>
+            <div>
+              <Label>Due Date</Label>
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={"w-full justify-start text-left font-normal"}
+                    >
+                      {editedDueTo ? (
+                        <DateLabel date={editedDueTo} />
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      weekStartsOn={1}
+                      selected={editedDueTo}
+                      onSelect={setEditedDueTo}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearDate}
+                  aria-label="Clear Date"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={() => setIsEditing(false)}>
                 Cancel
@@ -176,6 +239,54 @@ export function Task({
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function DateLabel({ date: dateToShow }: { date: Date }) {
+  function getDateColorClass(dueDate: Date) {
+    const now = new Date();
+    if (isAfter(startOfDay(now), startOfDay(dueDate))) {
+      return "text-red-600";
+    }
+    if (isToday(dueDate)) {
+      return "text-green-600";
+    }
+    return "text-gray-600";
+  }
+
+  function getFormattedDate(dueDate: Date) {
+    // const dueDate = dueTo;
+    const now = new Date();
+    console.log(dueDate, now);
+
+    if (isToday(dueDate)) {
+      return "Today";
+    }
+    if (isYesterday(dueDate)) {
+      return "Yesterday";
+    }
+    if (isTomorrow(dueDate)) {
+      return "Tomorrow";
+    }
+    if (
+      isThisWeek(dueDate, { weekStartsOn: 1 }) &&
+      isAfter(startOfDay(dueDate), startOfDay(now))
+    ) {
+      return format(dueDate, "EEEE"); // Day of the week (e.g., Monday)
+    }
+    if (isSameYear(dueDate, now)) {
+      return format(dueDate, "MMM d"); // Month and day (e.g., Nov 11)
+    }
+    return format(dueDate, "MMM d, yyyy"); // Month, day, and year (e.g., Nov 11, 2024)
+  }
+
+  const colorClass = getDateColorClass(dateToShow);
+
+  return (
+    <div className={`my-0.5 text-sm flex items-center ${colorClass}`}>
+      <CalendarIcon className={`mr-1 h-4 w-4 ${colorClass}`} />
+      {getFormattedDate(dateToShow)}
     </div>
   );
 }

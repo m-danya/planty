@@ -69,8 +69,8 @@ class TaskUpdateRequest(Schema):
     id: UUID
     title: str = None  # type: ignore
     description: Optional[str] = None
-    due_to_next: Optional[date] = None
-    due_to_days_period: Optional[int] = None
+    due_to: Optional[date] = None
+    # TODO: add recurrence params here
 
 
 class TaskUpdateResponse(Schema):
