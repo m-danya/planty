@@ -57,6 +57,7 @@ export function Task({
   const [editedDueTo, setEditedDueTo] = useState<Date | null>(
     task.due_to ? new Date(task.due_to) : null
   );
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   const clearDate = () => setEditedDueTo(null);
 
@@ -73,6 +74,10 @@ export function Task({
       due_to: editedDueTo ? format(editedDueTo, "yyyy-MM-dd") : null,
     });
     setIsEditing(false);
+  };
+  const handleDateSelect = (date: Date) => {
+    setEditedDueTo(date);
+    setIsPopoverOpen(false);
   };
 
   const taskDueTo = task.due_to && parseISO(task.due_to);
@@ -198,7 +203,7 @@ export function Task({
             <div>
               <Label>Due Date</Label>
               <div className="flex items-center gap-2">
-                <Popover>
+                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant={"outline"}
@@ -216,7 +221,7 @@ export function Task({
                       mode="single"
                       weekStartsOn={1}
                       selected={editedDueTo}
-                      onSelect={setEditedDueTo}
+                      onSelect={handleDateSelect}
                     />
                   </PopoverContent>
                 </Popover>
@@ -252,13 +257,14 @@ function DateLabel({ date: dateToShow }: { date: Date }) {
     if (isToday(dueDate)) {
       return "text-green-600";
     }
+    if (isThisWeek(dueDate, { weekStartsOn: 1 })) {
+      return "text-purple-800";
+    }
     return "text-gray-600";
   }
 
   function getFormattedDate(dueDate: Date) {
-    // const dueDate = dueTo;
     const now = new Date();
-    console.log(dueDate, now);
 
     if (isToday(dueDate)) {
       return "Today";
