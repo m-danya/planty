@@ -51,7 +51,7 @@ const data = {
     },
     {
       title: "Archived tasks",
-      url: "#",
+      url: "/archived",
       icon: Archive,
     },
     {

@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronRight } from "lucide-react";
-
+import { useRouter } from "next/navigation";
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,7 +23,6 @@ import Link from "next/link";
 
 export function NavSections() {
   const { sections, rootSectionId, isLoading, isError } = useSections();
-
   if (isError) return <p>Failed to load sections.</p>;
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden text-nowrap">
@@ -70,7 +69,7 @@ function Tree({ item, noIndent = false }) {
           </CollapsibleTrigger>
         </div>
         <CollapsibleContent>
-          <SidebarMenuSub className="w-fit">
+          <SidebarMenuSub className="w-full">
             {item.subsections.map((child) => (
               <Tree
                 key={child.title}
@@ -106,8 +105,16 @@ const TreeElement = React.forwardRef<
   ) => {
     const displayFullIdent = !withChevron && withIdentIfNoChevron;
     const displayMiniIdent = !withChevron && !withIdentIfNoChevron;
-    const mainContent = (
-      <div className="flex items-center">
+    const router = useRouter();
+
+    const handleClick = () => {
+      if (clickable) {
+        router.push(`/section/${item.id}`);
+      }
+    };
+
+    return (
+      <div className="flex items-center w-full h-full" onClick={handleClick}>
         {displayFullIdent && <div className="w-5 flex justify-left" />}
         {displayMiniIdent && <div className="w-2.5 flex justify-left" />}
         {withChevron && (
@@ -120,21 +127,6 @@ const TreeElement = React.forwardRef<
         </div>
       </div>
     );
-    if (!clickable) {
-      return mainContent;
-    } else {
-      return (
-        <Link
-          ref={ref}
-          href={`/section/${item.id}`}
-          title={item.title}
-          {...props}
-          className=""
-        >
-          {mainContent}
-        </Link>
-      );
-    }
   }
 );
 

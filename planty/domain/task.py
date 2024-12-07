@@ -89,6 +89,9 @@ class Task(Entity):
     def toggle_completed(self, auto_archive: bool = True) -> None:
         if self.is_completed:
             self.is_completed = False
+            # TODO: think about this behavior
+            if auto_archive:
+                self.unarchive()
         else:
             self.mark_completed(auto_archive=auto_archive)
 

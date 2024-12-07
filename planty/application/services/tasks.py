@@ -11,6 +11,7 @@ from planty.application.exceptions import (
     TaskNotFoundException,
 )
 from planty.application.schemas import (
+    ArchivedTasks,
     AttachmentUploadInfo,
     RequestAttachmentUpload,
     ArchivedTasksResponse,
@@ -75,6 +76,7 @@ class TaskService:
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
         tasks = await self._task_repo.get_archived_tasks(user_id)
+        tasks = ArchivedTasks(tasks=tasks)
         return convert_to_response(tasks)
 
     async def get_tasks_by_search_query(
@@ -253,10 +255,16 @@ class SectionService:
         if not task:
             raise TaskNotFoundException(task_id=task_id)
         task_is_archived_before = task.is_archived
+
         task.toggle_completed(auto_archive=auto_archive)
+
         if task.is_archived != task_is_archived_before:
-            # "remove" task from section to update others' indices:
-            section.remove_task(task)
+            if task.is_archived:
+                # "remove" task from section to update others' indices:
+                section.remove_task(task)
+            else:
+                # unarchiving task => add to section end
+                section.insert_task(task)
             await self._section_repo.update(section)
         await self._task_repo.update_or_create(task)
         return convert_to_response(section)

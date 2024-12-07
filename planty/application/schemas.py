@@ -5,7 +5,7 @@ import uuid
 
 from pydantic import BaseModel, ConfigDict, NonNegativeInt
 
-from planty.domain.task import Attachment, RecurrenceInfo
+from planty.domain.task import Attachment, RecurrenceInfo, Task
 
 from fastapi_users import schemas as fastapi_users_schemas
 
@@ -69,8 +69,8 @@ class TaskUpdateRequest(Schema):
     id: UUID
     title: str = None  # type: ignore
     description: Optional[str] = None
-    due_to_next: Optional[date] = None
-    due_to_days_period: Optional[int] = None
+    due_to: Optional[date] = None
+    # TODO: add recurrence params here
 
 
 class TaskUpdateResponse(Schema):
@@ -140,7 +140,17 @@ class SectionResponse(Schema):
 SectionsListResponse = list[SectionResponse]
 TasksByDateResponse = dict[date, list[TaskResponse]]
 
-ArchivedTasksResponse = list[TaskResponse]
+
+# TODO: remove if response_converted will be rewritten
+class ArchivedTasks(Schema):  # almost like `Section`
+    tasks: list[Task]
+
+
+class ArchivedTasksResponse(Schema):
+    title: str = "Archived tasks"
+    tasks: list[TaskResponse]
+
+
 TaskSearchResponse = list[TaskResponse]
 
 

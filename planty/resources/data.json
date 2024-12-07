@@ -189,7 +189,7 @@
       "due_to": "2025-01-20",
       "flexible_recurrence_mode": false,
       "recurrence_type": "days",
-      "index": 1
+      "index": 0
     },
     {
       "id": "f4186c04-3f2d-4217-a6ed-5c40bc9946d2",
@@ -201,7 +201,7 @@
       "is_archived": false,
       "added_at": "2024-03-28T04:11:17.677Z",
       "due_to": null,
-      "index": 2
+      "index": 1
     },
     {
       "id": "7874f13d-ef4b-4fbd-87a8-db6bbf407976",
@@ -216,7 +216,7 @@
       "recurrence_period": 2,
       "flexible_recurrence_mode": true,
       "recurrence_type": "days",
-      "index": 3
+      "index": 2
     },
     {
       "id": "6ba81664-a19c-43f7-8664-93a995bf0962",
@@ -228,7 +228,7 @@
       "is_archived": false,
       "added_at": "2024-03-28T04:11:17.677Z",
       "due_to": null,
-      "index": 4
+      "index": 3
     },
     {
       "id": "295089f4-da6c-4a14-8527-4019d51849d9",
