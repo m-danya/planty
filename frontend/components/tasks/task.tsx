@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { MoveRight, X, CalendarIcon } from "lucide-react";
+import { MoveRight, X, CalendarIcon, Archive } from "lucide-react";
 import { useState, useEffect } from "react";
 import { MoveTaskToSectionForm } from "./move-task-to-section-form";
 import {
@@ -58,7 +58,9 @@ export function Task({
   const [moveTaskDialogIsOpen, setMoveTaskDialogIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
-  const [editedDescription, setEditedDescription] = useState(task.description);
+  const [editedDescription, setEditedDescription] = useState(
+    task.description || ""
+  );
   const [editedDueTo, setEditedDueTo] = useState<Date | null>(
     task.due_to ? new Date(task.due_to) : null
   );
@@ -96,7 +98,7 @@ export function Task({
 
   const resetEditedValues = () => {
     setEditedTitle(task.title);
-    setEditedDescription(task.description);
+    setEditedDescription(task.description || "");
     setEditedDueTo(task.due_to ? new Date(task.due_to) : null);
   };
 
@@ -157,19 +159,19 @@ export function Task({
         <ContextMenuContent>
           <ContextMenuItem>
             <div
-              className="flex items-center gap-x-2 cursor-pointer"
+              className="flex items-center gap-x-2.5 cursor-pointer"
               onClick={() => {
                 setMoveTaskDialogIsOpen(true);
               }}
             >
-              <MoveRight />
+              <MoveRight size={16} />
               Move to another section
             </div>
           </ContextMenuItem>
           <ContextMenuItem>
-            <div className="flex items-center gap-x-2 cursor-pointer">
-              <X />
-              Remove
+            <div className="flex items-center gap-x-2.5 cursor-pointer">
+              <Archive size={16} />
+              Archive
             </div>
           </ContextMenuItem>
         </ContextMenuContent>
