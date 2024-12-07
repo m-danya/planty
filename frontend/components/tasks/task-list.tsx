@@ -39,10 +39,7 @@ export function TaskList({ sectionId }: { sectionId: string }) {
   }, [section]);
 
   const dndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 1 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
   );
 
   function handleToggleTaskCompleted(new_task) {

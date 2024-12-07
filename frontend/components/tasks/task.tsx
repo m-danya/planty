@@ -66,7 +66,8 @@ export function Task({
     transition,
   };
 
-  const handleFinishChangingTask = () => {
+  const handleFinishChangingTask = (e) => {
+    e.preventDefault();
     handleTaskEdit({
       id: task.id,
       title: editedTitle,
@@ -183,65 +184,68 @@ export function Task({
           <DialogHeader>
             <DialogTitle>Edit Task</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Due Date</Label>
-              <div className="flex items-center gap-2">
-                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={"w-full justify-start text-left font-normal"}
-                    >
-                      {editedDueTo ? (
-                        <DateLabel date={editedDueTo} />
-                      ) : (
-                        <span>Pick a date</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      weekStartsOn={1}
-                      selected={editedDueTo}
-                      onSelect={handleDateSelect}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearDate}
-                  aria-label="Clear Date"
-                >
-                  <X className="h-4 w-4" />
+          <form onSubmit={handleFinishChangingTask}>
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Due Date</Label>
+                <div className="flex items-center gap-2">
+                  <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={"w-full justify-start text-left font-normal"}
+                      >
+                        {editedDueTo ? (
+                          <DateLabel date={editedDueTo} />
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        weekStartsOn={1}
+                        selected={editedDueTo}
+                        onSelect={handleDateSelect}
+                        required
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={clearDate}
+                    aria-label="Clear Date"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                  Cancel
                 </Button>
+                <Button type="submit">Save</Button>
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleFinishChangingTask}>Save</Button>
-            </div>
-          </div>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
