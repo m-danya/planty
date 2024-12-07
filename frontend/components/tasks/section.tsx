@@ -42,16 +42,17 @@ export function Section({ sectionId }: { sectionId: string }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
   );
 
-  function handleToggleTaskCompleted(new_task) {
-    setTasks((tasks) =>
-      tasks.map((task) => {
-        if (task.id === new_task.id) {
-          return new_task;
-        } else {
-          return task;
-        }
-      })
-    );
+  async function handleToggleTaskCompleted(task_id: string) {
+    try {
+      const result = await api.toggleTaskCompletedApiTaskToggleCompletedPost({
+        task_id: task_id,
+      });
+      console.log("Toggled task completion successfully:", result);
+      mutateSection();
+    } catch (error) {
+      console.error("Failed to toggle task completion:", error);
+      alert("Failed to toggle task completion");
+    }
   }
 
   async function handleDragEnd(event) {

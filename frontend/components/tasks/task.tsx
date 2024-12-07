@@ -40,13 +40,20 @@ import {
   startOfDay,
   isAfter,
 } from "date-fns";
+import { TaskResponse } from "@/api/Api";
 
 export function Task({
   task,
   handleToggleTaskCompleted,
-  skeleton,
+  skeleton = false,
   mutateSection,
   handleTaskEdit,
+}: {
+  task: TaskResponse;
+  handleToggleTaskCompleted: (taskId: string) => void;
+  skeleton?: boolean;
+  mutateSection: () => void;
+  handleTaskEdit: (task: any) => void;
 }) {
   const [moveTaskDialogIsOpen, setMoveTaskDialogIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -125,13 +132,9 @@ export function Task({
               {!skeleton && (
                 <Checkbox
                   className="mx-2 w-5 h-5 rounded-xl"
-                  checked={task.isCompleted}
-                  onCheckedChange={(e) =>
-                    handleToggleTaskCompleted({
-                      ...task,
-                      isCompleted: e,
-                    })
-                  }
+                  checked={task.is_completed}
+                  onClick={(e) => e.stopPropagation()}
+                  onCheckedChange={(e) => handleToggleTaskCompleted(task.id)}
                 />
               )}
               {skeleton && (
