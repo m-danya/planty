@@ -253,7 +253,9 @@ class SectionService:
         if not task:
             raise TaskNotFoundException(task_id=task_id)
         task_is_archived_before = task.is_archived
+
         task.toggle_completed(auto_archive=auto_archive)
+
         if task.is_archived != task_is_archived_before:
             # "remove" task from section to update others' indices:
             section.remove_task(task)
