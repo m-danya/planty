@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { MoveRight, X, CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MoveTaskToSectionForm } from "./move-task-to-section-form";
 import {
   Popover,
@@ -86,6 +86,18 @@ export function Task({
   };
 
   const taskDueTo = task.due_to && parseISO(task.due_to);
+
+  const resetEditedValues = () => {
+    setEditedTitle(task.title);
+    setEditedDescription(task.description);
+    setEditedDueTo(task.due_to ? new Date(task.due_to) : null);
+  };
+
+  useEffect(() => {
+    if (isEditing) {
+      resetEditedValues();
+    }
+  }, [isEditing]);
 
   return (
     <div
@@ -247,7 +259,11 @@ export function Task({
                 </div>
               </div>
               <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsEditing(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                  type="button"
+                >
                   Cancel
                 </Button>
                 <Button type="submit">Save</Button>

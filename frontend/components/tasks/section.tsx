@@ -19,7 +19,7 @@ import {
 } from "@dnd-kit/sortable";
 import { useEffect, useState } from "react";
 
-export function TaskList({ sectionId }: { sectionId: string }) {
+export function Section({ sectionId }: { sectionId: string }) {
   const {
     section,
     isLoading,
@@ -110,7 +110,9 @@ export function TaskList({ sectionId }: { sectionId: string }) {
         <div className="items-center flex-col">
           <div className="xl:px-40">
             <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold md:text-2xl">Tasks</h1>
+              <h1 className="text-xl font-semibold md:text-2xl">
+                {section?.title}
+              </h1>
             </div>
             <div className="flex flex-col py-4">
               {tasks.map((task) => (

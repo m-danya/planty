@@ -1,4 +1,4 @@
-import { TaskList } from "@/components/tasks/task-list";
+import { Section } from "@/components/tasks/section";
 
 export default async function Page({
   params,
@@ -7,5 +7,5 @@ export default async function Page({
 }) {
   const { id: sectionId } = await params;
   // TODO: fetch initial data here to avoid flickering?
-  return <TaskList sectionId={sectionId} />;
+  return <Section sectionId={sectionId} />;
 }
