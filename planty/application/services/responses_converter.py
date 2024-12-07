@@ -7,7 +7,9 @@ from typing import get_origin, get_args
 
 
 from planty.application.schemas import (
+    ArchivedTasks,
     SectionResponse,
+    TaskSearchResponse,
     TaskResponse,
     SectionsListResponse,
     ArchivedTasksResponse,
@@ -22,9 +24,10 @@ from typing import Any
 # NOTE: mypy + singledispatch + overload doesn't work at the same time..
 
 possible_in_types = Union[
-    Task, Section, list[Section], dict[date, list[Task]], list[Task]
+    Task, Section, list[Section], dict[date, list[Task]], list[Task], ArchivedTasks
 ]
 possible_out_types = Union[
+    TaskSearchResponse,
     TaskResponse,
     SectionResponse,
     SectionsListResponse,
@@ -50,7 +53,11 @@ def convert_to_response(obj: dict[date, list[Task]]) -> TasksByDateResponse: ...
 
 
 @overload
-def convert_to_response(obj: list[Task]) -> ArchivedTasksResponse: ...
+def convert_to_response(obj: list[Task]) -> TaskSearchResponse: ...
+
+
+@overload
+def convert_to_response(obj: ArchivedTasks) -> ArchivedTasksResponse: ...
 
 
 # TODO: think about returning dict without casting to pydantic model:
@@ -68,6 +75,12 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
         section_data = obj.model_dump()
         _adjust_section_dict(section_data)
         return SectionResponse(**section_data)
+    elif _satisfies(obj, ArchivedTasks):
+        obj = cast(ArchivedTasks, obj)
+        archived_data = obj.model_dump()
+        for task in archived_data.get("tasks", []):
+            _adjust_task_dict(task)
+        return ArchivedTasksResponse(**archived_data)
     elif _satisfies(obj, list[Task]):
         obj = cast(list[Task], obj)
         return [convert_to_response(obj_item) for obj_item in obj]

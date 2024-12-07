@@ -107,7 +107,7 @@ async def test_get_archived_tasks(
 ) -> None:
     response = await ac.get("/api/tasks/archived")
     assert response.is_success
-    tasks = response.json()
+    tasks = response.json()["tasks"]
     expected_tasks_n = sum(task["is_archived"] for task in tasks_data)
     assert len(tasks) == expected_tasks_n
 
@@ -310,7 +310,7 @@ async def test_toggle_completed_task(
     task_id: str,
     ac: AsyncClient,
 ) -> None:
-    # TODO: exand this test to sequential requests
+    # TODO: exand this test to sequential requests when logics is established
     for expected_is_completed in [True]:
         response = await ac.post(
             "/api/task/toggle_completed",
@@ -323,10 +323,37 @@ async def test_toggle_completed_task(
         with pytest.raises(StopIteration):
             task = next(t for t in data["tasks"] if t["id"] == task_id)
         response = await ac.get("/api/tasks/archived")
-        task = next(t for t in response.json() if t["id"] == task_id)
+        task = next(t for t in response.json()["tasks"] if t["id"] == task_id)
         is_completed = task["is_completed"]
         assert task["is_archived"]
         assert is_completed is expected_is_completed
+
+
+async def test_unarchiving_ask_puts_it_to_the_section_end(
+    tasks_data: list[dict[str, Any]],
+    ac: AsyncClient,
+) -> None:
+    task_id = "e6a76c36-7dae-47ee-b657-1a0b02ca40df"
+    section_id = "090eda97-dd2d-45bb-baa0-7814313e5a38"
+    task_got, task_index = await _request_task_data(
+        task_id, section_id, ac, from_archived=True
+    )
+    assert task_index == 0
+
+    # task will be unarchived and will be put to the section end
+    response = await ac.post(
+        "/api/task/toggle_completed",
+        json={
+            "task_id": task_id,
+        },
+    )
+    section_len = len(response.json()["tasks"])
+    assert section_len > 3
+
+    task_got, task_index = await _request_task_data(
+        task_id, section_id, ac, from_archived=False
+    )
+    assert task_index == section_len - 1
 
 
 async def test_mark_completed_another_user_task(
@@ -430,8 +457,7 @@ async def test_add_attachment(
         return
 
     section_id = existing_task_data["section_id"]
-    response = await ac.get(f"/api/section/{section_id}")
-    task_got = next(t for t in response.json()["tasks"] if t["id"] == task_id)
+    task_got, _ = await _request_task_data(task_id, section_id, ac)
     assert len(task_got["attachments"]) == 1
     assert task_got["attachments"][0]["aes_key_b64"] == request_data["aes_key_b64"]
     assert task_got["attachments"][0]["aes_iv_b64"] == request_data["aes_iv_b64"]
@@ -462,6 +488,20 @@ async def test_add_attachment(
     # Verify that it's removed
     response = httpx.get(get_url)
     assert not response.is_success
+
+
+async def _request_task_data(
+    task_id: str, section_id: str, ac: AsyncClient, from_archived: bool = False
+) -> tuple[dict[str, Any], int]:
+    if from_archived:
+        response = await ac.get("/api/tasks/archived")
+    else:
+        response = await ac.get(f"/api/section/{section_id}")
+    print(response.json()["tasks"])
+    task_got, index = next(
+        (t, i) for i, t in enumerate(response.json()["tasks"]) if t["id"] == task_id
+    )
+    return task_got, index
 
 
 async def test_add_attachment_to_another_user_task(

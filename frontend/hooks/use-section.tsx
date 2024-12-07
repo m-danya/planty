@@ -9,9 +9,6 @@ export const useSection = (sectionId: string) => {
       "/api/tasks/archived",
       fetcher
     ));
-    data = {
-      tasks: data,
-    };
   } else {
     ({ data, error, isLoading, mutate } = useSWR(
       `/api/section/${sectionId}`,
