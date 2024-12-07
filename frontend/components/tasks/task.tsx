@@ -40,6 +40,7 @@ import {
   startOfDay,
   isAfter,
 } from "date-fns";
+
 export function Task({
   task,
   handleToggleTaskCompleted,
@@ -47,9 +48,6 @@ export function Task({
   mutateSection,
   handleTaskEdit,
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id: task.id });
-
   const [moveTaskDialogIsOpen, setMoveTaskDialogIsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(task.title);
@@ -58,6 +56,11 @@ export function Task({
     task.due_to ? new Date(task.due_to) : null
   );
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [isContextMenuOpen, setIsContextMenuOpen] = useState(false);
+  const isDragDisabled = moveTaskDialogIsOpen || isEditing || isContextMenuOpen;
+
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id: task.id, disabled: isDragDisabled });
 
   const clearDate = () => setEditedDueTo(null);
 
@@ -66,7 +69,7 @@ export function Task({
     transition,
   };
 
-  const handleFinishChangingTask = (e) => {
+  const handleFinishChangingTask = (e: React.FormEvent) => {
     e.preventDefault();
     handleTaskEdit({
       id: task.id,
@@ -76,6 +79,7 @@ export function Task({
     });
     setIsEditing(false);
   };
+
   const handleDateSelect = (date: Date) => {
     setEditedDueTo(date);
     setIsPopoverOpen(false);
@@ -91,10 +95,13 @@ export function Task({
       {...listeners}
       key={task.id}
     >
-      <ContextMenu key={`${task.id}_context_menu`}>
+      <ContextMenu
+        onOpenChange={setIsContextMenuOpen}
+        key={`${task.id}_context_menu`}
+      >
         <ContextMenuTrigger>
           <div
-            className="py-3.5 px-2 text-small"
+            className="py-3.5 px-2 text-small cursor-pointer"
             onClick={() => {
               setIsEditing(true);
             }}
@@ -135,7 +142,7 @@ export function Task({
         <ContextMenuContent>
           <ContextMenuItem>
             <div
-              className="flex items-center gap-x-2"
+              className="flex items-center gap-x-2 cursor-pointer"
               onClick={() => {
                 setMoveTaskDialogIsOpen(true);
               }}
@@ -145,7 +152,7 @@ export function Task({
             </div>
           </ContextMenuItem>
           <ContextMenuItem>
-            <div className="flex items-center gap-x-2">
+            <div className="flex items-center gap-x-2 cursor-pointer">
               <X />
               Remove
             </div>
@@ -192,6 +199,7 @@ export function Task({
                   id="title"
                   value={editedTitle}
                   onChange={(e) => setEditedTitle(e.target.value)}
+                  required
                 />
               </div>
               <div>
