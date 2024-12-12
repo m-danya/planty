@@ -1,12 +1,9 @@
-import { MainSidebarWrapper } from "@/components/main-sidebar-wrapper";
-
+import { MainSidebarWrapper } from "@/components/left-panel/main-sidebar-wrapper";
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-        <MainSidebarWrapper>{children}</MainSidebarWrapper>
-  );
+  return <MainSidebarWrapper>{children}</MainSidebarWrapper>;
 }

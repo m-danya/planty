@@ -1,29 +1,21 @@
 "use client";
 
-import {
-  Archive,
-  Calendar,
-  Search,
-  Settings2,
-  Sparkles,
-  User,
-} from "lucide-react";
+import { Archive, Calendar, Search, Settings2, Sparkles } from "lucide-react";
 import * as React from "react";
 
 import { siGithub } from "simple-icons";
 
-import { NavMain } from "@/components/nav-main";
-import { NavSecondary } from "@/components/nav-secondary";
-import { NavSections } from "@/components/nav-sections";
+import { NavMain } from "@/components/left-panel/nav-main";
+import { NavSecondary } from "@/components/left-panel/nav-secondary";
+import { NavSections } from "@/components/left-panel/nav-sections";
+import { Logo } from "@/components/left-panel/logo";
 import { SimpleIcon } from "@/components/simple-icon";
-import { TeamSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { Logo } from "@/components/logo";
 
 const data = {
   navMain: [
