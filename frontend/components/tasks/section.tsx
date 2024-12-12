@@ -125,6 +125,7 @@ export function Section({ sectionId }: { sectionId: string }) {
                       handleToggleTaskCompleted={handleToggleTaskCompleted}
                       mutateSection={mutateSection}
                       handleTaskEdit={handleTaskEdit}
+                      key={task.id}
                     />
                   </div>
                   <hr className="border-gray-200 dark:border-white" />
