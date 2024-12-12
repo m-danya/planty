@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import useUser from "@/hooks/use-user";
 import { User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { SidebarMenuButton } from "./ui/sidebar";
+import { SidebarMenuButton } from "@/components/ui/sidebar";
 
 export function UserProfile() {
   const router = useRouter();

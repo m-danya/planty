@@ -1,4 +1,3 @@
-import { MainSidebarWrapper } from "@/components/main-sidebar-wrapper";
 import type { Metadata } from "next";
 import Head from "next/head";
 import "./globals.css";
@@ -35,9 +34,7 @@ export default function RootLayout({
         />
         <link rel="manifest" href="/site.webmanifest" />
       </Head>
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

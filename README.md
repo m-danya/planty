@@ -6,7 +6,11 @@
 
 Planty is an open-source task management app inspired by Todoist and GTD system.
 
-(not yet released)
+This project is being **actively developed** and is not yet a fully working product.
+
+Here is a quick demo (last updated: December 12, 2024):
+
+https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
 
 ## How to run
 
@@ -29,7 +33,7 @@ poetry install
 # Alembic migrations are not being maintained yet due to a high pace of changes
 # during initial development. To get db with sample data from tests, uncomment a
 # line in `config.py` to avoid using in-memory db for tests and run this:
-pytest; cp planty_test.db planty.db
+pytest; mv planty_test.db planty.db
 
 # (backend is not dockerized yet)
 # run "FastAPI" configuration in VS code or:
