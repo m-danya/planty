@@ -6,7 +6,11 @@
 
 Planty is an open-source task management app inspired by Todoist and GTD system.
 
-(not yet released)
+This project is being **actively developed** and is not yet a fully working product.
+
+Here is a quick demo (last updated: December 12, 2024):
+
+https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
 
 ## How to run
 
