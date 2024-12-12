@@ -48,7 +48,7 @@ export function Task({
         onContextMenuChange={setIsContextMenuOpen}
       >
         <div
-          className="py-3.5 px-2 text-small cursor-pointer"
+          className="py-3.5 px-2 text-sm cursor-pointer"
           onClick={() => {
             setIsEditing(true);
           }}
@@ -71,12 +71,18 @@ export function Task({
             {!skeleton && (
               <div className="flex flex-col items-start">
                 <div>{task.title}</div>
-                {task.due_to && <DateLabel date={taskDueTo} />}
               </div>
             )}
           </div>
+
+          {!skeleton && task.due_to && (
+            <div className="ml-9">
+              <DateLabel date={taskDueTo} isRecurrent={!!task.recurrence} />
+            </div>
+          )}
+
           {!skeleton && task.description && (
-            <div className="ml-9 text-gray-400 pt-0.5">{task.description}</div>
+            <div className="ml-9 text-gray-400 pt-0.5 ">{task.description}</div>
           )}
         </div>
       </TaskContextMenu>

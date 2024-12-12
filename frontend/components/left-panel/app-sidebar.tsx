@@ -24,11 +24,11 @@ const data = {
       url: "#",
       icon: Search,
     },
-    {
-      title: "Ask AI",
-      url: "#",
-      icon: Sparkles,
-    },
+    // {
+    //   title: "Ask AI",
+    //   url: "#",
+    //   icon: Sparkles,
+    // },
     {
       title: "Calendar",
       url: "#",

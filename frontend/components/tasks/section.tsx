@@ -1,12 +1,12 @@
 "use client";
 
 import { Api } from "@/api/Api";
+import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
   closestCenter,
   DndContext,
-  KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
@@ -14,10 +14,11 @@ import {
 import {
   arrayMove,
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 export function Section({ sectionId }: { sectionId: string }) {
   const {
@@ -31,6 +32,8 @@ export function Section({ sectionId }: { sectionId: string }) {
   }));
   const [tasks, setTasks] = useState(tasksFillers);
   const api = new Api().api;
+
+  const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 
   useEffect(() => {
     if (section?.tasks) {
@@ -55,8 +58,9 @@ export function Section({ sectionId }: { sectionId: string }) {
     }
   }
 
-  async function handleDragEnd(event) {
+  async function handleDragEnd(event: any) {
     const { active, over } = event;
+    // if (!over) return;
     const oldIndex = tasks.findIndex((task) => task.id === active.id);
     const newIndex = tasks.findIndex((task) => task.id === over.id);
 
@@ -100,41 +104,81 @@ export function Section({ sectionId }: { sectionId: string }) {
     mutateSection();
   }
 
+  async function handleTaskAdd(task: {
+    title: string;
+    description: string;
+    due_to: string | null;
+  }) {
+    try {
+      const result = await api.createTaskApiTaskPost({
+        section_id: sectionId,
+        title: task.title,
+        description: task.description,
+        due_to: task.due_to,
+        recurrence: null,
+      });
+      console.log("Task added successfully:", result);
+      mutateSection();
+    } catch (error) {
+      console.error("Failed to add task:", error);
+      alert("Failed to add task");
+    }
+  }
+
   return (
-    <DndContext
-      id="dnd-context-for-task-list"
-      sensors={dndSensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
-        <div className="items-center flex-col">
-          <div className="xl:px-40">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold md:text-2xl">
-                {section?.title}
-              </h1>
-            </div>
-            <div className="flex flex-col py-4">
-              {tasks.map((task) => (
-                <div key={task.id}>
-                  <div>
-                    <Task
-                      task={task}
-                      skeleton={isLoading}
-                      handleToggleTaskCompleted={handleToggleTaskCompleted}
-                      mutateSection={mutateSection}
-                      handleTaskEdit={handleTaskEdit}
-                      key={task.id}
-                    />
+    <>
+      <DndContext
+        id="dnd-context-for-task-list"
+        sensors={dndSensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
+          <div className="items-center flex-col">
+            <div className="xl:px-40">
+              <div className="flex items-center justify-between">
+                <h1 className="text-xl font-semibold md:text-2xl">
+                  {section?.title}
+                </h1>
+              </div>
+              <div className="flex flex-col py-4">
+                {tasks.map((task) => (
+                  <div key={task.id}>
+                    <div>
+                      <Task
+                        task={task}
+                        skeleton={isLoading}
+                        handleToggleTaskCompleted={handleToggleTaskCompleted}
+                        mutateSection={mutateSection}
+                        handleTaskEdit={handleTaskEdit}
+                        key={task.id}
+                      />
+                    </div>
+                    <hr className="border-gray-200 dark:border-white" />
                   </div>
-                  <hr className="border-gray-200 dark:border-white" />
+                ))}
+                <div>
+                  <div
+                    className="py-3.5 px-2 text-small cursor-pointer"
+                    onClick={() => setIsAddTaskDialogOpen(true)}
+                  >
+                    <div className="flex items-center justify-start w-full">
+                      <Plus className="mx-2 w-5 h-5 " />
+                      Add task
+                    </div>
+                  </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        </div>
-      </SortableContext>
-    </DndContext>
+        </SortableContext>
+      </DndContext>
+
+      <AddTaskDialog
+        isOpen={isAddTaskDialogOpen}
+        onOpenChange={setIsAddTaskDialogOpen}
+        handleTaskAdd={handleTaskAdd}
+      />
+    </>
   );
 }

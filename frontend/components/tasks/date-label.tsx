@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarIcon } from "lucide-react";
+import { Calendar, CalendarSync } from "lucide-react";
 import {
   format,
   isToday,
@@ -15,9 +15,10 @@ import React from "react";
 
 interface DateLabelProps {
   date: Date;
+  isRecurrent: boolean;
 }
 
-export function DateLabel({ date: dateToShow }: DateLabelProps) {
+export function DateLabel({ date: dateToShow, isRecurrent }: DateLabelProps) {
   function getDateColorClass(dueDate: Date) {
     const now = new Date();
     if (isAfter(startOfDay(now), startOfDay(dueDate))) {
@@ -60,7 +61,8 @@ export function DateLabel({ date: dateToShow }: DateLabelProps) {
 
   return (
     <div className={`my-0.5 text-sm flex items-center ${colorClass}`}>
-      <CalendarIcon className={`mr-1 h-4 w-4 ${colorClass}`} />
+      {!isRecurrent && <Calendar className={`mr-1 h-4 w-4 ${colorClass}`} />}
+      {isRecurrent && <CalendarSync className={`mr-1 h-4 w-4 ${colorClass}`} />}
       {getFormattedDate(dateToShow)}
     </div>
   );
