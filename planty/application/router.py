@@ -11,6 +11,8 @@ from planty.application.schemas import (
     SectionCreateResponse,
     SectionMoveRequest,
     SectionResponse,
+    SectionUpdateRequest,
+    SectionUpdateResponse,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskCreateResponse,
@@ -186,6 +188,18 @@ async def get_section(
         return section
 
 
+@router.patch("/section")
+async def patch_task(
+    section_data: SectionUpdateRequest, user: User = Depends(current_user)
+) -> SectionUpdateResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        section = await section_service.update_section(user.id, section_data)
+        await uow.commit()
+        return SectionUpdateResponse(section=section)
+
+
+# TODO: merge into PATCH /section
 @router.post("/section/move")
 async def move_section(
     request: SectionMoveRequest, user: User = Depends(current_user)

@@ -285,6 +285,21 @@ async def test_move_section(
         return
 
 
+async def test_update_section(
+    ac: AsyncClient,
+) -> None:
+    section_id = "090eda97-dd2d-45bb-baa0-7814313e5a38"
+    new_title = "new title"
+    update_data = {"id": section_id, "title": new_title}
+    response = await ac.patch(
+        "/api/section",
+        json=update_data,
+    )
+    assert response.status_code == 200
+    response = await ac.get(f"/api/section/{section_id}")
+    assert response.json()["title"] == new_title
+
+
 async def test_move_another_user_task(
     ac_another_user: AsyncClient,
 ) -> None:

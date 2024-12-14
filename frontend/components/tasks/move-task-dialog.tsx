@@ -63,7 +63,6 @@ export function MoveTaskDialog({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
     try {
       const result = await api.moveTaskApiTaskMovePost({
         task_id: taskId,

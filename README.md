@@ -86,7 +86,8 @@ ruff format
 
 ### Generate types for frontend from openapi.json
 
-Start backend, save 127.0.0.1:8000/openapi.json to `frontend` directory (TODO: automate)
+1. Start backend, save 127.0.0.1:8000/openapi.json to `frontend` directory (TODO: automate)
+2. Run this:
 
 ```
 cd frontend

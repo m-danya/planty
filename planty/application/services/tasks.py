@@ -18,6 +18,7 @@ from planty.application.schemas import (
     SectionCreateRequest,
     SectionMoveRequest,
     SectionResponse,
+    SectionUpdateRequest,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskMoveRequest,
@@ -157,6 +158,18 @@ class SectionService:
         )  # this line checks constraints of parent_section
         await self._section_repo.add(section, index=index)
         return section
+
+    async def update_section(
+        self, user_id: UUID, section_data: SectionUpdateRequest
+    ) -> SectionResponse:
+        section: Section = await self._section_repo.get(section_data.id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        section_data = section_data.model_dump(exclude_unset=True)
+        for key, value in section_data.items():
+            setattr(section, key, value)
+        await self._section_repo.update(section)
+        return convert_to_response(section)
 
     async def get_section(self, user_id: UUID, section_id: UUID) -> SectionResponse:
         section: Section = await self._section_repo.get(section_id)
