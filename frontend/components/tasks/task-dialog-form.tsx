@@ -65,7 +65,11 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
 
     return (
       <div>
-        <form onSubmit={handleFinish} className="space-y-4 mt-4">
+        <form
+          onSubmit={handleFinish}
+          className="space-y-4 mt-4"
+          autoComplete="off"
+        >
           <div>
             <Label htmlFor="title">Title</Label>
             <Input
