@@ -777,12 +777,12 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * No description
      *
      * @tags User tasks
-     * @name PatchTaskApiSectionPatch
-     * @summary Patch Task
+     * @name PatchSectionApiSectionPatch
+     * @summary Patch Section
      * @request PATCH:/api/section
      * @secure
      */
-    patchTaskApiSectionPatch: (data: SectionUpdateRequest, params: RequestParams = {}) =>
+    patchSectionApiSectionPatch: (data: SectionUpdateRequest, params: RequestParams = {}) =>
       this.request<SectionUpdateResponse, HTTPValidationError>({
         path: `/api/section`,
         method: "PATCH",

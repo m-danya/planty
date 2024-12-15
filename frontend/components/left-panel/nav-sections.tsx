@@ -20,17 +20,74 @@ import {
   SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, Pencil, Trash } from "lucide-react";
+import { ArrowDownUp, ChevronRight, Pencil, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { useSections } from "@/hooks/use-sections";
 import { EditSectionDialog } from "./edit-section-dialog";
+import { Api } from "@/api/Api";
+import { useSWRConfig } from "swr";
+import { MoveSectionDialog } from "./move-section-dialog";
 
 export function NavSections() {
-  const { sections, rootSectionId, isLoading, isError } = useSections();
+  const {
+    sections,
+    rootSectionId,
+    isLoading,
+    isError,
+    mutate: mutateSections,
+  } = useSections();
   const [editingSectionId, setEditingSectionId] = useState(null);
+  const [movingSectionId, setMovingSectionId] = useState(null);
   if (isError) return <p>Failed to load sections.</p>;
+
+  const api = new Api().api;
+  const { cache, mutate } = useSWRConfig();
+
+  // TODO: move to utils
+  function mutateSWRByPartialKey(partialKey: string) {
+    cache
+      .keys()
+      .filter((key: string) => key.includes(partialKey))
+      .forEach((key: string) => mutate(key));
+  }
+
+  async function handleSectionEdit(updateSectionData: {
+    id: string;
+    title?: string;
+    description?: string;
+  }) {
+    try {
+      const result = await api.patchSectionApiSectionPatch({
+        id: updateSectionData.id,
+        title: updateSectionData.title,
+      });
+      console.log("Section edited successfully:", result);
+    } catch (error) {
+      console.error("Failed to edit section:", error);
+      alert("Error while editing section");
+    }
+    mutateSections();
+    // mutate(`/api/section/${updateSectionData.id}`);
+    mutateSWRByPartialKey("/api/section/");
+  }
+
+  async function handleSectionMove(updateSectionData) {
+    try {
+      const result = await api.moveSectionApiSectionMovePost({
+        section_id: movingSectionId,
+        to_parent_id: updateSectionData.parentId,
+        index: updateSectionData.index,
+      });
+      console.log("Section moved successfully:", result);
+    } catch (error) {
+      console.error("Failed to move section:", error);
+      alert(`Error while moving section: ${error.response.data.detail}`);
+    }
+    mutateSections();
+  }
+
   return (
     <>
       <SidebarGroup className="group-data-[collapsible=icon]:hidden text-nowrap">
@@ -44,6 +101,7 @@ export function NavSections() {
                 key={section.id}
                 section={section}
                 setEditingSectionId={setEditingSectionId}
+                setMovingSectionId={setMovingSectionId}
               />
             ))
           )}
@@ -51,19 +109,32 @@ export function NavSections() {
       </SidebarGroup>
       {editingSectionId && (
         <EditSectionDialog
-          isEditing={!!editingSectionId}
+          isOpened={!!editingSectionId}
           //  Warning: boolean value is set
           onOpenChange={setEditingSectionId}
           section={findSectionById(sections, editingSectionId)}
-          // TODO: change
-          handleTaskEdit={(arg) => {}}
+          onSubmit={handleSectionEdit}
+        />
+      )}
+      {movingSectionId && (
+        <MoveSectionDialog
+          isOpened={!!movingSectionId}
+          //  Warning: boolean value is set
+          onOpenChange={setMovingSectionId}
+          section={findSectionById(sections, movingSectionId)}
+          onSubmit={handleSectionMove}
         />
       )}
     </>
   );
 }
 
-function Tree({ section, noIndent = false, setEditingSectionId }) {
+function Tree({
+  section,
+  noIndent = false,
+  setEditingSectionId,
+  setMovingSectionId,
+}) {
   const hasChildren = section.subsections && section.subsections.length > 0;
   if (!hasChildren) {
     return (
@@ -74,6 +145,7 @@ function Tree({ section, noIndent = false, setEditingSectionId }) {
           clickable={true}
           withIdentIfNoChevron={!noIndent}
           setEditingSectionId={setEditingSectionId}
+          setMovingSectionId={setMovingSectionId}
         />
       </SidebarMenuItem>
     );
@@ -92,6 +164,7 @@ function Tree({ section, noIndent = false, setEditingSectionId }) {
               withChevron={true}
               clickable={false}
               setEditingSectionId={setEditingSectionId}
+              setMovingSectionId={setMovingSectionId}
             />
           </CollapsibleTrigger>
         </div>
@@ -103,6 +176,7 @@ function Tree({ section, noIndent = false, setEditingSectionId }) {
                 section={child}
                 noIndent={!anyChildHasChildren}
                 setEditingSectionId={setEditingSectionId}
+                setMovingSectionId={setMovingSectionId}
               />
             ))}
           </SidebarMenuSub>
@@ -118,6 +192,7 @@ const TreeElement = ({
   withChevron = false,
   withIdentIfNoChevron = true,
   setEditingSectionId,
+  setMovingSectionId,
   ...props
 }: {
   section: { id: string; title: string };
@@ -125,6 +200,7 @@ const TreeElement = ({
   clickable?: boolean;
   withIdentIfNoChevron?: boolean;
   setEditingSectionId: (value: any) => {};
+  setMovingSectionId: (value: any) => {};
 }) => {
   const displayFullIdent = !withChevron && withIdentIfNoChevron;
   const displayMiniIdent = !withChevron && !withIdentIfNoChevron;
@@ -163,6 +239,17 @@ const TreeElement = ({
             <div className="flex items-center gap-x-2.5 cursor-pointer">
               <Pencil size={16} />
               Edit
+            </div>
+          </ContextMenuItem>
+          <ContextMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setMovingSectionId(section.id);
+            }}
+          >
+            <div className="flex items-center gap-x-2.5 cursor-pointer">
+              <ArrowDownUp size={16} />
+              Move
             </div>
           </ContextMenuItem>
           <ContextMenuItem>

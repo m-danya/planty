@@ -8,36 +8,36 @@ import {
 } from "@/components/ui/dialog";
 import { useRef } from "react";
 import { SectionEditDialogForm } from "./section-edit-dialog-form";
+import { SectionMoveDialogForm } from "./section-move-dialog-form";
 
-interface EditSectionDialogProps {
+interface MoveSectionDialogProps {
   isOpened: boolean;
   onOpenChange: (open: boolean) => void;
   section: {
     id: string;
     title: string;
+    parent_id: string;
+    index: number;
   };
   onSubmit: (section: any) => void;
 }
 
-export function EditSectionDialog({
+export function MoveSectionDialog({
   isOpened,
   onOpenChange,
   section,
   onSubmit,
-}: EditSectionDialogProps) {
-  const initialTitle = section.title || "";
-
+}: MoveSectionDialogProps) {
   const titleInputRef = useRef<HTMLInputElement>(null);
+  const initialParentId = section.parent_id;
+  const initialIndex = 0;
 
   const handleCancel = () => {
     onOpenChange(false);
   };
 
-  const handleSubmit = (updatedSection: { title: string }) => {
-    onSubmit({
-      id: section.id,
-      title: updatedSection.title,
-    });
+  const handleSubmit = (updatedSection) => {
+    onSubmit(updatedSection);
     onOpenChange(false);
   };
 
@@ -58,11 +58,13 @@ export function EditSectionDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Edit Section</DialogTitle>
+          <DialogTitle>Move Section</DialogTitle>
         </DialogHeader>
-        <SectionEditDialogForm
-          initialTitle={initialTitle}
-          submitLabel="Save"
+        <SectionMoveDialogForm
+          // initialTitle={initialTitle}
+          initialParentId={initialParentId}
+          initialIndex={initialIndex}
+          submitLabel="Move"
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           titleInputRef={titleInputRef}

@@ -27,6 +27,9 @@ export function DateLabel({ date: dateToShow, isRecurrent }: DateLabelProps) {
     if (isToday(dueDate)) {
       return "text-green-600";
     }
+    if (isTomorrow(dueDate)) {
+      return "text-orange-800";
+    }
     if (isThisWeek(dueDate, { weekStartsOn: 1 })) {
       return "text-purple-800";
     }

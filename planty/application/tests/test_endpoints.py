@@ -135,7 +135,6 @@ async def test_create_section(
         "parent_id": parent_id,
     }
     response = await ac.post("/api/section", json=section_data)
-    print(response.json())
     assert response.status_code == status_code
     if not response.is_success:
         assert response.json()["detail"] == error_detail
@@ -231,12 +230,13 @@ async def test_move_task(
 
 
 @pytest.mark.parametrize(
-    "section_id,section_to,index,status_code,error_detail",
+    "section_id,section_to,index,parent_id_before_move,status_code,error_detail",
     [
         (
             "090eda97-dd2d-45bb-baa0-7814313e5a38",
             "36ea0a4f-0334-464d-8066-aa359ecfdcba",
             0,  # move to the beginning
+            "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
             200,
             None,
         ),
@@ -244,6 +244,7 @@ async def test_move_task(
             "090eda97-dd2d-45bb-baa0-7814313e5a38",
             "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
             123,  # move to an incorrect index
+            "6ff6e896-5da3-46ec-bf66-0a317c5496fa",
             422,
             "The section can't be placed at the specified index",
         ),
@@ -251,6 +252,7 @@ async def test_move_task(
             "7e98e010-9d89-4dd2-be8e-773808e1ad85",
             "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move inside the root section
             0,
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
             200,
             None,
         ),
@@ -258,19 +260,46 @@ async def test_move_task(
             "0d966845-254b-4b5c-b8a7-8d34dcd3d527",  # move the root section itself
             "7e98e010-9d89-4dd2-be8e-773808e1ad85",
             2,
+            None,
             422,
             "The root section can't be modified",
         ),
+        (
+            # This test on incorrect code (with `with_direct_subsections=False`
+            # in `SectionService.move_section`) could trigger 500 error in
+            # validator `check_flags`, but it doesn't, even with
+            # revalidate_instances='always' in both Schema and Entity classes
+            "6754b40e-aa0d-4b0d-9dba-4d15c751b270",
+            "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
+            0,
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            200,
+            None,
+        ),
+        # TODO: FORBID MOVING SUBSECTION INTO ITS CHILD, IT DISAPPEARS
+        # (
+        #     "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+        #     "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
+        #     0,
+        #     "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+        #     200,  # MUST BE 422
+        #     None,
+        # ),
     ],
 )
 async def test_move_section(
     section_id: str,
     section_to: str,
     index: int,
+    parent_id_before_move: Optional[str],
     status_code: int,
     error_detail: Optional[str],
     ac: AsyncClient,
 ) -> None:
+    # just an assertion
+    response = await ac.get(f"/api/section/{section_id}")
+    assert response.json()["parent_id"] == parent_id_before_move
+    # the main test
     response = await ac.post(
         "/api/section/move",
         json={
@@ -283,6 +312,15 @@ async def test_move_section(
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
+
+    # check for possible 500 errors (with incorrectly updated flags)
+    response = await ac.get("/api/sections")
+    print(response.json())
+    assert response.is_success
+    for section_id_to_check in (section_id, section_to, parent_id_before_move):
+        if section_id_to_check:
+            response = await ac.get(f"/api/section/{section_id_to_check}")
+            assert response.is_success
 
 
 async def test_update_section(
@@ -512,7 +550,6 @@ async def _request_task_data(
         response = await ac.get("/api/tasks/archived")
     else:
         response = await ac.get(f"/api/section/{section_id}")
-    print(response.json()["tasks"])
     task_got, index = next(
         (t, i) for i, t in enumerate(response.json()["tasks"]) if t["id"] == task_id
     )

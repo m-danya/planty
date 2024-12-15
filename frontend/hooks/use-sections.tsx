@@ -4,23 +4,30 @@ import { SectionResponse } from "@/api/Api";
 
 export const useSections = ({
   leavesOnly = false,
-}: { leavesOnly?: boolean } = {}) => {
-  const { data, error, isLoading } = useSWR<SectionResponse[]>(
-    `/api/sections?leaves_only=${leavesOnly}`,
+  asTree = true,
+}: { leavesOnly?: boolean; asTree?: boolean } = {}) => {
+  const { data, error, isLoading, mutate } = useSWR<SectionResponse[]>(
+    `/api/sections?leaves_only=${leavesOnly}&as_tree=${asTree}`,
     fetcher
   );
   let rootSectionId;
   let sections;
-  if (leavesOnly) {
-    sections = data;
+  if (asTree) {
+    if (leavesOnly) {
+      sections = data;
+    } else {
+      rootSectionId = data?.[0]?.id;
+      sections = data?.[0]?.subsections;
+    }
   } else {
-    rootSectionId = data?.[0]?.id;
-    sections = data?.[0]?.subsections;
+    sections = data;
+    rootSectionId = sections?.find((s) => !s.parent_id)?.id;
   }
   return {
     sections: sections,
     rootSectionId: rootSectionId,
     isLoading,
     isError: error,
+    mutate: mutate,
   };
 };

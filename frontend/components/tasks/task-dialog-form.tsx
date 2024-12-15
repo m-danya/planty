@@ -71,9 +71,9 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
           autoComplete="off"
         >
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="task_title">Title</Label>
             <Input
-              id="title"
+              id="task_title"
               ref={titleInputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -81,9 +81,9 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
             />
           </div>
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="task_description">Description</Label>
             <Textarea
-              id="description"
+              id="task_description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />

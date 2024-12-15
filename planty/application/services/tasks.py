@@ -178,11 +178,10 @@ class SectionService:
         return convert_to_response(section)
 
     async def get_all_sections(
-        self, user_id: UUID, leaves_only: bool
+        self, user_id: UUID, leaves_only: bool, as_tree: bool
     ) -> SectionsListResponse:
         sections: list[Section] = await self._section_repo.get_all_without_tasks(
-            user_id,
-            leaves_only=leaves_only,
+            user_id, leaves_only=leaves_only, as_tree=as_tree
         )
         # TODO: remove tasks=[] from this schema to avoid confusion! use new
         # schema, e.g. "SectionSummary"
@@ -232,7 +231,9 @@ class SectionService:
 
     async def move_section(self, user_id: UUID, request: SectionMoveRequest) -> None:
         # move `section` from `section_from` to `section to` with given `index``
-        section = await self._section_repo.get(request.section_id)
+        section = await self._section_repo.get(
+            request.section_id, with_direct_subsections=True
+        )
         if section.user_id != user_id:
             raise ForbiddenException()
         if section.is_root():
@@ -247,7 +248,9 @@ class SectionService:
         if same_section:
             section_from = section_to
         else:
-            section_from = await self._section_repo.get(section.parent_id)
+            section_from = await self._section_repo.get(
+                section.parent_id, with_direct_subsections=True
+            )
 
         Section.move_section(section, section_from, section_to, request.index)
 

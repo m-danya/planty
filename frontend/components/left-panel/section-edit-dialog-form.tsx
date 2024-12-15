@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { forwardRef, useState } from "react";
 
-interface SectionDialogFormProps {
+interface SectionEditDialogFormProps {
   initialTitle?: string;
   submitLabel: string;
   onSubmit: (section: { title: string }) => void;
@@ -13,9 +13,9 @@ interface SectionDialogFormProps {
   titleInputRef?: React.RefObject<HTMLInputElement>;
 }
 
-export const SectionDialogForm = forwardRef<
+export const SectionEditDialogForm = forwardRef<
   HTMLInputElement,
-  SectionDialogFormProps
+  SectionEditDialogFormProps
 >(
   (
     { initialTitle = "", submitLabel, onSubmit, onCancel, titleInputRef },
@@ -38,9 +38,9 @@ export const SectionDialogForm = forwardRef<
           autoComplete="off"
         >
           <div>
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="section_title">Title</Label>
             <Input
-              id="title"
+              id="section_title"
               ref={titleInputRef}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -60,4 +60,4 @@ export const SectionDialogForm = forwardRef<
   }
 );
 
-SectionDialogForm.displayName = "SectionDialogForm"; // for devtools
+SectionEditDialogForm.displayName = "SectionDialogForm"; // for devtools
