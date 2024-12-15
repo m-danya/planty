@@ -63,7 +63,6 @@ export function MoveTaskDialog({
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
     try {
       const result = await api.moveTaskApiTaskMovePost({
         task_id: taskId,
@@ -90,6 +89,7 @@ export function MoveTaskDialog({
             noValidate
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-8"
+            autoComplete="off"
           >
             <FormField
               control={form.control}

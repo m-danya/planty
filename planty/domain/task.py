@@ -225,6 +225,7 @@ class Section(Entity):
 
     @staticmethod
     def move_section(
+        # They both must be with loaded subsections!
         section: "Section",
         section_from: "Section",
         section_to: "Section",

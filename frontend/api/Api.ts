@@ -9,6 +9,17 @@
  * ---------------------------------------------------------------
  */
 
+/** ArchivedTasksResponse */
+export interface ArchivedTasksResponse {
+  /**
+   * Title
+   * @default "Archived tasks"
+   */
+  title?: string;
+  /** Tasks */
+  tasks: TaskResponse[];
+}
+
 /** AttachmentResponse */
 export interface AttachmentResponse {
   /**
@@ -157,6 +168,22 @@ export interface SectionResponse {
   subsections: SectionResponse[];
   /** Tasks */
   tasks: TaskResponse[];
+}
+
+/** SectionUpdateRequest */
+export interface SectionUpdateRequest {
+  /**
+   * Id
+   * @format uuid
+   */
+  id: string;
+  /** Title */
+  title?: string;
+}
+
+/** SectionUpdateResponse */
+export interface SectionUpdateResponse {
+  section: SectionResponse;
 }
 
 /** ShuffleSectionRequest */
@@ -718,7 +745,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
      * @secure
      */
     getArchivedTasksApiTasksArchivedGet: (params: RequestParams = {}) =>
-      this.request<TaskResponse[], any>({
+      this.request<ArchivedTasksResponse, any>({
         path: `/api/tasks/archived`,
         method: "GET",
         secure: true,
@@ -739,6 +766,26 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<SectionCreateResponse, HTTPValidationError>({
         path: `/api/section`,
         method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @tags User tasks
+     * @name PatchSectionApiSectionPatch
+     * @summary Patch Section
+     * @request PATCH:/api/section
+     * @secure
+     */
+    patchSectionApiSectionPatch: (data: SectionUpdateRequest, params: RequestParams = {}) =>
+      this.request<SectionUpdateResponse, HTTPValidationError>({
+        path: `/api/section`,
+        method: "PATCH",
         body: data,
         secure: true,
         type: ContentType.Json,
