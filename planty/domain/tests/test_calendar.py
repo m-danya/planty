@@ -67,7 +67,7 @@ def test_recurrence_rule(
     dates = list(
         recurrence_rule(
             start_day=start_day,
-            k=k,
+            period=k,
             period_type=period_type,
             not_after=not_after,
         )

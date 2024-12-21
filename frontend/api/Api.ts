@@ -318,6 +318,7 @@ export interface TaskUpdateRequest {
   description?: string | null;
   /** Due To */
   due_to?: string | null;
+  recurrence?: RecurrenceInfo | null;
 }
 
 /** TaskUpdateResponse */

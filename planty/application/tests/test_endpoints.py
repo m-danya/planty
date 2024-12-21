@@ -366,7 +366,7 @@ async def test_move_another_user_task(
     "task_id",
     ["f4186c04-3f2d-4217-a6ed-5c40bc9946d2"],
 )
-async def test_toggle_completed_task(
+async def test_toggle_completed_nonperiodical_task(
     task_id: str,
     ac: AsyncClient,
 ) -> None:
@@ -382,11 +382,58 @@ async def test_toggle_completed_task(
         # Task was auto-archived
         with pytest.raises(StopIteration):
             task = next(t for t in data["tasks"] if t["id"] == task_id)
-        response = await ac.get("/api/tasks/archived")
-        task = next(t for t in response.json()["tasks"] if t["id"] == task_id)
+        task, _ = await _request_task_data(task_id, ac, from_archived=True)
         is_completed = task["is_completed"]
         assert task["is_archived"]
         assert is_completed is expected_is_completed
+
+
+@pytest.mark.parametrize(
+    "task_id, section_id, due_to, new_due_to",
+    [
+        (
+            # Recurrence is "every day, non-flexible mode"
+            "f15c4c32-3d85-4a64-a216-75bdf6f2d8c5",
+            "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "2024-12-21",
+            "2024-12-22",
+        ),
+        (
+            # Recurrence is "every 3 days, non-flexible mode"
+            "fe03f915-a5d8-4b4a-9ee6-93dacb2bf08e",
+            "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "2001-01-01",
+            "2001-01-04",
+        ),
+        (
+            # Recurrence is "every 3 months, non-flexible mode"
+            "effd5cea-038c-43d2-9363-d0aa15ce9e77",
+            "a5b2010d-c27c-4f22-be47-828e065f9607",
+            "2010-01-01",
+            "2010-04-01",
+        ),
+    ],
+)
+async def test_toggle_completed_periodical_task(
+    ac: AsyncClient,
+    task_id: str,
+    section_id: str,
+    due_to: str,
+    new_due_to: str,
+) -> None:
+    task, _ = await _request_task_data(task_id, ac, section_id)
+    assert task["due_to"] == due_to
+
+    await ac.post(
+        "/api/task/toggle_completed",
+        json={
+            "task_id": task_id,
+        },
+    )
+    task, _ = await _request_task_data(task_id, ac, section_id)
+    assert task["is_completed"] is False
+    assert task["is_archived"] is False
+    assert task["due_to"] == new_due_to
 
 
 async def test_unarchiving_ask_puts_it_to_the_section_end(
@@ -396,7 +443,7 @@ async def test_unarchiving_ask_puts_it_to_the_section_end(
     task_id = "e6a76c36-7dae-47ee-b657-1a0b02ca40df"
     section_id = "090eda97-dd2d-45bb-baa0-7814313e5a38"
     task_got, task_index = await _request_task_data(
-        task_id, section_id, ac, from_archived=True
+        task_id, ac, section_id, from_archived=True
     )
     assert task_index == 0
 
@@ -411,7 +458,7 @@ async def test_unarchiving_ask_puts_it_to_the_section_end(
     assert section_len > 3
 
     task_got, task_index = await _request_task_data(
-        task_id, section_id, ac, from_archived=False
+        task_id, ac, section_id, from_archived=False
     )
     assert task_index == section_len - 1
 
@@ -517,7 +564,7 @@ async def test_add_attachment(
         return
 
     section_id = existing_task_data["section_id"]
-    task_got, _ = await _request_task_data(task_id, section_id, ac)
+    task_got, _ = await _request_task_data(task_id, ac, section_id)
     assert len(task_got["attachments"]) == 1
     assert task_got["attachments"][0]["aes_key_b64"] == request_data["aes_key_b64"]
     assert task_got["attachments"][0]["aes_iv_b64"] == request_data["aes_iv_b64"]
@@ -551,7 +598,10 @@ async def test_add_attachment(
 
 
 async def _request_task_data(
-    task_id: str, section_id: str, ac: AsyncClient, from_archived: bool = False
+    task_id: str,
+    ac: AsyncClient,
+    section_id: Optional[str] = None,
+    from_archived: bool = False,
 ) -> tuple[dict[str, Any], int]:
     if from_archived:
         response = await ac.get("/api/tasks/archived")

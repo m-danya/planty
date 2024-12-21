@@ -1,6 +1,6 @@
 "use client";
 
-import { Api } from "@/api/Api";
+import { Api, RecurrenceInfo } from "@/api/Api";
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
@@ -101,6 +101,7 @@ export function Section({ sectionId }: { sectionId: string }) {
     title?: string;
     description?: string;
     due_to?: string;
+    recurrence: RecurrenceInfo | null;
   }) {
     try {
       const result = await api.updateTaskApiTaskPatch({
@@ -108,11 +109,12 @@ export function Section({ sectionId }: { sectionId: string }) {
         title: updateTaskData.title,
         description: updateTaskData.description,
         due_to: updateTaskData.due_to,
+        recurrence: updateTaskData.recurrence,
       });
       console.log("Task edited successfully:", result);
     } catch (error) {
       console.error("Failed to edit task:", error);
-      alert("Error while editing task");
+      alert(`Error while editing task: ${error.response.data.detail}`);
     }
     mutateSection();
   }
@@ -121,6 +123,7 @@ export function Section({ sectionId }: { sectionId: string }) {
     title: string;
     description: string;
     due_to: string | null;
+    recurrence: RecurrenceInfo | null;
   }) {
     try {
       const result = await api.createTaskApiTaskPost({
@@ -128,13 +131,13 @@ export function Section({ sectionId }: { sectionId: string }) {
         title: task.title,
         description: task.description,
         due_to: task.due_to,
-        recurrence: null,
+        recurrence: task.recurrence,
       });
       console.log("Task added successfully:", result);
       mutateSection();
     } catch (error) {
       console.error("Failed to add task:", error);
-      alert("Failed to add task");
+      alert(`Failed to add task: ${error.response.data.detail}`);
     }
   }
 

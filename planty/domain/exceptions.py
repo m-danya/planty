@@ -10,6 +10,14 @@ class MovingTaskIndexError(PlantyException):
         return "The task can't be moved to the specified index"
 
 
+class RecurrenceWithoutDueDate(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "Recurrence settings can't be set unless a due date is specified."
+
+
 class MisplaceSectionIndexError(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 

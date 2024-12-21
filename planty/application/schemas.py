@@ -74,7 +74,7 @@ class TaskUpdateRequest(Schema):
     title: str = None  # type: ignore
     description: Optional[str] = None
     due_to: Optional[date] = None
-    # TODO: add recurrence params here
+    recurrence: Optional[RecurrenceInfo] = None
 
 
 class TaskUpdateResponse(Schema):

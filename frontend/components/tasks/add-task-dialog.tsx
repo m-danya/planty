@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { TaskDialogForm } from "./task-dialog-form";
+import { RecurrenceInfo } from "@/api/Api";
 
 interface AddTaskDialogProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ interface AddTaskDialogProps {
     title: string;
     description: string;
     due_to: string | null;
+    recurrence: RecurrenceInfo | null;
   }) => void;
 }
 
@@ -32,6 +34,7 @@ export function AddTaskDialog({
     title: string;
     description: string;
     due_to: string | null;
+    recurrence: RecurrenceInfo | null;
   }) => {
     handleTaskAdd(task);
     onOpenChange(false);

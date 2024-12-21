@@ -252,6 +252,8 @@
       "added_at": "2024-03-28T04:11:17.677Z",
       "flexible_recurrence_mode": false,
       "recurrence_type": "days",
+      "recurrence_period": 1,
+      "due_to": "2024-12-21",
       "index": 1
     },
     {
@@ -284,7 +286,7 @@
       "id": "fe03f915-a5d8-4b4a-9ee6-93dacb2bf08e",
       "user_id": "38df4136-36b2-4171-8459-27f411af8323",
       "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
-      "title": "Task for testing recurrence",
+      "title": "Task for testing recurrence in 2001",
       "description": "🧺",
       "is_completed": false,
       "is_archived": false,
@@ -318,6 +320,21 @@
       "added_at": "2024-03-28T04:11:17.677Z",
       "due_to": "2025-01-01",
       "index": 6
+    },
+    {
+      "id": "effd5cea-038c-43d2-9363-d0aa15ce9e77",
+      "user_id": "38df4136-36b2-4171-8459-27f411af8323",
+      "section_id": "a5b2010d-c27c-4f22-be47-828e065f9607",
+      "title": "Task for testing monthly recurrence",
+      "description": "🧺🧺🧺",
+      "is_completed": false,
+      "is_archived": false,
+      "added_at": "2024-03-28T04:11:17.677Z",
+      "flexible_recurrence_mode": false,
+      "due_to": "2010-01-01",
+      "recurrence_period": 3,
+      "recurrence_type": "months",
+      "index": 7
     },
     {
       "id": "f8dfbd24-cdec-4cc9-a6bc-9adf64bbd7a9",

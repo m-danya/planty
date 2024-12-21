@@ -1,4 +1,6 @@
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
+from dateutil.relativedelta import relativedelta
+
 import random
 from typing import Any, Optional
 from uuid import UUID
@@ -15,6 +17,7 @@ from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
 from planty.domain.exceptions import (
     MisplaceSectionIndexError,
+    RecurrenceWithoutDueDate,
     RemovingSectionFromWrongSectionError,
     RemovingTaskFromWrongSectionError,
     MovingTaskIndexError,
@@ -64,7 +67,7 @@ class Task(Entity):
         recurrence = values.get("recurrence")
         due_to = values.get("due_to")
         if recurrence is not None and due_to is None:
-            raise ValueError("If recurrence is not None, due_to must also be not None")
+            raise RecurrenceWithoutDueDate()
         return values
 
     def __eq__(self, other: object) -> bool:
@@ -76,11 +79,11 @@ class Task(Entity):
     def mark_completed(self, auto_archive: bool = True) -> None:
         if self.recurrence is not None:
             assert self.due_to  # only for type checking, it's already validated
-            days_delta = timedelta(days=self.recurrence.period)
+            delta = relativedelta(**{self.recurrence.type: self.recurrence.period})  # type: ignore
             if self.recurrence.flexible_mode:
-                self.due_to = get_datetime_now().date() + days_delta
+                self.due_to = get_datetime_now().date() + delta
             else:
-                self.due_to += days_delta
+                self.due_to += delta
         else:
             self.is_completed = True
             if auto_archive:

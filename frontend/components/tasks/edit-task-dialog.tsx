@@ -9,6 +9,7 @@ import {
 import { format } from "date-fns";
 import { TaskDialogForm } from "./task-dialog-form";
 import React, { useRef } from "react";
+import { RecurrenceInfo } from "@/api/Api";
 
 interface EditTaskDialogProps {
   isEditing: boolean;
@@ -18,6 +19,7 @@ interface EditTaskDialogProps {
     title: string;
     description?: string | null;
     due_to?: string | null;
+    recurrence: RecurrenceInfo | null;
   };
   handleTaskEdit: (task: any) => void;
 }
@@ -31,6 +33,7 @@ export function EditTaskDialog({
   const initialTitle = task.title || "";
   const initialDescription = task.description || "";
   const initialDueTo = task.due_to ? new Date(task.due_to) : null;
+  const initialRecurrence = task.recurrence || null;
 
   const titleInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,6 +45,7 @@ export function EditTaskDialog({
     title: string;
     description: string;
     due_to: string | null;
+    recurrence: RecurrenceInfo | null;
   }) => {
     handleTaskEdit({
       id: task.id,
@@ -50,6 +54,7 @@ export function EditTaskDialog({
       due_to: updatedTask.due_to
         ? format(new Date(updatedTask.due_to), "yyyy-MM-dd")
         : null,
+      recurrence: updatedTask.recurrence,
     });
     onOpenChange(false);
   };
@@ -73,6 +78,7 @@ export function EditTaskDialog({
           initialTitle={initialTitle}
           initialDescription={initialDescription}
           initialDueTo={initialDueTo}
+          initialRecurrence={initialRecurrence}
           submitLabel="Save"
           onSubmit={handleSubmit}
           onCancel={handleCancel}
