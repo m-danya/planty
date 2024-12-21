@@ -7,17 +7,22 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { MoveRight, Archive } from "lucide-react";
+import { MoveRight, Archive, ArchiveRestore, CircleCheck } from "lucide-react";
+import { TaskResponse } from "@/api/Api";
 
 interface TaskContextMenuProps {
+  task: TaskResponse;
   onOpenMoveDialog: () => void;
   onContextMenuChange: (open: boolean) => void;
+  onToggleArchived: () => void;
   children: React.ReactNode;
 }
 
 export function TaskContextMenu({
+  task,
   onOpenMoveDialog,
   onContextMenuChange,
+  onToggleArchived,
   children,
 }: TaskContextMenuProps) {
   return (
@@ -33,10 +38,33 @@ export function TaskContextMenu({
             Move to another section
           </div>
         </ContextMenuItem>
+        {/* <ContextMenuItem>
+          <div
+            className="flex items-center gap-x-2.5 cursor-pointer pr-2"
+            onClick={...}
+          >
+            <CircleCheck size={16} />
+            Complete without archiving
+          </div>
+        </ContextMenuItem> */}
+
         <ContextMenuItem>
-          <div className="flex items-center gap-x-2.5 cursor-pointer">
-            <Archive size={16} />
-            Archive
+          <div
+            className="flex items-center gap-x-2.5 cursor-pointer"
+            onClick={onToggleArchived}
+          >
+            {task.is_archived && (
+              <>
+                <ArchiveRestore size={16} />
+                Unarchive
+              </>
+            )}
+            {!task.is_archived && (
+              <>
+                <Archive size={16} />
+                Archive
+              </>
+            )}
           </div>
         </ContextMenuItem>
       </ContextMenuContent>

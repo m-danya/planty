@@ -314,6 +314,29 @@ class SectionService:
         await self._task_repo.update_or_create(task)
         return convert_to_response(section)
 
+    async def toggle_task_archived(
+        self, user_id: UUID, task_id: UUID
+    ) -> SectionResponse:
+        task = await self._task_repo.get(task_id)
+        if task.user_id != user_id:
+            raise ForbiddenException()
+        section = await self._section_repo.get(task.section_id)
+        if not task:
+            raise TaskNotFoundException(task_id=task_id)
+
+        task.toggle_archived()
+
+        if task.is_archived:
+            # just became archived =>
+            # "remove" task from section to update others' indices:
+            section.remove_task(task)
+        else:
+            # unarchiving task => add to section end
+            section.insert_task(task)
+        await self._section_repo.update(section)
+        await self._task_repo.update_or_create(task)
+        return convert_to_response(section)
+
     async def shuffle(
         self, user_id: UUID, request: ShuffleSectionRequest
     ) -> SectionResponse:

@@ -95,6 +95,9 @@ class Task(Entity):
         else:
             self.mark_completed(auto_archive=auto_archive)
 
+    def toggle_archived(self) -> None:
+        self.is_archived = not self.is_archived
+
     def add_attachment(self, attachment: "Attachment") -> None:
         self.attachments.append(attachment)
 

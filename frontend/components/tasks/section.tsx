@@ -58,6 +58,19 @@ export function Section({ sectionId }: { sectionId: string }) {
     }
   }
 
+  async function handleToggleTaskArchived(task_id: string) {
+    try {
+      const result = await api.toggleTaskArchivedApiTaskToggleArchivedPost({
+        task_id: task_id,
+      });
+      console.log("Toggled task archived status successfully:", result);
+      mutateSection();
+    } catch (error) {
+      console.error("Failed to toggle task archived status:", error);
+      alert("Failed to toggle task archived status");
+    }
+  }
+
   async function handleDragEnd(event: any) {
     const { active, over } = event;
     // if (!over) return;
@@ -149,6 +162,7 @@ export function Section({ sectionId }: { sectionId: string }) {
                         task={task}
                         skeleton={isLoading}
                         handleToggleTaskCompleted={handleToggleTaskCompleted}
+                        handleToggleTaskArchived={handleToggleTaskArchived}
                         mutateSection={mutateSection}
                         handleTaskEdit={handleTaskEdit}
                         key={task.id}

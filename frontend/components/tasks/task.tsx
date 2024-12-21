@@ -14,6 +14,7 @@ import { parseISO } from "date-fns";
 interface TaskProps {
   task: TaskResponse;
   handleToggleTaskCompleted: (taskId: string) => void;
+  handleToggleTaskArchived: (taskId: string) => void;
   skeleton?: boolean;
   mutateSection: () => void;
   handleTaskEdit: (task: any) => void;
@@ -22,6 +23,7 @@ interface TaskProps {
 export function Task({
   task,
   handleToggleTaskCompleted,
+  handleToggleTaskArchived,
   skeleton = false,
   mutateSection,
   handleTaskEdit,
@@ -44,7 +46,9 @@ export function Task({
   return (
     <div ref={setNodeRef} style={dndStyle} {...attributes} {...listeners}>
       <TaskContextMenu
+        task={task}
         onOpenMoveDialog={() => setMoveTaskDialogIsOpen(true)}
+        onToggleArchived={() => handleToggleTaskArchived(task.id)}
         onContextMenuChange={setIsContextMenuOpen}
       >
         <div

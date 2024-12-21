@@ -93,16 +93,15 @@ class SQLAlchemyTaskRepository:
 
     async def get_section_tasks(self, section_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
-            select(TaskModel).where(
+            select(TaskModel)
+            .where(
                 (TaskModel.section_id == section_id)
                 & (TaskModel.is_archived.is_(False))
             )
+            .order_by(TaskModel.index)
         )
         task_models = result.scalars().all()
-        return [
-            await self.get_entity(task_model)
-            for task_model in sorted(task_models, key=lambda t: t.index)
-        ]
+        return [await self.get_entity(task_model) for task_model in task_models]
 
     async def search(self, user_id: UUID, query: str) -> list[Task]:
         # TODO: Reimplement search to improve performance. Possible options:
@@ -125,13 +124,12 @@ class SQLAlchemyTaskRepository:
 
     async def _get_task_attachments(self, task_id: UUID) -> list[Attachment]:
         result = await self._db_session.execute(
-            select(AttachmentModel).where(AttachmentModel.task_id == task_id)
+            select(AttachmentModel)
+            .where(AttachmentModel.task_id == task_id)
+            .order_by(AttachmentModel.index)
         )
         attachment_models = result.scalars().all()
-        return [
-            attachment_model.to_entity()
-            for attachment_model in sorted(attachment_models, key=lambda t: t.index)
-        ]
+        return [attachment_model.to_entity() for attachment_model in attachment_models]
 
     async def _persist_attachment(
         self, attachment: Attachment, index: NonNegativeInt
@@ -168,9 +166,9 @@ class SQLAlchemyTaskRepository:
 
     async def get_archived_tasks(self, user_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
-            select(TaskModel).where(
-                (TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True))
-            )
+            select(TaskModel)
+            .where((TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True)))
+            .order_by(TaskModel.added_at)
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]

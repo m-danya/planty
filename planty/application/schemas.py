@@ -47,6 +47,10 @@ class TaskToggleCompletedRequest(Schema):
     auto_archive: bool = True
 
 
+class TaskToggleArchivedRequest(Schema):
+    task_id: UUID
+
+
 class ShuffleSectionRequest(Schema):
     section_id: UUID
 

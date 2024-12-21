@@ -282,6 +282,15 @@ export interface TaskResponse {
   attachments: AttachmentResponse[];
 }
 
+/** TaskToggleArchivedRequest */
+export interface TaskToggleArchivedRequest {
+  /**
+   * Task Id
+   * @format uuid
+   */
+  task_id: string;
+}
+
 /** TaskToggleCompletedRequest */
 export interface TaskToggleCompletedRequest {
   /**
@@ -694,6 +703,26 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       }),
 
     /**
+     * No description
+     *
+     * @tags User tasks
+     * @name ToggleTaskArchivedApiTaskToggleArchivedPost
+     * @summary Toggle Task Archived
+     * @request POST:/api/task/toggle_archived
+     * @secure
+     */
+    toggleTaskArchivedApiTaskToggleArchivedPost: (data: TaskToggleArchivedRequest, params: RequestParams = {}) =>
+      this.request<SectionResponse, HTTPValidationError>({
+        path: `/api/task/toggle_archived`,
+        method: "POST",
+        body: data,
+        secure: true,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
      * @description This endpoint allows the frontend to obtain a pre-signed POST URL along with the required fields for uploading an attachment to an S3-compatible storage. The frontend is responsible for encrypting the file client-side using AES-128 CBC with the provided key and IV. After encryption, the frontend directly uploads the file to the S3 storage using the pre-signed URL and fields. The frontend can include the 'Content-Disposition' header in the upload request to specify the file name, ensuring that the file is downloaded later with the correct name. The approach with client-side encryption allows using even non-trusted S3 Storage providers for user files.
      *
      * @tags User tasks
@@ -844,9 +873,14 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       query?: {
         /**
          * Leaves Only
-         * @default true
+         * @default false
          */
         leaves_only?: boolean;
+        /**
+         * As Tree
+         * @default true
+         */
+        as_tree?: boolean;
       },
       params: RequestParams = {},
     ) =>

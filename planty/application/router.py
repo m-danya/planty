@@ -20,6 +20,7 @@ from planty.application.schemas import (
     TaskMoveRequest,
     TaskRemoveRequest,
     ArchivedTasksResponse,
+    TaskToggleArchivedRequest,
     TasksByDateResponse,
     TaskToggleCompletedRequest,
     TaskUpdateRequest,
@@ -108,6 +109,7 @@ async def move_task(
         await uow.commit()
 
 
+# TODO: make this endpoint idempotent
 @router.post("/task/toggle_completed")
 async def toggle_task_completed(
     request: TaskToggleCompletedRequest, user: User = Depends(current_user)
@@ -118,6 +120,21 @@ async def toggle_task_completed(
             user.id,
             request.task_id,
             auto_archive=request.auto_archive,  # TODO: move `auto_archive` to user settings?
+        )
+        await uow.commit()
+    return section
+
+
+# TODO: make this endpoint idempotent
+@router.post("/task/toggle_archived")
+async def toggle_task_archived(
+    request: TaskToggleArchivedRequest, user: User = Depends(current_user)
+) -> SectionResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        section = await section_service.toggle_task_archived(
+            user.id,
+            request.task_id,
         )
         await uow.commit()
     return section
