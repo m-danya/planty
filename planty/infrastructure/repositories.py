@@ -224,7 +224,7 @@ class SQLAlchemySectionRepository:
         return section_model.to_entity(tasks=tasks, subsections=subsections)
 
     async def get_all_without_tasks(
-        self, user_id: UUID, leaves_only: bool
+        self, user_id: UUID, leaves_only: bool, as_tree: bool
     ) -> list[Section]:
         result = await self._db_session.execute(
             select(SectionModel).where(SectionModel.user_id == user_id)
@@ -237,7 +237,7 @@ class SQLAlchemySectionRepository:
                 if not model.has_subsections
             ]
         else:
-            return self.construct_sections_tree(section_models)
+            return self.construct_sections_tree(section_models, return_flat=not as_tree)
 
     @staticmethod
     def construct_sections_tree(
@@ -295,6 +295,9 @@ class SQLAlchemySectionRepository:
         # Warning: does not update any excluded tasks from section.tasks
         for i, task in enumerate(section.tasks):
             await self._task_repo.update_or_create(task, index=i)
+
+        for i, subsection in enumerate(section.subsections):
+            await self.update(subsection, index=i)
 
         self._db_session.add(section_model)
 

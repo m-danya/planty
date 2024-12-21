@@ -77,6 +77,15 @@ class TaskUpdateResponse(Schema):
     task: "TaskResponse"
 
 
+class SectionUpdateRequest(Schema):
+    id: UUID
+    title: str = None  # type: ignore
+
+
+class SectionUpdateResponse(Schema):
+    section: "SectionResponse"
+
+
 class SectionCreateRequest(Schema):
     title: str
     parent_id: UUID

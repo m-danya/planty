@@ -18,6 +18,7 @@ from planty.application.schemas import (
     SectionCreateRequest,
     SectionMoveRequest,
     SectionResponse,
+    SectionUpdateRequest,
     ShuffleSectionRequest,
     TaskCreateRequest,
     TaskMoveRequest,
@@ -36,7 +37,10 @@ from planty.application.services.responses_converter import (
 )
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
-from planty.domain.exceptions import ChangingRootSectionError
+from planty.domain.exceptions import (
+    ChangingRootSectionError,
+    MisplaceSectionHierarchyError,
+)
 from planty.domain.task import Attachment, Section, Task
 
 
@@ -158,6 +162,18 @@ class SectionService:
         await self._section_repo.add(section, index=index)
         return section
 
+    async def update_section(
+        self, user_id: UUID, section_data: SectionUpdateRequest
+    ) -> SectionResponse:
+        section: Section = await self._section_repo.get(section_data.id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        section_data = section_data.model_dump(exclude_unset=True)
+        for key, value in section_data.items():
+            setattr(section, key, value)
+        await self._section_repo.update(section)
+        return convert_to_response(section)
+
     async def get_section(self, user_id: UUID, section_id: UUID) -> SectionResponse:
         section: Section = await self._section_repo.get(section_id)
         if section.user_id != user_id:
@@ -165,11 +181,10 @@ class SectionService:
         return convert_to_response(section)
 
     async def get_all_sections(
-        self, user_id: UUID, leaves_only: bool
+        self, user_id: UUID, leaves_only: bool, as_tree: bool
     ) -> SectionsListResponse:
         sections: list[Section] = await self._section_repo.get_all_without_tasks(
-            user_id,
-            leaves_only=leaves_only,
+            user_id, leaves_only=leaves_only, as_tree=as_tree
         )
         # TODO: remove tasks=[] from this schema to avoid confusion! use new
         # schema, e.g. "SectionSummary"
@@ -219,7 +234,9 @@ class SectionService:
 
     async def move_section(self, user_id: UUID, request: SectionMoveRequest) -> None:
         # move `section` from `section_from` to `section to` with given `index``
-        section = await self._section_repo.get(request.section_id)
+        section = await self._section_repo.get(
+            request.section_id, with_direct_subsections=True
+        )
         if section.user_id != user_id:
             raise ForbiddenException()
         if section.is_root():
@@ -234,7 +251,15 @@ class SectionService:
         if same_section:
             section_from = section_to
         else:
-            section_from = await self._section_repo.get(section.parent_id)
+            section_from = await self._section_repo.get(
+                section.parent_id, with_direct_subsections=True
+            )
+
+        is_valid_moving = await self.is_hierarchically_valid_moving(
+            user_id, section.id, section_to.id
+        )
+        if not is_valid_moving:
+            raise MisplaceSectionHierarchyError()
 
         Section.move_section(section, section_from, section_to, request.index)
 
@@ -244,6 +269,26 @@ class SectionService:
         else:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
+
+    async def is_hierarchically_valid_moving(
+        self, user_id: UUID, section_id: UUID, section_to_id: UUID
+    ) -> bool:
+        sections = await self._section_repo.get_all_without_tasks(
+            user_id=user_id, leaves_only=False, as_tree=False
+        )
+
+        def find_section_by_id(section_id: UUID) -> Section:
+            return next(s for s in sections if s.id == section_id)
+
+        section_to = find_section_by_id(section_to_id)
+        if section_to.id == section_id:
+            return False
+        s = section_to
+        while s.parent_id:
+            if s.id == section_id:
+                return False
+            s = find_section_by_id(s.parent_id)
+        return True
 
     async def toggle_task_completed(
         self, user_id: UUID, task_id: UUID, auto_archive: bool
