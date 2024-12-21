@@ -40,10 +40,11 @@ export function NavSections() {
   } = useSections();
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [movingSectionId, setMovingSectionId] = useState(null);
+  const { cache, mutate } = useSWRConfig();
+
   if (isError) return <p>Failed to load sections.</p>;
 
   const api = new Api().api;
-  const { cache, mutate } = useSWRConfig();
 
   // TODO: move to utils
   function mutateSWRByPartialKey(partialKey: string) {

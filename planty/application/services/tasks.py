@@ -37,7 +37,10 @@ from planty.application.services.responses_converter import (
 )
 from planty.application.uow import IUnitOfWork
 from planty.domain.calendar import multiply_tasks_with_recurrences
-from planty.domain.exceptions import ChangingRootSectionError
+from planty.domain.exceptions import (
+    ChangingRootSectionError,
+    MisplaceSectionHierarchyError,
+)
 from planty.domain.task import Attachment, Section, Task
 
 
@@ -252,6 +255,12 @@ class SectionService:
                 section.parent_id, with_direct_subsections=True
             )
 
+        is_valid_moving = await self.is_hierarchically_valid_moving(
+            user_id, section.id, section_to.id
+        )
+        if not is_valid_moving:
+            raise MisplaceSectionHierarchyError()
+
         Section.move_section(section, section_from, section_to, request.index)
 
         await self._section_repo.update(section)
@@ -260,6 +269,26 @@ class SectionService:
         else:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
+
+    async def is_hierarchically_valid_moving(
+        self, user_id: UUID, section_id: UUID, section_to_id: UUID
+    ) -> bool:
+        sections = await self._section_repo.get_all_without_tasks(
+            user_id=user_id, leaves_only=False, as_tree=False
+        )
+
+        def find_section_by_id(section_id: UUID) -> Section:
+            return next(s for s in sections if s.id == section_id)
+
+        section_to = find_section_by_id(section_to_id)
+        if section_to.id == section_id:
+            return False
+        s = section_to
+        while s.parent_id:
+            if s.id == section_id:
+                return False
+            s = find_section_by_id(s.parent_id)
+        return True
 
     async def toggle_task_completed(
         self, user_id: UUID, task_id: UUID, auto_archive: bool

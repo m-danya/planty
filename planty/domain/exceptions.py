@@ -18,6 +18,14 @@ class MisplaceSectionIndexError(PlantyException):
         return "The section can't be placed at the specified index"
 
 
+class MisplaceSectionHierarchyError(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "The section can't be placed as a subsection of its own subsection"
+
+
 class RemovingTaskFromWrongSectionError(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 

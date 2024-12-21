@@ -35,6 +35,9 @@ poetry install
 # line in `config.py` to avoid using in-memory db for tests and run this:
 pytest; mv planty_test.db planty.db
 
+# or just run this for automatic commenting, running tests and uncommenting:
+sed -i '/Uncomment to /{n;s/# //}' planty/config.py; pytest planty/application; mv planty_test.db planty.db; sed -i '/Uncomment to /{n;s/^\(\s*\)/\1# /}' planty/config.py; echo Done. DB is ready!
+
 # (backend is not dockerized yet)
 # run "FastAPI" configuration in VS code or:
 uvicorn planty.main:app --reload

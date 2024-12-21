@@ -276,15 +276,22 @@ async def test_move_task(
             200,
             None,
         ),
-        # TODO: FORBID MOVING SUBSECTION INTO ITS CHILD, IT DISAPPEARS
-        # (
-        #     "36ea0a4f-0334-464d-8066-aa359ecfdcba",
-        #     "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
-        #     0,
-        #     "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
-        #     200,  # MUST BE 422
-        #     None,
-        # ),
+        (
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            "5fa09005-4ba9-417b-a9cb-82f182cd1f26",
+            0,
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+            422,  # MisplaceSectionHierarchyError
+            "The section can't be placed as a subsection of its own subsection",
+        ),
+        (
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            "36ea0a4f-0334-464d-8066-aa359ecfdcba",
+            0,
+            "0d966845-254b-4b5c-b8a7-8d34dcd3d527",
+            422,  # MisplaceSectionHierarchyError
+            "The section can't be placed as a subsection of its own subsection",
+        ),
     ],
 )
 async def test_move_section(
