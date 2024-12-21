@@ -94,9 +94,7 @@ export const SectionMoveDialogForm = forwardRef<
           </div>
 
           <div>
-            <Label htmlFor="section_index">
-              Index inside parent's children (0, 1, 2, ...)
-            </Label>
+            <Label htmlFor="section_index">Index in parent section</Label>
             <Input
               id="section_index"
               value={index}
