@@ -12,6 +12,7 @@ import { useTasksByDate } from "@/hooks/use-tasks-by-date";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useState } from "react";
+import { Task } from "./tasks/task";
 
 function CalendarView() {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -49,6 +50,16 @@ function CalendarView() {
     return `${formattedStart} — ${formattedEnd}`;
   }
 
+  function getFormattedDate(date: Date): string {
+    const currentYear = new Date().getFullYear();
+
+    const includeYear = date.getFullYear() !== currentYear;
+    // TODO: add day of week here
+    return format(date, includeYear ? "MMM dd, yyyy" : "MMM dd", {
+      locale: enUS,
+    });
+  }
+
   const weekRange = selectedDate ? getWeekRange(selectedDate) : "";
 
   return (
@@ -83,12 +94,47 @@ function CalendarView() {
       </div>
       <div>
         {tasksByDate &&
-          Object.keys(tasksByDate).map((date) => (
-            <div key={date}>
-              <h1>{date}</h1>
-              {tasksByDate[date].map((task: TaskResponse) => (
-                <div>{task.title}</div>
-              ))}
+          tasksByDate.map((date_with_tasks) => (
+            <div
+              className="items-center flex-col"
+              key={`${date_with_tasks.date}_tasks`}
+            >
+              <div className="xl:px-40">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-xl font-semibold md:text-2xl">
+                    {getFormattedDate(new Date(date_with_tasks.date))}
+                  </h1>
+                </div>
+                <div className="flex flex-col py-4">
+                  {date_with_tasks.tasks.map((task: TaskResponse) => (
+                    <div key={task.id}>
+                      <div>
+                        <Task
+                          task={task}
+                          skeleton={isLoading}
+                          // handleToggleTaskCompleted={handleToggleTaskCompleted}
+                          // handleToggleTaskArchived={handleToggleTaskArchived}
+                          // mutateSection={mutateSection}
+                          // handleTaskEdit={handleTaskEdit}
+                          key={task.id}
+                        />
+                      </div>
+                      <hr className="border-gray-200 dark:border-white" />
+                    </div>
+                  ))}
+                  {/* <div>
+                      <div
+                        className="py-3.5 px-2 text-small cursor-pointer"
+                        onClick={() => setIsAddTaskDialogOpen(true)}
+                      >
+                        <div className="flex items-center justify-start w-full">
+                          <Plus className="mx-2 w-5 h-5 " />
+                          Add task
+                        </div>
+                      </div>
+                    </div> */}
+                </div>
+              </div>
             </div>
           ))}
       </div>

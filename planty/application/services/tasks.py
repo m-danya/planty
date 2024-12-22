@@ -74,16 +74,19 @@ class TaskService:
         user_id: UUID,
         not_before: date,
         not_after: date,
-    ) -> TasksByDateResponse:
+    ):  # -> TasksByDateResponse:
         if not_before > not_after:
             raise IncorrectDateInterval()
-        prefiltered_tasks = await self._task_repo.get_tasks_by_due_date(
+        prefiltered_tasks = await self._task_repo.get_prefiltered_tasks_by_due_date(
             not_before=not_before,
             not_after=not_after,
             user_id=user_id,
         )
-        tasks_by_date = multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
-        return convert_to_response(tasks_by_date)
+        tasks_by_date = multiply_tasks_with_recurrences(
+            prefiltered_tasks, not_before, not_after
+        )
+        return tasks_by_date
+        # return convert_to_response(tasks_by_date)
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
         tasks = await self._task_repo.get_archived_tasks(user_id)
