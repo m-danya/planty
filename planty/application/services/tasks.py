@@ -51,14 +51,21 @@ class TaskService:
         self._s3_session = aiobotocore.session.get_session()
 
     async def update_task(
-        self, user_id: UUID, task_data: TaskUpdateRequest
+        self, user_id: UUID, task_update_request: TaskUpdateRequest
     ) -> TaskResponse:
-        task: Task = await self._task_repo.get(task_data.id)
+        task: Task = await self._task_repo.get(task_update_request.id)
         if task.user_id != user_id:
             raise ForbiddenException()
-        task_data = task_data.model_dump(exclude_unset=True)
-        for key, value in task_data.items():
-            setattr(task, key, value)
+        updated_task_data = task_update_request.model_dump(exclude_unset=True)
+
+        # Avoid triggering validation on every field assignment. Otherwise, this
+        # can trigger validation error because of partial attributes update,
+        # e.g. if `due_to` is set to `None` before `recurrence` is set to
+        # `None`.
+        task_data = task.model_dump()
+        task_data.update(updated_task_data)
+        task = Task.model_validate(task_data)
+
         await self._task_repo.update_or_create(task)
         return convert_to_response(task)
 
