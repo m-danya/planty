@@ -151,13 +151,15 @@ class SQLAlchemyTaskRepository:
         attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
         await self._db_session.delete(attachment_model)
 
-    async def get_tasks_by_due_date(
+    async def get_prefiltered_tasks_by_due_date(
         self, not_before: date, not_after: date, user_id: UUID
     ) -> list[Task]:
+        # NOTE: not_before is IGNORED rn, as task with due_date < not_before can
+        # produce its recurrent clones with due_date in the given interval.
         result = await self._db_session.execute(
             select(TaskModel).where(
                 (TaskModel.user_id == user_id)
-                & TaskModel.due_to.between(not_before, not_after)
+                & (TaskModel.due_to < not_after)
                 & (TaskModel.is_archived.is_(False))
             )
         )

@@ -1,28 +1,28 @@
 "use client";
 
-import React, { useState, forwardRef } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RecurrenceInfo } from "@/api/Api";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Popover,
-  PopoverTrigger,
   PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
-  SelectTrigger,
-  SelectValue,
   SelectContent,
   SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
-import { X } from "lucide-react";
-import { DateLabel } from "./date-label";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
-import { RecurrenceInfo } from "@/api/Api";
+import { X } from "lucide-react";
+import React, { forwardRef, useState } from "react";
+import { DateLabel } from "./date-label";
 
 interface TaskDialogFormProps {
   initialTitle?: string;
@@ -96,7 +96,10 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
       setIsPopoverOpen(false);
     };
 
-    const clearDate = () => setDueTo(null);
+    const clearDate = () => {
+      setIsRecurring(false);
+      setDueTo(null);
+    };
 
     return (
       <div>
@@ -167,6 +170,7 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
                 id="recurrence_toggle"
                 checked={isRecurring}
                 onCheckedChange={(checked) => setIsRecurring(!!checked)}
+                disabled={!dueTo}
               />
               <Label htmlFor="recurrence_toggle">
                 This task is recurring {isRecurring ? "every" : ""}
@@ -210,7 +214,15 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
                     checked={flexibleMode}
                     onCheckedChange={(checked) => setFlexibleMode(!!checked)}
                   />
-                  <Label htmlFor="recurrence_flexible">Flexible mode</Label>
+                  <Label htmlFor="recurrence_flexible">
+                    Flexible mode
+                    <span
+                      className="mx-2 text-muted-foreground cursor-pointer"
+                      title="Flexible mode adjusts a task's recurrence based on the completion date instead of the original due date. For example, let's set a task recurring every 7 days with flexible mode enabled. Completing it on December 22 sets the next due date to December 29. Completing it later, on December 24, shifts the next due date to December 31."
+                    >
+                      ?
+                    </span>
+                  </Label>
                 </div>
               </div>
             )}
