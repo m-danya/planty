@@ -148,6 +148,7 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
                     weekStartsOn={1}
                     selected={dueTo}
                     onSelect={handleDateSelect}
+                    defaultMonth={dueTo}
                     required
                   />
                 </PopoverContent>

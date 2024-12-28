@@ -13,7 +13,7 @@ from planty.domain.types import RecurrencePeriodType
 
 
 @pytest.mark.parametrize(
-    "start_day,k,period_type,not_before,not_after,result",
+    "start_day, period, period_type, not_before, not_after, expected_dates",
     [
         (
             date(2024, 8, 31),
@@ -59,26 +59,96 @@ from planty.domain.types import RecurrencePeriodType
                 date(2025, 8, 31),
             ],
         ),
+        (
+            date(2024, 1, 1),
+            3,
+            "days",
+            date(2024, 1, 1),
+            date(2024, 1, 10),
+            [
+                date(2024, 1, 1),
+                date(2024, 1, 4),
+                date(2024, 1, 7),
+                date(2024, 1, 10),
+            ],
+        ),
+        (
+            date(2024, 1, 1),
+            2,
+            "weeks",
+            date(2024, 1, 1),
+            date(2024, 2, 15),
+            [
+                date(2024, 1, 1),
+                date(2024, 1, 15),
+                date(2024, 1, 29),
+                date(2024, 2, 12),
+            ],
+        ),
+        (
+            date(2024, 1, 31),
+            1,
+            "months",
+            date(2024, 1, 1),
+            date(2024, 5, 31),
+            [
+                date(2024, 1, 31),
+                date(2024, 2, 29),  # 2024 is a leap year
+                date(2024, 3, 31),
+                date(2024, 4, 30),
+                date(2024, 5, 31),
+            ],
+        ),
+        (
+            date(2024, 1, 15),
+            2,
+            "months",
+            date(2024, 1, 1),
+            date(2024, 7, 31),
+            [
+                date(2024, 1, 15),
+                date(2024, 3, 15),
+                date(2024, 5, 15),
+                date(2024, 7, 15),
+            ],
+        ),
+        (
+            date(2023, 3, 1),
+            1,
+            "years",
+            date(2022, 1, 1),
+            date(2030, 3, 1),
+            [
+                date(2023, 3, 1),
+                date(2024, 3, 1),
+                date(2025, 3, 1),
+                date(2026, 3, 1),
+                date(2027, 3, 1),
+                date(2028, 3, 1),
+                date(2029, 3, 1),
+                date(2030, 3, 1),
+            ],
+        ),
     ],
 )
 def test_recurrence_rule(
     start_day: date,
-    k: int,
+    period: int,
     period_type: RecurrencePeriodType,
     not_before: date,
     not_after: date,
-    result: list[date],
+    expected_dates: list[date],
 ) -> None:
     dates = list(
         recurrence_rule(
             start_day=start_day,
-            period=k,
+            period=period,
             period_type=period_type,
             not_before=not_before,
             not_after=not_after,
         )
     )
-    assert dates == result
+    assert dates == expected_dates
 
 
 @pytest.mark.parametrize(
