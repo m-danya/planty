@@ -151,7 +151,22 @@ class SectionResponse(Schema):
 
 
 SectionsListResponse = list[SectionResponse]
-TasksByDateResponse = dict[date, list[TaskResponse]]
+
+
+class TasksByDate(Schema):
+    date: date
+    tasks: list[Task]
+
+
+TasksByDates = list[TasksByDate]
+
+
+class TasksByDateResponse(Schema):
+    date: date
+    tasks: list[TaskResponse]
+
+
+TasksByDatesResponse = list[TasksByDateResponse]
 
 
 # TODO: remove if response_converted will be rewritten

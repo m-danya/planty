@@ -326,6 +326,17 @@ export interface TaskUpdateResponse {
   task: TaskResponse;
 }
 
+/** TasksByDateResponse */
+export interface TasksByDateResponse {
+  /**
+   * Date
+   * @format date
+   */
+  date: string;
+  /** Tasks */
+  tasks: TaskResponse[];
+}
+
 /** UserCreate */
 export interface UserCreate {
   /**
@@ -629,7 +640,7 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       },
       params: RequestParams = {},
     ) =>
-      this.request<Record<string, TaskResponse[]>, HTTPValidationError>({
+      this.request<TasksByDateResponse[], HTTPValidationError>({
         path: `/api/task/by_date`,
         method: "GET",
         query: query,

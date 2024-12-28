@@ -445,7 +445,6 @@ async def test_unarchiving_ask_puts_it_to_the_section_end(
     task_got, task_index = await _request_task_data(
         task_id, ac, section_id, from_archived=True
     )
-    assert task_index == 0
 
     # task will be unarchived and will be put to the section end
     response = await ac.post(
@@ -487,6 +486,13 @@ async def test_mark_completed_another_user_task(
             None,
         ),
         (
+            "2001-02-01",
+            "2002-12-31",
+            233,
+            200,
+            None,
+        ),
+        (
             "2002-12-31",
             "2001-01-01",
             0,
@@ -514,9 +520,9 @@ async def test_get_tasks_by_date(
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
-    tasks_by_date = response.json()
+    tasks_by_dates = response.json()
 
-    n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
+    n_tasks = sum(len(tasks_by_date["tasks"]) for tasks_by_date in tasks_by_dates)
     assert n_tasks == n_tasks_expected
 
 

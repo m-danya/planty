@@ -1,12 +1,13 @@
 "use client";
 
-import { Api, RecurrenceInfo } from "@/api/Api";
+import { RecurrenceInfo } from "@/api/Api";
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
 import {
   closestCenter,
   DndContext,
+  DragEndEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -16,9 +17,16 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import {
+  createTask,
+  moveTask,
+  toggleTaskArchived,
+  toggleTaskCompleted,
+  updateTask,
+} from "@/api/api-calls";
 
 export function Section({ sectionId }: { sectionId: string }) {
   const {
@@ -27,12 +35,12 @@ export function Section({ sectionId }: { sectionId: string }) {
     isError,
     mutate: mutateSection,
   } = useSection(sectionId);
-  const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
-    id: index,
-  }));
-  const [tasks, setTasks] = useState(tasksFillers);
-  const api = new Api().api;
 
+  const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
+    id: index.toString(),
+  }));
+
+  const [tasks, setTasks] = useState(tasksFillers);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -45,99 +53,28 @@ export function Section({ sectionId }: { sectionId: string }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
   );
 
-  async function handleToggleTaskCompleted(task_id: string) {
-    try {
-      const result = await api.toggleTaskCompletedApiTaskToggleCompletedPost({
-        task_id: task_id,
-      });
-      console.log("Toggled task completion successfully:", result);
-      mutateSection();
-    } catch (error) {
-      console.error("Failed to toggle task completion:", error);
-      alert("Failed to toggle task completion");
-    }
-  }
-
   async function handleToggleTaskArchived(task_id: string) {
-    try {
-      const result = await api.toggleTaskArchivedApiTaskToggleArchivedPost({
-        task_id: task_id,
-      });
-      console.log("Toggled task archived status successfully:", result);
-      mutateSection();
-    } catch (error) {
-      console.error("Failed to toggle task archived status:", error);
-      alert("Failed to toggle task archived status");
-    }
+    await toggleTaskArchived(task_id);
+    mutateSection();
   }
 
-  async function handleDragEnd(event: any) {
+  async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    // if (!over) return;
+    if (!over) return;
+
     const oldIndex = tasks.findIndex((task) => task.id === active.id);
     const newIndex = tasks.findIndex((task) => task.id === over.id);
 
     if (active.id !== over.id) {
-      setTasks((tasks) => {
-        return arrayMove(tasks, oldIndex, newIndex);
-      });
+      setTasks((tasks) => arrayMove(tasks, oldIndex, newIndex));
 
       try {
-        const result = await api.moveTaskApiTaskMovePost({
-          task_id: active.id,
-          section_to_id: sectionId,
-          index: newIndex,
-        });
-        console.log("Task moved successfully:", result);
+        await moveTask(active.id as string, sectionId, newIndex);
       } catch (error) {
-        console.error("Failed to move task:", error);
         alert("Failed to move task");
+        // revert changes in UI
+        setTasks((tasks) => arrayMove(tasks, newIndex, oldIndex));
       }
-    }
-  }
-
-  async function handleTaskEdit(updateTaskData: {
-    id: string;
-    title?: string;
-    description?: string;
-    due_to?: string;
-    recurrence: RecurrenceInfo | null;
-  }) {
-    try {
-      const result = await api.updateTaskApiTaskPatch({
-        id: updateTaskData.id,
-        title: updateTaskData.title,
-        description: updateTaskData.description,
-        due_to: updateTaskData.due_to,
-        recurrence: updateTaskData.recurrence,
-      });
-      console.log("Task edited successfully:", result);
-    } catch (error) {
-      console.error("Failed to edit task:", error);
-      alert(`Error while editing task: ${error.response.data.detail}`);
-    }
-    mutateSection();
-  }
-
-  async function handleTaskAdd(task: {
-    title: string;
-    description: string;
-    due_to: string | null;
-    recurrence: RecurrenceInfo | null;
-  }) {
-    try {
-      const result = await api.createTaskApiTaskPost({
-        section_id: sectionId,
-        title: task.title,
-        description: task.description,
-        due_to: task.due_to,
-        recurrence: task.recurrence,
-      });
-      console.log("Task added successfully:", result);
-      mutateSection();
-    } catch (error) {
-      console.error("Failed to add task:", error);
-      alert(`Failed to add task: ${error.response.data.detail}`);
     }
   }
 
@@ -164,10 +101,19 @@ export function Section({ sectionId }: { sectionId: string }) {
                       <Task
                         task={task}
                         skeleton={isLoading}
-                        handleToggleTaskCompleted={handleToggleTaskCompleted}
-                        handleToggleTaskArchived={handleToggleTaskArchived}
-                        mutateSection={mutateSection}
-                        handleTaskEdit={handleTaskEdit}
+                        handleToggleTaskCompleted={async (task_id) => {
+                          await toggleTaskCompleted(task_id);
+                          mutateSection();
+                        }}
+                        handleToggleTaskArchived={async (task_id) => {
+                          await toggleTaskArchived(task_id);
+                          mutateSection();
+                        }}
+                        mutateOnTaskMove={mutateSection}
+                        handleTaskEdit={async (updateTaskData) => {
+                          await updateTask(updateTaskData);
+                          mutateSection();
+                        }}
                         key={task.id}
                       />
                     </div>
@@ -194,7 +140,10 @@ export function Section({ sectionId }: { sectionId: string }) {
       <AddTaskDialog
         isOpen={isAddTaskDialogOpen}
         onOpenChange={setIsAddTaskDialogOpen}
-        handleTaskAdd={handleTaskAdd}
+        handleTaskAdd={async (task) => {
+          await createTask(sectionId, task);
+          mutateSection();
+        }}
       />
     </>
   );

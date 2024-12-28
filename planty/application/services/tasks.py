@@ -23,7 +23,7 @@ from planty.application.schemas import (
     TaskCreateRequest,
     TaskMoveRequest,
     TaskResponse,
-    TasksByDateResponse,
+    TasksByDatesResponse,
     TaskUpdateRequest,
     TaskSearchResponse,
     SectionsListResponse,
@@ -51,14 +51,21 @@ class TaskService:
         self._s3_session = aiobotocore.session.get_session()
 
     async def update_task(
-        self, user_id: UUID, task_data: TaskUpdateRequest
+        self, user_id: UUID, task_update_request: TaskUpdateRequest
     ) -> TaskResponse:
-        task: Task = await self._task_repo.get(task_data.id)
+        task: Task = await self._task_repo.get(task_update_request.id)
         if task.user_id != user_id:
             raise ForbiddenException()
-        task_data = task_data.model_dump(exclude_unset=True)
-        for key, value in task_data.items():
-            setattr(task, key, value)
+        updated_task_data = task_update_request.model_dump(exclude_unset=True)
+
+        # Avoid triggering validation on every field assignment. Otherwise, this
+        # can trigger validation error because of partial attributes update,
+        # e.g. if `due_to` is set to `None` before `recurrence` is set to
+        # `None`.
+        task_data = task.model_dump()
+        task_data.update(updated_task_data)
+        task = Task.model_validate(task_data)
+
         await self._task_repo.update_or_create(task)
         return convert_to_response(task)
 
@@ -67,15 +74,17 @@ class TaskService:
         user_id: UUID,
         not_before: date,
         not_after: date,
-    ) -> TasksByDateResponse:
+    ) -> TasksByDatesResponse:
         if not_before > not_after:
             raise IncorrectDateInterval()
-        prefiltered_tasks = await self._task_repo.get_tasks_by_due_date(
+        prefiltered_tasks = await self._task_repo.get_prefiltered_tasks_by_due_date(
             not_before=not_before,
             not_after=not_after,
             user_id=user_id,
         )
-        tasks_by_date = multiply_tasks_with_recurrences(prefiltered_tasks, not_after)
+        tasks_by_date = multiply_tasks_with_recurrences(
+            prefiltered_tasks, not_before, not_after
+        )
         return convert_to_response(tasks_by_date)
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:

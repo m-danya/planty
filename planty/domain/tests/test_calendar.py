@@ -13,12 +13,13 @@ from planty.domain.types import RecurrencePeriodType
 
 
 @pytest.mark.parametrize(
-    "start_day,k,period_type,not_after,result",
+    "start_day,k,period_type,not_before,not_after,result",
     [
         (
             date(2024, 8, 31),
             1,
             "months",
+            date(1990, 1, 1),
             date(2025, 1, 1),
             [
                 date(2024, 8, 31),
@@ -32,6 +33,7 @@ from planty.domain.types import RecurrencePeriodType
             date(2024, 8, 31),
             1,
             "days",
+            date(1990, 1, 1),
             date(2024, 8, 31),
             [date(2024, 8, 31)],
         ),
@@ -39,6 +41,7 @@ from planty.domain.types import RecurrencePeriodType
             date(2024, 8, 31),
             1,
             "days",
+            date(1990, 1, 1),
             date(2024, 9, 2),
             [date(2024, 8, 31), date(2024, 9, 1), date(2024, 9, 2)],
         ),
@@ -46,6 +49,7 @@ from planty.domain.types import RecurrencePeriodType
             date(2024, 8, 31),
             3,
             "months",
+            date(1990, 1, 1),
             date(2025, 9, 2),
             [
                 date(2024, 8, 31),
@@ -61,6 +65,7 @@ def test_recurrence_rule(
     start_day: date,
     k: int,
     period_type: RecurrencePeriodType,
+    not_before: date,
     not_after: date,
     result: list[date],
 ) -> None:
@@ -69,6 +74,7 @@ def test_recurrence_rule(
             start_day=start_day,
             period=k,
             period_type=period_type,
+            not_before=not_before,
             not_after=not_after,
         )
     )
@@ -76,46 +82,64 @@ def test_recurrence_rule(
 
 
 @pytest.mark.parametrize(
-    "not_after, expected_dates",
+    "not_before, not_after, expected_dates",
     [
-        (date(1997, 12, 31), []),
-        (date(2001, 1, 1), [date(2001, 1, 1)]),
-        (date(2001, 1, 2), [date(2001, 1, 1)]),
-        (date(2001, 1, 4), [date(2001, 1, 1), date(2001, 1, 4)]),
+        (date(1997, 12, 31), date(1997, 12, 31), []),
+        (date(1997, 12, 31), date(2001, 1, 1), [date(2001, 1, 1)]),
+        (date(1997, 12, 31), date(2001, 1, 2), [date(2001, 1, 1)]),
+        (date(1997, 12, 31), date(2001, 1, 4), [date(2001, 1, 1), date(2001, 1, 4)]),
         (
+            date(1997, 12, 31),
             date(2001, 1, 10),
             [date(2001, 1, 1), date(2001, 1, 4), date(2001, 1, 7), date(2001, 1, 10)],
         ),
     ],
 )
 def test_get_task_recurrences(
-    task_from_2001: Task, not_after: date, expected_dates: list[date]
+    task_from_2001: Task, not_before: date, not_after: date, expected_dates: list[date]
 ) -> None:
-    recurrences = get_task_recurrences(task_from_2001, not_after)
+    recurrences = get_task_recurrences(task_from_2001, not_before, not_after)
     assert recurrences == expected_dates
 
 
 def test_get_task_recurrences_with_nonperiodic(nonperiodic_task: Task) -> None:
-    recurrences = get_task_recurrences(nonperiodic_task, date(2001, 1, 1))
+    recurrences = get_task_recurrences(
+        nonperiodic_task, date(1990, 1, 1), date(2001, 1, 1)
+    )
     assert recurrences == []
 
 
 @pytest.mark.parametrize(
-    "not_after",
+    "not_before, not_after",
     [
-        date(1997, 12, 31),
-        date(2001, 1, 1),
-        date(2001, 1, 2),
-        date(2099, 1, 4),
-        date(2099, 1, 10),
+        (
+            date(1997, 12, 31),
+            date(1997, 12, 31),
+        ),
+        (
+            date(1997, 12, 31),
+            date(2001, 1, 1),
+        ),
+        (
+            date(1997, 12, 31),
+            date(2001, 1, 2),
+        ),
+        (
+            date(1997, 12, 31),
+            date(2099, 1, 4),
+        ),
+        (
+            date(1997, 12, 31),
+            date(2099, 1, 10),
+        ),
     ],
 )
 def test_get_task_recurrence_with_no_recurrence(
-    task_with_due_to_and_no_recurrence: Task, not_after: date
+    task_with_due_to_and_no_recurrence: Task, not_before: date, not_after: date
 ) -> None:
     task = task_with_due_to_and_no_recurrence
     assert task.due_to is not None
-    recurrences = get_task_recurrences(task, not_after)
+    recurrences = get_task_recurrences(task, not_before, not_after)
     if not_after >= task.due_to:
         assert recurrences == [task.due_to]
     else:
@@ -125,7 +149,13 @@ def test_get_task_recurrence_with_no_recurrence(
 def test_multiply_tasks_with_recurrences(
     task_from_2001: Task,
 ) -> None:
+    not_before = date(1990, 12, 31)
     not_after = date(2002, 12, 31)
     expected_len = 244
-    tasks_by_date = multiply_tasks_with_recurrences([task_from_2001], not_after)
-    assert sum(len(tasks_by_date[date_]) for date_ in tasks_by_date) == expected_len
+    tasks_by_dates = multiply_tasks_with_recurrences(
+        [task_from_2001], not_before, not_after
+    )
+    assert (
+        sum(len(tasks_by_date.tasks) for tasks_by_date in tasks_by_dates)
+        == expected_len
+    )

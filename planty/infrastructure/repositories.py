@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from planty.application.exceptions import (
@@ -151,13 +151,15 @@ class SQLAlchemyTaskRepository:
         attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
         await self._db_session.delete(attachment_model)
 
-    async def get_tasks_by_due_date(
+    async def get_prefiltered_tasks_by_due_date(
         self, not_before: date, not_after: date, user_id: UUID
     ) -> list[Task]:
+        # NOTE: not_before is IGNORED rn, as task with due_date < not_before can
+        # produce its recurrent clones with due_date in the given interval.
         result = await self._db_session.execute(
             select(TaskModel).where(
                 (TaskModel.user_id == user_id)
-                & TaskModel.due_to.between(not_before, not_after)
+                & (TaskModel.due_to < not_after)
                 & (TaskModel.is_archived.is_(False))
             )
         )
@@ -168,7 +170,7 @@ class SQLAlchemyTaskRepository:
         result = await self._db_session.execute(
             select(TaskModel)
             .where((TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True)))
-            .order_by(TaskModel.added_at)
+            .order_by(desc(TaskModel.added_at))
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]
