@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Union, cast, overload
 
 from fastapi.encoders import jsonable_encoder
@@ -13,7 +12,8 @@ from planty.application.schemas import (
     TaskResponse,
     SectionsListResponse,
     ArchivedTasksResponse,
-    TasksByDateResponse,
+    TasksByDatesResponse,
+    TasksByDates,
 )
 from planty.application.services.attachments import (
     get_attachment_url,
@@ -24,14 +24,14 @@ from typing import Any
 # NOTE: mypy + singledispatch + overload doesn't work at the same time..
 
 possible_in_types = Union[
-    Task, Section, list[Section], dict[date, list[Task]], list[Task], ArchivedTasks
+    Task, Section, list[Section], TasksByDates, list[Task], ArchivedTasks
 ]
 possible_out_types = Union[
     TaskSearchResponse,
     TaskResponse,
     SectionResponse,
     SectionsListResponse,
-    TasksByDateResponse,
+    TasksByDatesResponse,
     ArchivedTasksResponse,
 ]
 
@@ -49,7 +49,7 @@ def convert_to_response(obj: list[Section]) -> SectionsListResponse: ...
 
 
 @overload
-def convert_to_response(obj: dict[date, list[Task]]) -> TasksByDateResponse: ...
+def convert_to_response(obj: TasksByDates) -> TasksByDatesResponse: ...
 
 
 @overload
@@ -87,14 +87,14 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
     elif _satisfies(obj, list[Section]):
         obj = cast(list[Section], obj)
         return [convert_to_response(obj_item) for obj_item in obj]
-    elif _satisfies(obj, dict[date, list[Task]]):
-        obj = cast(dict[date, list[Task]], obj)
-        tasks_by_date = jsonable_encoder(obj)
-        for date_ in tasks_by_date:
-            for task in tasks_by_date[date_]:
+    elif _satisfies(obj, TasksByDates):
+        obj = cast(TasksByDates, obj)
+        tasks_by_dates = jsonable_encoder(obj)
+        for task_by_date in tasks_by_dates:
+            for task in task_by_date["tasks"]:
                 _adjust_task_dict(task)
-        tasks_by_date: TasksByDateResponse
-        return tasks_by_date
+        tasks_by_dates: TasksByDatesResponse
+        return tasks_by_dates
     else:
         raise NotImplementedError(
             f"Unsupported type for converting into response schema: {type(obj)}"

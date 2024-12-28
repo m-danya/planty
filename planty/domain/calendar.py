@@ -1,10 +1,10 @@
-from collections import defaultdict
 from datetime import date
 
 from typing import Generator
 import itertools
 from dateutil.relativedelta import relativedelta
 
+from planty.application.schemas import TasksByDate, TasksByDates
 from planty.domain.task import Task
 from planty.domain.types import RecurrencePeriodType
 
@@ -48,17 +48,16 @@ def multiply_tasks_with_recurrences(
     prefiltered_tasks: list[Task],
     not_before: date,
     not_after: date,
-):
+) -> TasksByDates:
     delta = not_after - not_before
-    # TODO: rewrite with pydantic model, add typings, add tests
-    tasks_by_date = [
-        {"date": not_before + relativedelta(days=i), "tasks": []}
+    tasks_by_dates = [
+        TasksByDate(date=not_before + relativedelta(days=i), tasks=[])
         for i in range(delta.days + 1)
     ]
     for task in prefiltered_tasks:
         for date_ in get_task_recurrences(task, not_before, not_after):
-            for date_tasks_item in tasks_by_date:
-                if date_tasks_item["date"] == date_:
-                    date_tasks_item["tasks"].append(task)
+            for date_tasks_item in tasks_by_dates:
+                if date_tasks_item.date == date_:
+                    date_tasks_item.tasks.append(task)
                     break
-    return tasks_by_date
+    return tasks_by_dates

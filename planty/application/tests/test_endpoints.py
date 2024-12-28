@@ -489,7 +489,7 @@ async def test_mark_completed_another_user_task(
         (
             "2001-02-01",
             "2002-12-31",
-            244,  # TODO: fix test: a bit less than this
+            233,
             200,
             None,
         ),
@@ -521,9 +521,9 @@ async def test_get_tasks_by_date(
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
-    tasks_by_date = response.json()
+    tasks_by_dates = response.json()
 
-    n_tasks = sum(len(tasks_by_date[date_]) for date_ in tasks_by_date)
+    n_tasks = sum(len(tasks_by_date["tasks"]) for tasks_by_date in tasks_by_dates)
     assert n_tasks == n_tasks_expected
 
 

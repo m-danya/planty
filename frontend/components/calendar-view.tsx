@@ -55,7 +55,7 @@ function CalendarView() {
 
     const includeYear = date.getFullYear() !== currentYear;
     // TODO: add day of week here
-    return format(date, includeYear ? "MMM dd, yyyy" : "MMM dd", {
+    return format(date, includeYear ? "MMM dd, yyyy, EEEE" : "MMM dd, EEEE", {
       locale: enUS,
     });
   }
@@ -64,7 +64,7 @@ function CalendarView() {
 
   return (
     <div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 justify-center">
         <div>
           <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger asChild>
@@ -92,18 +92,18 @@ function CalendarView() {
           </Popover>
         </div>
       </div>
-      <div>
+      <div className="py-5">
         {tasksByDate &&
           tasksByDate.map((date_with_tasks) => (
             <div
               className="items-center flex-col"
               key={`${date_with_tasks.date}_tasks`}
             >
-              <div className="xl:px-40">
+              <div className="xl:px-20">
                 <div className="flex items-center justify-between">
-                  <h1 className="text-xl font-semibold md:text-2xl">
+                  <h3 className="text-base font-semibold md:text-xl">
                     {getFormattedDate(new Date(date_with_tasks.date))}
-                  </h1>
+                  </h3>
                 </div>
                 <div className="flex flex-col py-4">
                   {date_with_tasks.tasks.map((task: TaskResponse) => (
