@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from planty.application.exceptions import (
@@ -170,7 +170,7 @@ class SQLAlchemyTaskRepository:
         result = await self._db_session.execute(
             select(TaskModel)
             .where((TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True)))
-            .order_by(TaskModel.added_at)
+            .order_by(desc(TaskModel.added_at))
         )
         task_models = result.scalars().all()
         return [await self.get_entity(task_model) for task_model in task_models]

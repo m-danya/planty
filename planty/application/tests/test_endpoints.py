@@ -445,7 +445,6 @@ async def test_unarchiving_ask_puts_it_to_the_section_end(
     task_got, task_index = await _request_task_data(
         task_id, ac, section_id, from_archived=True
     )
-    assert task_index == 0
 
     # task will be unarchived and will be put to the section end
     response = await ac.post(

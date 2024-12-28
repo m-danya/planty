@@ -58,22 +58,6 @@ export function Section({ sectionId }: { sectionId: string }) {
     mutateSection();
   }
 
-  async function handleTaskAdd(task: {
-    title: string;
-    description: string;
-    due_to: string | null;
-    recurrence: RecurrenceInfo | null;
-  }) {
-    try {
-      await createTask(sectionId, task);
-      mutateSection();
-    } catch (error: any) {
-      alert(
-        `Failed to add task: ${error.response?.data?.detail || error.message}`
-      );
-    }
-  }
-
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
@@ -156,7 +140,10 @@ export function Section({ sectionId }: { sectionId: string }) {
       <AddTaskDialog
         isOpen={isAddTaskDialogOpen}
         onOpenChange={setIsAddTaskDialogOpen}
-        handleTaskAdd={handleTaskAdd}
+        handleTaskAdd={async (task) => {
+          await createTask(sectionId, task);
+          mutateSection();
+        }}
       />
     </>
   );

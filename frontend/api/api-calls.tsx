@@ -96,8 +96,11 @@ export async function createTask(
     });
     console.log("Task added successfully:", result);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to add task:", error);
+    alert(
+      `Failed to add task: ${error.response?.data?.detail || error.message}`
+    );
     throw error;
   }
 }
