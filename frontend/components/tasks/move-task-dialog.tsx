@@ -36,7 +36,7 @@ interface MoveTaskDialogProps {
   onOpenChange: (open: boolean) => void;
   taskTitle: string;
   taskId: string;
-  mutateSection: () => void;
+  mutateOnTaskMove: () => void;
 }
 
 const formSchema = z.object({
@@ -48,7 +48,7 @@ export function MoveTaskDialog({
   onOpenChange,
   taskTitle,
   taskId,
-  mutateSection,
+  mutateOnTaskMove,
 }: MoveTaskDialogProps) {
   const { sections, isLoading, isError } = useSections({
     leavesOnly: true,
@@ -70,7 +70,7 @@ export function MoveTaskDialog({
         index: 0, // TODO: pass None to move to the end of section
       });
       console.log("Task moved successfully:", result);
-      mutateSection();
+      mutateOnTaskMove();
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to move task:", error);

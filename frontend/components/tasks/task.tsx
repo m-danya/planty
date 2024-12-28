@@ -16,7 +16,7 @@ interface TaskProps {
   handleToggleTaskCompleted: (taskId: string) => void;
   handleToggleTaskArchived: (taskId: string) => void;
   skeleton?: boolean;
-  mutateSection: () => void;
+  mutateOnTaskMove: () => void;
   handleTaskEdit: (task: any) => void;
 }
 
@@ -25,7 +25,7 @@ export function Task({
   handleToggleTaskCompleted,
   handleToggleTaskArchived,
   skeleton = false,
-  mutateSection,
+  mutateOnTaskMove,
   handleTaskEdit,
 }: TaskProps) {
   const [moveTaskDialogIsOpen, setMoveTaskDialogIsOpen] = useState(false);
@@ -96,7 +96,7 @@ export function Task({
         onOpenChange={setMoveTaskDialogIsOpen}
         taskTitle={task.title}
         taskId={task.id}
-        mutateSection={mutateSection}
+        mutateOnTaskMove={mutateOnTaskMove}
       />
 
       <EditTaskDialog

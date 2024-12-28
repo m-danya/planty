@@ -11,6 +11,7 @@ export async function toggleTaskCompleted(taskId: string) {
     return result;
   } catch (error) {
     console.error("Failed to toggle task completion:", error);
+    alert("Failed to toggle task completion");
     throw error;
   }
 }
@@ -24,6 +25,7 @@ export async function toggleTaskArchived(taskId: string) {
     return result;
   } catch (error) {
     console.error("Failed to toggle task archived status:", error);
+    alert("Failed to toggle task archived status");
     throw error;
   }
 }
@@ -64,8 +66,13 @@ export async function updateTask(updateTaskData: {
     });
     console.log("Task edited successfully:", result);
     return result;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to edit task:", error);
+    alert(
+      `Error while editing task: ${
+        error.response?.data?.detail || error.message
+      }`
+    );
     throw error;
   }
 }

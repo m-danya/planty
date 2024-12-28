@@ -13,16 +13,23 @@ import { endOfWeek, format, startOfWeek } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useState } from "react";
 import { Task } from "./tasks/task";
+import {
+  toggleTaskArchived,
+  toggleTaskCompleted,
+  updateTask,
+} from "@/api/api-calls";
 
 function CalendarView() {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
-  const { tasksByDate, isLoading, isError, mutate } = useTasksByDate(
-    weekStart,
-    weekEnd
-  );
+  const {
+    tasksByDate,
+    isLoading,
+    isError,
+    mutate: mutateTasksByDate,
+  } = useTasksByDate(weekStart, weekEnd);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -112,10 +119,19 @@ function CalendarView() {
                         <Task
                           task={task}
                           skeleton={isLoading}
-                          // handleToggleTaskCompleted={handleToggleTaskCompleted}
-                          // handleToggleTaskArchived={handleToggleTaskArchived}
-                          // mutateSection={mutateSection}
-                          // handleTaskEdit={handleTaskEdit}
+                          handleToggleTaskCompleted={async (task_id) => {
+                            await toggleTaskCompleted(task_id);
+                            mutateTasksByDate();
+                          }}
+                          handleToggleTaskArchived={async (task_id) => {
+                            await toggleTaskArchived(task_id);
+                            mutateTasksByDate();
+                          }}
+                          mutateOnTaskMove={mutateTasksByDate}
+                          handleTaskEdit={async (updateTaskData) => {
+                            await updateTask(updateTaskData);
+                            mutateTasksByDate();
+                          }}
                           key={task.id}
                         />
                       </div>

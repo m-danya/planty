@@ -53,21 +53,24 @@ export function Section({ sectionId }: { sectionId: string }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
   );
 
-  async function handleToggleTaskCompleted(task_id: string) {
-    try {
-      await toggleTaskCompleted(task_id);
-      mutateSection();
-    } catch (error) {
-      alert("Failed to toggle task completion");
-    }
+  async function handleToggleTaskArchived(task_id: string) {
+    await toggleTaskArchived(task_id);
+    mutateSection();
   }
 
-  async function handleToggleTaskArchived(task_id: string) {
+  async function handleTaskAdd(task: {
+    title: string;
+    description: string;
+    due_to: string | null;
+    recurrence: RecurrenceInfo | null;
+  }) {
     try {
-      await toggleTaskArchived(task_id);
+      await createTask(sectionId, task);
       mutateSection();
-    } catch (error) {
-      alert("Failed to toggle task archived status");
+    } catch (error: any) {
+      alert(
+        `Failed to add task: ${error.response?.data?.detail || error.message}`
+      );
     }
   }
 
@@ -88,41 +91,6 @@ export function Section({ sectionId }: { sectionId: string }) {
         // revert changes in UI
         setTasks((tasks) => arrayMove(tasks, newIndex, oldIndex));
       }
-    }
-  }
-
-  async function handleTaskEdit(updateTaskData: {
-    id: string;
-    title?: string;
-    description?: string;
-    due_to?: string;
-    recurrence: RecurrenceInfo | null;
-  }) {
-    try {
-      await updateTask(updateTaskData);
-      mutateSection();
-    } catch (error: any) {
-      alert(
-        `Error while editing task: ${
-          error.response?.data?.detail || error.message
-        }`
-      );
-    }
-  }
-
-  async function handleTaskAdd(task: {
-    title: string;
-    description: string;
-    due_to: string | null;
-    recurrence: RecurrenceInfo | null;
-  }) {
-    try {
-      await createTask(sectionId, task);
-      mutateSection();
-    } catch (error: any) {
-      alert(
-        `Failed to add task: ${error.response?.data?.detail || error.message}`
-      );
     }
   }
 
@@ -149,10 +117,19 @@ export function Section({ sectionId }: { sectionId: string }) {
                       <Task
                         task={task}
                         skeleton={isLoading}
-                        handleToggleTaskCompleted={handleToggleTaskCompleted}
-                        handleToggleTaskArchived={handleToggleTaskArchived}
-                        mutateSection={mutateSection}
-                        handleTaskEdit={handleTaskEdit}
+                        handleToggleTaskCompleted={async (task_id) => {
+                          await toggleTaskCompleted(task_id);
+                          mutateSection();
+                        }}
+                        handleToggleTaskArchived={async (task_id) => {
+                          await toggleTaskArchived(task_id);
+                          mutateSection();
+                        }}
+                        mutateOnTaskMove={mutateSection}
+                        handleTaskEdit={async (updateTaskData) => {
+                          await updateTask(updateTaskData);
+                          mutateSection();
+                        }}
                         key={task.id}
                       />
                     </div>
