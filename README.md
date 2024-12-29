@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
 
 ## How to run
 
-Prerequisites: Docker (with compose plugin)
+Prerequisites: Docker (with compose plugin), [uv](https://docs.astral.sh/uv/)
 
 ```
 git clone https://github.com/m-danya/planty
@@ -22,10 +22,8 @@ cd planty
 cp .env.sample .env
 echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
 
-sudo apt install python3.11 python3.11-venv
-python3.11 -m venv venv
-source venv/bin/activate
-poetry install
+uv sync
+source .venv/bin/activate
 
 # Run Alembic migrations
 # alembic upgrade head

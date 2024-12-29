@@ -23,36 +23,27 @@ jobs:
           cp .env.sample .env
           echo "PLANTY_AUTH_SECRET=TEST_SECRET" >> .env
       #----------------------------------------------
-      #  -----  install & configure poetry  -----
+      #  -----  install uv  -----
       #----------------------------------------------
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
         with:
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-
+          version: "0.5.13"
       #----------------------------------------------
       #       load cached venv if cache exists
       #----------------------------------------------
       - name: Load cached venv
-        id: cached-poetry-dependencies
+        id: cached-uv-dependencies
         uses: actions/cache@v4
         with:
           path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
       #----------------------------------------------
       # install dependencies if cache does not exist
       #----------------------------------------------
       - name: Install dependencies
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-        run: poetry install --no-interaction --no-root
-      #----------------------------------------------
-      # install your root project, if required
-      #----------------------------------------------
-      - name: Install project
-        run: poetry install --no-interaction
+        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
+        run: uv sync --all-extras --dev
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
