@@ -140,19 +140,6 @@ class SQLAlchemyTaskRepository:
             task_model.recurrence_type = task.recurrence.type
             task_model.flexible_recurrence_mode = task.recurrence.flexible_mode
 
-    async def get_section_tasks(self, section_id: UUID) -> list[Task]:
-        result = await self._db_session.execute(
-            select(TaskModel)
-            .where(
-                (TaskModel.section_id == section_id)
-                & (TaskModel.is_archived.is_(False))
-            )
-            .options(selectinload(TaskModel.attachments))
-            .order_by(TaskModel.index)
-        )
-        task_models = result.scalars().all()
-        return await self.get_entities(task_models)
-
     async def search(self, user_id: UUID, query: str) -> list[Task]:
         # TODO: Reimplement search to improve performance. Possible options:
         # 1) Use PostgreSQL Full-text search ( => deal with SQLite separately.. )
@@ -246,13 +233,18 @@ class SQLAlchemySectionRepository:
         with_direct_subsections: bool = False,
     ) -> Section:
         result = await self._db_session.execute(
-            select(SectionModel).where(SectionModel.id == section_id)
+            select(SectionModel)
+            .where(SectionModel.id == section_id)
+            .options(
+                selectinload(SectionModel.tasks).selectinload(TaskModel.attachments)
+            )
         )
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
-        # TODO use .options(selectinload(SectionModel.tasks)) instead
-        tasks = await self._task_repo.get_section_tasks(section_id)
+        # filter out archived tasks from section tasks
+        task_models = [tm for tm in section_model.tasks if not tm.is_archived]
+        tasks = await self._task_repo.get_entities(task_models)
         subsections = []
         if with_direct_subsections:
             subsection_models = (

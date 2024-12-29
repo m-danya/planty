@@ -118,7 +118,7 @@ class SectionModel(Base):
 
     index: Mapped[int]  # ordering inside parent
 
-    tasks = relationship(
+    tasks: Mapped[list[TaskModel]] = relationship(
         "TaskModel",
         back_populates="section",
         order_by="TaskModel.index",
