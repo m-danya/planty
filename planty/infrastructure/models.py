@@ -36,7 +36,11 @@ class TaskModel(Base):
 
     section = relationship("SectionModel", back_populates="tasks")
     user = relationship("UserModel", back_populates="tasks")
-    attachments = relationship("AttachmentModel", back_populates="task")
+    attachments = relationship(
+        "AttachmentModel",
+        back_populates="task",
+        order_by="AttachmentModel.index",
+    )
 
     @classmethod
     def from_entity(cls, task: Task, index: NonNegativeInt) -> "TaskModel":
@@ -114,7 +118,11 @@ class SectionModel(Base):
 
     index: Mapped[int]  # ordering inside parent
 
-    tasks = relationship("TaskModel", back_populates="section")
+    tasks = relationship(
+        "TaskModel",
+        back_populates="section",
+        order_by="TaskModel.index",
+    )
     user = relationship("UserModel", back_populates="sections")
 
     has_tasks: Mapped[bool]

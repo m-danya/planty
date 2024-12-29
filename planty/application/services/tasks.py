@@ -213,6 +213,34 @@ class SectionService:
         await self._section_repo.update(section)
         return task.id
 
+    async def create_tasks_bulk(
+        self, user_id: UUID, task_requests: list[TaskCreateRequest]
+    ) -> list[UUID]:
+        if not task_requests:
+            return []
+        # assuming tasks[i].section_id are the same:
+        assert all(
+            task.section_id == task_requests[0].section_id for task in task_requests
+        )
+        task_ids = []
+        tasks = []
+        for task_request in task_requests:
+            task = Task(
+                user_id=user_id,
+                section_id=task_request.section_id,
+                title=task_request.title,
+                is_completed=False,
+                due_to=task_request.due_to,
+                recurrence=task_request.recurrence,
+            )
+            task_ids.append(task.id)
+            tasks.append(task)
+        section = await self._section_repo.get(tasks[0].section_id)
+        for task in tasks:
+            section.insert_task(task)
+        await self._section_repo.update(section)
+        return task_ids
+
     async def remove_task(self, user_id: UUID, task_id: UUID) -> None:
         task = await self._task_repo.get(task_id)
         if task.user_id != user_id:

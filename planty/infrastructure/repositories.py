@@ -1,10 +1,11 @@
 from datetime import date
-from typing import Optional
+from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import NonNegativeInt
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from planty.application.exceptions import (
     SectionNotFoundException,
@@ -35,7 +36,9 @@ class SQLAlchemyTaskRepository:
 
     async def get(self, task_id: UUID) -> Task:
         result = await self._db_session.execute(
-            select(TaskModel).where(TaskModel.id == task_id)
+            select(TaskModel)
+            .where(TaskModel.id == task_id)
+            .options(selectinload(TaskModel.attachments))
         )
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
@@ -44,8 +47,20 @@ class SQLAlchemyTaskRepository:
 
     async def get_entity(self, task_model: TaskModel) -> Task:
         return task_model.to_entity(
-            attachments=await self._get_task_attachments(task_model.id)
+            attachments=[
+                attachment.to_entity() for attachment in task_model.attachments
+            ]
         )
+
+    async def get_entities(self, task_models: Sequence[TaskModel]) -> list[Task]:
+        return [
+            task_model.to_entity(
+                attachments=[
+                    attachment.to_entity() for attachment in task_model.attachments
+                ]
+            )
+            for task_model in task_models
+        ]
 
     async def update_or_create(
         self,
@@ -64,6 +79,49 @@ class SQLAlchemyTaskRepository:
             await self.add(task, index=index)
             return
 
+        self._fill_in_model_except_index(task, task_model)
+
+        # update index if it's meant to be updated
+        if index is not None:
+            task_model.index = index
+
+        for i, attachment in enumerate(task.attachments):
+            await self._persist_attachment(attachment, index=i)
+
+        self._db_session.add(task_model)
+
+    async def update_or_create_bulk(
+        self,
+        section_tasks: list[Task],
+    ) -> None:
+        # NOTE: it is assumed that indexes are 0..N-1 for given tasks
+        tasks = section_tasks
+
+        existing_ids = [t.id for t in tasks if t.id is not None]
+
+        existing_tasks_result = await self._db_session.execute(
+            select(TaskModel).where(TaskModel.id.in_(existing_ids))
+        )
+
+        existing_task_models = existing_tasks_result.scalars().all()
+        existing_tasks_map = {tm.id: tm for tm in existing_task_models}
+
+        for i, task in enumerate(tasks):
+            if task.id in existing_tasks_map:
+                task_model = existing_tasks_map[task.id]
+            else:
+                await self.add(task, index=i)
+                continue
+
+            self._fill_in_model_except_index(task, task_model)
+            task_model.index = i
+
+            for i, attachment in enumerate(task.attachments):
+                await self._persist_attachment(attachment, index=i)
+
+            self._db_session.add(task_model)
+
+    def _fill_in_model_except_index(self, task: Task, task_model: TaskModel) -> None:
         task_model.user_id = task.user_id
         task_model.section_id = task.section_id
         task_model.title = task.title
@@ -82,15 +140,6 @@ class SQLAlchemyTaskRepository:
             task_model.recurrence_type = task.recurrence.type
             task_model.flexible_recurrence_mode = task.recurrence.flexible_mode
 
-        # update index if it's meant to be updated
-        if index is not None:
-            task_model.index = index
-
-        for i, attachment in enumerate(task.attachments):
-            await self._persist_attachment(attachment, index=i)
-
-        self._db_session.add(task_model)
-
     async def get_section_tasks(self, section_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
             select(TaskModel)
@@ -98,10 +147,11 @@ class SQLAlchemyTaskRepository:
                 (TaskModel.section_id == section_id)
                 & (TaskModel.is_archived.is_(False))
             )
+            .options(selectinload(TaskModel.attachments))
             .order_by(TaskModel.index)
         )
         task_models = result.scalars().all()
-        return [await self.get_entity(task_model) for task_model in task_models]
+        return await self.get_entities(task_models)
 
     async def search(self, user_id: UUID, query: str) -> list[Task]:
         # TODO: Reimplement search to improve performance. Possible options:
@@ -111,25 +161,18 @@ class SQLAlchemyTaskRepository:
 
         query = f"%{query}%"
 
-        query = select(TaskModel).where(
-            (TaskModel.user_id == user_id)
-            & (TaskModel.is_archived.is_(False))
-            & (TaskModel.title.ilike(query) | TaskModel.description.ilike(query))
+        query = (
+            select(TaskModel)
+            .where(
+                (TaskModel.user_id == user_id)
+                & (TaskModel.is_archived.is_(False))
+                & (TaskModel.title.ilike(query) | TaskModel.description.ilike(query))
+            )
+            .options(selectinload(TaskModel.attachments))
         )
-
         result = await self._db_session.execute(query)
         task_models = result.scalars().all()
-
-        return [await self.get_entity(task_model) for task_model in task_models]
-
-    async def _get_task_attachments(self, task_id: UUID) -> list[Attachment]:
-        result = await self._db_session.execute(
-            select(AttachmentModel)
-            .where(AttachmentModel.task_id == task_id)
-            .order_by(AttachmentModel.index)
-        )
-        attachment_models = result.scalars().all()
-        return [attachment_model.to_entity() for attachment_model in attachment_models]
+        return await self.get_entities(task_models)
 
     async def _persist_attachment(
         self, attachment: Attachment, index: NonNegativeInt
@@ -157,23 +200,26 @@ class SQLAlchemyTaskRepository:
         # NOTE: not_before is IGNORED rn, as task with due_date < not_before can
         # produce its recurrent clones with due_date in the given interval.
         result = await self._db_session.execute(
-            select(TaskModel).where(
+            select(TaskModel)
+            .where(
                 (TaskModel.user_id == user_id)
                 & (TaskModel.due_to < not_after)
                 & (TaskModel.is_archived.is_(False))
             )
+            .options(selectinload(TaskModel.attachments))
         )
         task_models = result.scalars().all()
-        return [await self.get_entity(task_model) for task_model in task_models]
+        return await self.get_entities(task_models)
 
     async def get_archived_tasks(self, user_id: UUID) -> list[Task]:
         result = await self._db_session.execute(
             select(TaskModel)
             .where((TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True)))
             .order_by(desc(TaskModel.added_at))
+            .options(selectinload(TaskModel.attachments))
         )
         task_models = result.scalars().all()
-        return [await self.get_entity(task_model) for task_model in task_models]
+        return await self.get_entities(task_models)
 
     async def remove(self, task: Task) -> None:
         result = await self._db_session.execute(
@@ -205,6 +251,7 @@ class SQLAlchemySectionRepository:
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
             raise SectionNotFoundException(section_id=section_id)
+        # TODO use .options(selectinload(SectionModel.tasks)) instead
         tasks = await self._task_repo.get_section_tasks(section_id)
         subsections = []
         if with_direct_subsections:
@@ -275,7 +322,9 @@ class SQLAlchemySectionRepository:
         self, section: Section, index: Optional[NonNegativeInt] = None
     ) -> None:
         result = await self._db_session.execute(
-            select(SectionModel).where(SectionModel.id == section.id)
+            select(SectionModel)
+            .where(SectionModel.id == section.id)
+            .options(selectinload(SectionModel.tasks))
         )
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
@@ -293,8 +342,8 @@ class SQLAlchemySectionRepository:
 
         # Tasks can be loaded or not, it doesn't matter
         # Warning: does not update any excluded tasks from section.tasks
-        for i, task in enumerate(section.tasks):
-            await self._task_repo.update_or_create(task, index=i)
+
+        await self._task_repo.update_or_create_bulk(section.tasks)
 
         for i, subsection in enumerate(section.subsections):
             await self.update(subsection, index=i)

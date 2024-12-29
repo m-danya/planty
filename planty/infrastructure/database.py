@@ -12,7 +12,9 @@ else:
     database_url = settings.get_database_url()
 
 
-engine = create_async_engine(database_url)
+engine = create_async_engine(
+    database_url,  # echo=True
+)
 
 
 # Enable foreign key checks for SQLite
