@@ -7,7 +7,6 @@ from planty.utils import get_today
 from planty.domain.types import RecurrencePeriodType
 
 
-
 def test_toggle_completed_nonperiodic(nonperiodic_task: Task) -> None:
     task = nonperiodic_task
     assert not task.is_completed
