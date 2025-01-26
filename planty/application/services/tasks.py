@@ -36,7 +36,7 @@ from planty.application.services.responses_converter import (
     convert_to_response,
 )
 from planty.application.uow import IUnitOfWork
-from planty.domain.calendar import multiply_tasks_with_recurrences
+from planty.domain.calendar import get_tasks_by_dates
 from planty.domain.exceptions import (
     ChangingRootSectionError,
     MisplaceSectionHierarchyError,
@@ -77,15 +77,13 @@ class TaskService:
     ) -> TasksByDatesResponse:
         if not_before > not_after:
             raise IncorrectDateInterval()
-        prefiltered_tasks = await self._task_repo.get_prefiltered_tasks_by_due_date(
+        tasks = await self._task_repo.get_tasks_by_due_to(
             not_before=not_before,
             not_after=not_after,
             user_id=user_id,
         )
-        tasks_by_date = multiply_tasks_with_recurrences(
-            prefiltered_tasks, not_before, not_after
-        )
-        return convert_to_response(tasks_by_date)
+        tasks_by_dates = get_tasks_by_dates(tasks, not_before, not_after)
+        return convert_to_response(tasks_by_dates)
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
         tasks = await self._task_repo.get_archived_tasks(user_id)
