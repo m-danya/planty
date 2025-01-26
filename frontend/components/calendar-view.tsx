@@ -14,16 +14,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTasksByDate } from "@/hooks/use-tasks-by-date";
-import { endOfWeek, format, startOfWeek } from "date-fns";
+import { endOfWeek, format, startOfWeek, addWeeks, subWeeks } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useState } from "react";
 import { Task } from "./tasks/task";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function CalendarView() {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
+
+  const isPreviousWeekBeforeCurrent =
+    startOfWeek(subWeeks(selectedDate, 1), { weekStartsOn: 1 }) <
+    startOfWeek(new Date(), { weekStartsOn: 1 });
 
   // const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   // const [addTaskDate, setAddTaskDate] = useState<Date | null>(null);
@@ -78,12 +83,21 @@ function CalendarView() {
     <>
       <div>
         <div className="flex items-center gap-2 justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isPreviousWeekBeforeCurrent}
+            onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
           <div>
             <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-full justify-start text-left font-normal"
+                  className="w-[256] justify-center font-normal"
                 >
                   {selectedDate ? (
                     <div>{weekRange}</div>
@@ -99,11 +113,20 @@ function CalendarView() {
                   selected={selectedDate}
                   onSelect={handleDateSelect}
                   defaultMonth={selectedDate}
+                  fromDate={new Date()}
                   required
                 />
               </PopoverContent>
             </Popover>
           </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedDate(addWeeks(selectedDate, 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
         <div className="py-5">
           {tasksByDate &&

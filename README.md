@@ -53,7 +53,7 @@ Use [nvm](https://github.com/nvm-sh/nvm) to manage nodejs versions:
 
 ```
 nvm install --lts 20
-nvm use --lts 20
+nvm use 20
 ```
 
 ### Switching between database engines
