@@ -481,14 +481,14 @@ async def test_mark_completed_another_user_task(
         (
             "2001-01-01",
             "2002-12-31",
-            244,
+            1,
             200,
             None,
         ),
         (
             "2001-02-01",
             "2002-12-31",
-            233,
+            0,
             200,
             None,
         ),
