@@ -30,33 +30,20 @@ jobs:
         with:
           version: "0.5.13"
       #----------------------------------------------
-      #       load cached venv if cache exists
-      #----------------------------------------------
-      - name: Load cached venv
-        id: cached-uv-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/uv.lock') }}
-      #----------------------------------------------
-      # install dependencies if cache does not exist
+      # install dependencies
       #----------------------------------------------
       - name: Install dependencies
-        if: steps.cached-uv-dependencies.outputs.cache-hit != 'true'
         run: uv sync --all-extras --dev
       #----------------------------------------------
       #              run test suite
       #----------------------------------------------
       - name: Run ruff
         run: |
-          source .venv/bin/activate
-          ruff format --check
-          ruff check
+          uv run ruff format --check
+          uv run ruff check
       - name: Run pytest
         run: |
-          source .venv/bin/activate
-          pytest --cov
+          uv run pytest --cov
       - name: Run mypy
         run: |
-          source .venv/bin/activate
-          mypy planty
+          uv run mypy planty
