@@ -78,12 +78,15 @@ async def update_task(
 
 @router.get("/task/by_date")
 async def get_tasks_by_date(
-    not_before: date, not_after: date, user: User = Depends(current_user)
+    not_before: date,
+    not_after: date,
+    user: User = Depends(current_user),
+    with_overdue: bool = False,
 ) -> TasksByDatesResponse:
     async with SqlAlchemyUnitOfWork() as uow:
         task_service = TaskService(uow=uow)
         tasks_by_date = await task_service.get_tasks_by_date(
-            user.id, not_before, not_after
+            user.id, not_before, not_after, with_overdue
         )
         await uow.commit()
         return tasks_by_date

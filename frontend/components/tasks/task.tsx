@@ -79,14 +79,14 @@ export function Task({
             )}
           </div>
 
+          {!skeleton && task.description && (
+            <div className="ml-9 text-gray-400 pt-0.5 ">{task.description}</div>
+          )}
+
           {!skeleton && task.due_to && (
             <div className="ml-9">
               <DateLabel date={taskDueTo} isRecurrent={!!task.recurrence} />
             </div>
-          )}
-
-          {!skeleton && task.description && (
-            <div className="ml-9 text-gray-400 pt-0.5 ">{task.description}</div>
           )}
         </div>
       </TaskContextMenu>

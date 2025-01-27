@@ -158,7 +158,9 @@ class TasksByDate(Schema):
     tasks: list[Task]
 
 
-TasksByDates = list[TasksByDate]
+class TasksByDates(Schema):
+    by_dates: list[TasksByDate]
+    overdue: list[Task]
 
 
 class TasksByDateResponse(Schema):
@@ -166,7 +168,9 @@ class TasksByDateResponse(Schema):
     tasks: list[TaskResponse]
 
 
-TasksByDatesResponse = list[TasksByDateResponse]
+class TasksByDatesResponse(Schema):
+    by_dates: list[TasksByDateResponse]
+    overdue: list[TaskResponse]
 
 
 # TODO: remove if response_converted will be rewritten

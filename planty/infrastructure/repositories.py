@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import desc, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -17,6 +17,7 @@ from planty.infrastructure.models import (
     SectionModel,
     TaskModel,
 )
+from planty.utils import get_today
 
 
 class SQLAlchemyUserRepository:
@@ -193,6 +194,20 @@ class SQLAlchemyTaskRepository:
                 & (TaskModel.is_archived.is_(False))
             )
             .options(selectinload(TaskModel.attachments))
+        )
+        task_models = result.scalars().all()
+        return await self.get_entities(task_models)
+
+    async def get_overdue_tasks(self, user_id: UUID) -> list[Task]:
+        result = await self._db_session.execute(
+            select(TaskModel)
+            .where(
+                (TaskModel.user_id == user_id)
+                & (TaskModel.due_to < get_today())
+                & (TaskModel.is_archived.is_(False))
+            )
+            .options(selectinload(TaskModel.attachments))
+            .order_by(asc(TaskModel.due_to), asc(TaskModel.added_at))
         )
         task_models = result.scalars().all()
         return await self.get_entities(task_models)

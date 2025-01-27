@@ -14,7 +14,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTasksByDate } from "@/hooks/use-tasks-by-date";
-import { endOfWeek, format, startOfWeek, addWeeks, subWeeks } from "date-fns";
+import {
+  endOfWeek,
+  format,
+  startOfWeek,
+  addWeeks,
+  subWeeks,
+  isToday,
+  isTomorrow,
+  isSameWeek,
+} from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useState } from "react";
 import { Task } from "./tasks/task";
@@ -26,9 +35,9 @@ function CalendarView() {
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekEnd = endOfWeek(selectedDate, { weekStartsOn: 1 });
 
-  const isPreviousWeekBeforeCurrent =
-    startOfWeek(subWeeks(selectedDate, 1), { weekStartsOn: 1 }) <
-    startOfWeek(new Date(), { weekStartsOn: 1 });
+  const isCurrentWeekSelected = isSameWeek(selectedDate, new Date(), {
+    weekStartsOn: 1,
+  });
 
   // const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
   // const [addTaskDate, setAddTaskDate] = useState<Date | null>(null);
@@ -36,10 +45,11 @@ function CalendarView() {
 
   const {
     tasksByDate,
+    overdueTasks,
     isLoading,
     isError,
     mutate: mutateTasksByDate,
-  } = useTasksByDate(weekStart, weekEnd);
+  } = useTasksByDate(weekStart, weekEnd, isCurrentWeekSelected);
 
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
@@ -47,8 +57,15 @@ function CalendarView() {
   };
 
   function getWeekRange(date: Date): string {
-    const currentYear = new Date().getFullYear();
+    const today = new Date();
+    const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
+    const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
 
+    if (isCurrentWeek) {
+      return "This week";
+    }
+
+    const currentYear = new Date().getFullYear();
     const includeYear =
       weekStart.getFullYear() !== currentYear ||
       weekEnd.getFullYear() !== currentYear;
@@ -69,15 +86,37 @@ function CalendarView() {
 
   function getFormattedDate(date: Date): string {
     const currentYear = new Date().getFullYear();
-
     const includeYear = date.getFullYear() !== currentYear;
-    // TODO: add day of week here
-    return format(date, includeYear ? "MMM dd, yyyy, EEEE" : "MMM dd, EEEE", {
+
+    const baseFormat = format(date, includeYear ? "MMM dd, yyyy" : "MMM dd", {
       locale: enUS,
     });
+    if (isToday(date)) {
+      return `${baseFormat}  ·  Today`;
+    }
+    if (isTomorrow(date)) {
+      return `${baseFormat}  ·  Tomorrow`;
+    }
+    return `${baseFormat}  ·  ${format(date, "EEEE", { locale: enUS })}`;
   }
 
   const weekRange = selectedDate ? getWeekRange(selectedDate) : "";
+
+  const allTasks = [
+    ...(isCurrentWeekSelected && overdueTasks?.length
+      ? [
+          {
+            date: "overdue",
+            tasks: overdueTasks,
+            title: "Overdue Tasks",
+          },
+        ]
+      : []),
+    ...(tasksByDate?.map((dateWithTasks) => ({
+      ...dateWithTasks,
+      title: getFormattedDate(new Date(dateWithTasks.date)),
+    })) || []),
+  ];
 
   return (
     <>
@@ -86,7 +125,7 @@ function CalendarView() {
           <Button
             variant="ghost"
             size="icon"
-            disabled={isPreviousWeekBeforeCurrent}
+            disabled={isCurrentWeekSelected}
             onClick={() => setSelectedDate(subWeeks(selectedDate, 1))}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -129,64 +168,63 @@ function CalendarView() {
           </Button>
         </div>
         <div className="py-5">
-          {tasksByDate &&
-            tasksByDate.map((date_with_tasks) => (
-              <div
-                className="items-center flex-col"
-                key={`${date_with_tasks.date}_tasks`}
-              >
-                <div className="xl:px-20">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold md:text-xl">
-                      {getFormattedDate(new Date(date_with_tasks.date))}
-                    </h3>
-                  </div>
-                  <div className="flex flex-col py-4">
-                    {date_with_tasks.tasks.map((task: TaskResponse) => (
-                      <div key={task.id}>
-                        <div>
-                          <Task
-                            task={task}
-                            skeleton={isLoading}
-                            handleToggleTaskCompleted={async (task_id) => {
-                              await toggleTaskCompleted(task_id);
-                              mutateTasksByDate();
-                            }}
-                            handleToggleTaskArchived={async (task_id) => {
-                              await toggleTaskArchived(task_id);
-                              mutateTasksByDate();
-                            }}
-                            mutateOnTaskMove={mutateTasksByDate}
-                            handleTaskEdit={async (updateTaskData) => {
-                              await updateTask(updateTaskData);
-                              mutateTasksByDate();
-                            }}
-                            key={task.id}
-                          />
-                        </div>
-                        <hr className="border-gray-200 dark:border-white" />
+          {allTasks.map((date_with_tasks) => (
+            <div
+              className="items-center flex-col"
+              key={`${date_with_tasks.date}_tasks`}
+            >
+              <div className="xl:px-20">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base md:text-xl whitespace-pre">
+                    {date_with_tasks.title}
+                  </h3>
+                </div>
+                <div className="flex flex-col py-4">
+                  {date_with_tasks.tasks.map((task: TaskResponse) => (
+                    <div key={task.id}>
+                      <div>
+                        <Task
+                          task={task}
+                          skeleton={isLoading}
+                          handleToggleTaskCompleted={async (task_id) => {
+                            await toggleTaskCompleted(task_id);
+                            mutateTasksByDate();
+                          }}
+                          handleToggleTaskArchived={async (task_id) => {
+                            await toggleTaskArchived(task_id);
+                            mutateTasksByDate();
+                          }}
+                          mutateOnTaskMove={mutateTasksByDate}
+                          handleTaskEdit={async (updateTaskData) => {
+                            await updateTask(updateTaskData);
+                            mutateTasksByDate();
+                          }}
+                          key={task.id}
+                        />
                       </div>
-                    ))}
-                    {/* TODO: Make this button work by adding section_id to TaskAddForm */}
-                    {/* <div>
-                      <div
-                        className="py-3.5 px-2 text-small cursor-pointer"
-                        // onClick={() => {
-                        //   setIsAddTaskDialogOpen(true);
-                        //   setAddTaskDate(parseISO(date_with_tasks.date));
-                        //   setAddTaskSectionId(??);
-                        // }}
-                      >
-                        <div className="flex items-center justify-start w-full">
-                          <Plus className="mx-2 w-5 h-5 " />
-                          Add task
-                        </div>
+                      <hr className="border-gray-200 dark:border-white" />
+                    </div>
+                  ))}
+                  {/* TODO: Make this button work by adding section_id to TaskAddForm */}
+                  {/* <div>
+                    <div
+                      className="py-3.5 px-2 text-small cursor-pointer"
+                      // onClick={() => {
+                      //   setIsAddTaskDialogOpen(true);
+                      //   setAddTaskDate(parseISO(date_with_tasks.date));
+                      //   setAddTaskSectionId(??);
+                      // }}
+                    >
+                      <div className="flex items-center justify-start w-full">
+                        <Plus className="mx-2 w-5 h-5 " />
+                        Add task
                       </div>
-                    </div> */}
-                  </div>
+                    </div>
+                  </div> */}
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
         </div>
       </div>
       {/* <AddTaskDialog

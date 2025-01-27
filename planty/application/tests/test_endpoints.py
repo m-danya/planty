@@ -1,7 +1,9 @@
+from datetime import date
 from typing import Any, Optional
 import httpx
 import pytest
 from httpx import AsyncClient
+from pytest_mock import MockerFixture
 
 
 # TODO: test task creation with `recurrence`
@@ -476,16 +478,21 @@ async def test_mark_completed_another_user_task(
 
 
 @pytest.mark.parametrize(
-    "not_before, not_after, n_tasks_expected, status_code, error_detail",
+    "not_before, not_after, n_tasks_expected, n_overdue_tasks_expected, status_code, error_detail",
     [
-        # TODO: rework this test considering overdue tasks and hiding tasks
-        # before today.
-        #
-        # ( "2001-01-01", "2002-12-31", 1, 200, None, ),
+        (
+            "2001-01-01",
+            "2002-12-31",
+            1,
+            0,
+            200,
+            None,
+        ),
         (
             "2001-02-01",
             "2002-12-31",
             0,
+            1,
             200,
             None,
         ),
@@ -493,8 +500,17 @@ async def test_mark_completed_another_user_task(
             "2002-12-31",
             "2001-01-01",
             0,
+            0,
             422,
             "Incorrect date interval",
+        ),
+        (
+            "2002-12-31",
+            "2025-01-01",
+            11,  # 11 tasks to do in this range
+            1,  # 1 overdue task before 2002-12-31
+            200,
+            None,
         ),
     ],
 )
@@ -502,25 +518,38 @@ async def test_get_tasks_by_date(
     not_before: str,
     not_after: str,
     n_tasks_expected: int,
+    n_overdue_tasks_expected: int,
     status_code: int,
     error_detail: Optional[str],
     ac: AsyncClient,
+    mocker: MockerFixture,
 ) -> None:
+    mocker.patch(
+        "planty.domain.calendar.get_today", return_value=date.fromisoformat(not_before)
+    )
+    mocker.patch(
+        "planty.infrastructure.repositories.get_today",
+        return_value=date.fromisoformat(not_before),
+    )
+
     response = await ac.get(
         "/api/task/by_date",
         params={
             "not_before": not_before,
             "not_after": not_after,
+            "with_overdue": True,
         },
     )
     assert response.status_code == status_code
     if not response.is_success:
         assert response.json()["detail"] == error_detail
         return
-    tasks_by_dates = response.json()
+    tasks_by_dates = response.json()["by_dates"]
+    overdue_tasks = response.json()["overdue"]
 
     n_tasks = sum(len(tasks_by_date["tasks"]) for tasks_by_date in tasks_by_dates)
     assert n_tasks == n_tasks_expected
+    assert len(overdue_tasks) == n_overdue_tasks_expected
 
 
 @pytest.mark.parametrize(

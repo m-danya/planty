@@ -337,6 +337,14 @@ export interface TasksByDateResponse {
   tasks: TaskResponse[];
 }
 
+/** TasksByDatesResponse */
+export interface TasksByDatesResponse {
+  /** By Dates */
+  by_dates: TasksByDateResponse[];
+  /** Overdue */
+  overdue: TaskResponse[];
+}
+
 /** UserCreate */
 export interface UserCreate {
   /**
@@ -637,10 +645,15 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
          * @format date
          */
         not_after: string;
+        /**
+         * With Overdue
+         * @default false
+         */
+        with_overdue?: boolean;
       },
       params: RequestParams = {},
     ) =>
-      this.request<TasksByDateResponse[], HTTPValidationError>({
+      this.request<TasksByDatesResponse, HTTPValidationError>({
         path: `/api/task/by_date`,
         method: "GET",
         query: query,

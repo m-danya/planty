@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Union, cast, overload
 
 from fastapi.encoders import jsonable_encoder
@@ -90,9 +91,10 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
     elif _satisfies(obj, TasksByDates):
         obj = cast(TasksByDates, obj)
         tasks_by_dates = jsonable_encoder(obj)
-        for task_by_date in tasks_by_dates:
-            for task in task_by_date["tasks"]:
-                _adjust_task_dict(task)
+        for task in chain(
+            tasks_by_dates["overdue"], *[d["tasks"] for d in tasks_by_dates["by_dates"]]
+        ):
+            _adjust_task_dict(task)
         tasks_by_dates: TasksByDatesResponse
         return tasks_by_dates
     else:

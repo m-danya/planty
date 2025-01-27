@@ -36,7 +36,7 @@ from planty.application.services.responses_converter import (
     convert_to_response,
 )
 from planty.application.uow import IUnitOfWork
-from planty.domain.calendar import get_tasks_by_dates
+from planty.domain.calendar import divide_tasks_by_dates
 from planty.domain.exceptions import (
     ChangingRootSectionError,
     MisplaceSectionHierarchyError,
@@ -74,6 +74,7 @@ class TaskService:
         user_id: UUID,
         not_before: date,
         not_after: date,
+        with_overdue: bool = False,
     ) -> TasksByDatesResponse:
         if not_before > not_after:
             raise IncorrectDateInterval()
@@ -82,7 +83,9 @@ class TaskService:
             not_after=not_after,
             user_id=user_id,
         )
-        tasks_by_dates = get_tasks_by_dates(tasks, not_before, not_after)
+        tasks_by_dates = divide_tasks_by_dates(tasks, not_before, not_after)
+        if with_overdue:
+            tasks_by_dates.overdue = await self._task_repo.get_overdue_tasks(user_id)
         return convert_to_response(tasks_by_dates)
 
     async def get_archived_tasks(self, user_id: UUID) -> ArchivedTasksResponse:
