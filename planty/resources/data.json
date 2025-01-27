@@ -7,7 +7,7 @@
       "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$k1eNeIjFZcxaEsMP1d931g$X32zZKlcoTzQHmFJl5Qo8XhDBQ4vtgQcOM0DFEinr+k",
       "is_active": 1,
       "is_superuser": 1,
-      "is_verified": 0
+      "is_verified": 1
     },
     {
       "id": "73ca2340-76bd-4abe-b872-7e82a9528c45",
@@ -16,7 +16,7 @@
       "hashed_password": "$argon2id$v=19$m=65536,t=3,p=4$E7rjhtAMpgBZQjp886mDoQ$HYwwbXvuAMVfz89VfcuNRqUO1dXvPzzg5KIlqx9tE2c",
       "is_active": 1,
       "is_superuser": 0,
-      "is_verified": 0
+      "is_verified": 1
     }
   ],
   "sections": [

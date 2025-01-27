@@ -10,6 +10,7 @@ from sqlalchemy.orm import selectinload
 from planty.application.exceptions import (
     SectionNotFoundException,
     TaskNotFoundException,
+    UserNotFoundException,
 )
 from planty.application.schemas import UserStats
 from planty.domain.task import Attachment, Section, Task
@@ -33,6 +34,8 @@ class SQLAlchemyUserRepository:
                 func.count(TaskModel.id).label("tasks_count"),
                 func.count(SectionModel.id).label("sections_count"),
                 func.count(AttachmentModel.id).label("attachments_count"),
+                UserModel.is_superuser.label("is_superuser"),  # type: ignore
+                UserModel.is_verified.label("is_verified"),  # type: ignore
             )
             .outerjoin(TaskModel, UserModel.id == TaskModel.user_id)  # type: ignore
             .outerjoin(SectionModel, UserModel.id == SectionModel.user_id)  # type: ignore
@@ -42,14 +45,33 @@ class SQLAlchemyUserRepository:
         )
 
         users = []
-        for user_model, tasks_count, sections_count, attachments_count in result:
+        for (
+            user_model,
+            tasks_count,
+            sections_count,
+            attachments_count,
+            is_superuser,
+            is_verified,
+        ) in result:
             user = user_model.to_entity().model_dump()
             user["tasks_count"] = tasks_count
             user["sections_count"] = sections_count
             user["attachments_count"] = attachments_count
+            user["is_superuser"] = is_superuser
+            user["is_verified"] = is_verified
             users.append(UserStats.model_validate(user))
 
         return users
+
+    async def verify_user(self, user_id: UUID) -> None:
+        result = await self._db_session.execute(
+            select(UserModel).where(UserModel.id == user_id)  # type: ignore
+        )
+        user_model: Optional[UserModel] = result.scalar_one_or_none()
+        if user_model is None:
+            raise UserNotFoundException(user_id=user_id)
+        user_model.is_verified = True
+        self._db_session.add(user_model)
 
 
 class SQLAlchemyTaskRepository:

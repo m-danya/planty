@@ -1,7 +1,9 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from planty.application.auth import admin_user, current_user
 from planty.application.schemas import (
@@ -28,7 +30,7 @@ from planty.application.schemas import (
     TaskUpdateRequest,
     TaskUpdateResponse,
 )
-from planty.application.services.stats import StatsService
+from planty.application.services.admin import AdminService
 from planty.application.services.tasks import (
     SectionService,
     TaskService,
@@ -37,6 +39,8 @@ from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.task import User
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
+
+templates = Jinja2Templates(directory="planty/application/templates")
 
 
 @router.post("/task", status_code=status.HTTP_201_CREATED)
@@ -250,8 +254,27 @@ async def shuffle_section(
         return section
 
 
-@router.get("/stats")
+# ADMIN STATS & CONTROLS
+# TODO: rework and move to separate router
+
+
+@router.get("/user/stats")
 async def get_stats(admin_user: User = Depends(admin_user)) -> StatsResponse:
     async with SqlAlchemyUnitOfWork() as uow:
-        stats_service = StatsService(uow=uow)
-        return await stats_service.get_stats()
+        admin_service = AdminService(uow=uow)
+        return await admin_service.get_stats()
+
+
+@router.get("/user/verify", response_class=HTMLResponse)
+async def verify_user_form(
+    request: Request, admin: User = Depends(admin_user)
+) -> HTMLResponse:
+    return templates.TemplateResponse("verify_user.html", {"request": request})
+
+
+@router.post("/user/{user_id}/verify")
+async def verify_user(user_id: UUID, admin: User = Depends(admin_user)) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        admin_service = AdminService(uow=uow)
+        await admin_service.verify_user(user_id)
+        await uow.commit()

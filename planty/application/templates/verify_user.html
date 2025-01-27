@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 15px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .input {
+            width: 100%;
+            padding: 12px 20px;
+            margin: 8px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>User Verification</h2>
+        <form id="verifyForm" onsubmit="handleSubmit(event)">
+            <label for="user_id">User ID:</label>
+            <input type="text" id="user_id" name="user_id" class="input" required>
+            <button type="submit" class="button">Verify User</button>
+        </form>
+    </div>
+
+    <script>
+        function handleSubmit(event) {
+            event.preventDefault();
+            const userId = document.getElementById('user_id').value;
+            fetch(`/api/user/${userId}/verify`, {
+                method: 'POST'
+            }).then(response => {
+                if (response.ok) {
+                    alert('User successfully verified');
+                } else {
+                    alert('An error occurred while verifying the user');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

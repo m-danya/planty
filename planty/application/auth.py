@@ -74,7 +74,7 @@ fastapi_users_obj = FastAPIUsers[UserModel, uuid.UUID](
 )
 
 
-current_user_dependency = fastapi_users_obj.current_user()
+current_user_dependency = fastapi_users_obj.current_user(verified=True)
 admin_user_dependency = fastapi_users_obj.current_user(superuser=True)
 
 
