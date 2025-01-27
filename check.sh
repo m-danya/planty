@@ -1,10 +1,4 @@
-(
-    ruff format --check || (
-        ruff format && \
-        echo "Reformatted. You should run this script again." && \
-        false
-    )
-) && \
+ruff format && \
 ruff check --fix && \
 mypy planty && \
 pytest -x && \

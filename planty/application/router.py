@@ -3,42 +3,38 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
 
-
+from planty.application.auth import admin_user, current_user
 from planty.application.schemas import (
-    RequestAttachmentUpload,
+    ArchivedTasksResponse,
     AttachmentUploadInfo,
+    RequestAttachmentUpload,
     SectionCreateRequest,
     SectionCreateResponse,
     SectionMoveRequest,
     SectionResponse,
+    SectionsListResponse,
     SectionUpdateRequest,
     SectionUpdateResponse,
     ShuffleSectionRequest,
+    StatsResponse,
     TaskCreateRequest,
     TaskCreateResponse,
-    TaskSearchResponse,
     TaskMoveRequest,
     TaskRemoveRequest,
-    ArchivedTasksResponse,
-    TaskToggleArchivedRequest,
     TasksByDatesResponse,
+    TaskSearchResponse,
+    TaskToggleArchivedRequest,
     TaskToggleCompletedRequest,
     TaskUpdateRequest,
     TaskUpdateResponse,
-    SectionsListResponse,
 )
+from planty.application.services.stats import StatsService
 from planty.application.services.tasks import (
     SectionService,
     TaskService,
 )
 from planty.application.uow import SqlAlchemyUnitOfWork
-
-
 from planty.domain.task import User
-
-
-from planty.application.auth import current_user
-
 
 router = APIRouter(tags=["User tasks"], prefix="/api")
 
@@ -252,3 +248,10 @@ async def shuffle_section(
         section = await section_service.shuffle(user.id, request)
         await uow.commit()
         return section
+
+
+@router.get("/stats")
+async def get_stats(admin_user: User = Depends(admin_user)) -> StatsResponse:
+    async with SqlAlchemyUnitOfWork() as uow:
+        stats_service = StatsService(uow=uow)
+        return await stats_service.get_stats()

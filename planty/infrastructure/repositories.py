@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import asc, desc, select
+from sqlalchemy import asc, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -11,11 +11,13 @@ from planty.application.exceptions import (
     SectionNotFoundException,
     TaskNotFoundException,
 )
+from planty.application.schemas import UserStats
 from planty.domain.task import Attachment, Section, Task
 from planty.infrastructure.models import (
     AttachmentModel,
     SectionModel,
     TaskModel,
+    UserModel,
 )
 from planty.utils import get_today
 
@@ -23,6 +25,31 @@ from planty.utils import get_today
 class SQLAlchemyUserRepository:
     def __init__(self, db_session: AsyncSession):
         self._db_session = db_session
+
+    async def get_all_users(self) -> list[UserStats]:
+        result = await self._db_session.execute(
+            select(
+                UserModel,
+                func.count(TaskModel.id).label("tasks_count"),
+                func.count(SectionModel.id).label("sections_count"),
+                func.count(AttachmentModel.id).label("attachments_count"),
+            )
+            .outerjoin(TaskModel, UserModel.id == TaskModel.user_id)  # type: ignore
+            .outerjoin(SectionModel, UserModel.id == SectionModel.user_id)  # type: ignore
+            .outerjoin(AttachmentModel, TaskModel.attachments)
+            .group_by(UserModel)  # type: ignore
+            .order_by(desc(UserModel.added_at))
+        )
+
+        users = []
+        for user_model, tasks_count, sections_count, attachments_count in result:
+            user = user_model.to_entity().model_dump()
+            user["tasks_count"] = tasks_count
+            user["sections_count"] = sections_count
+            user["attachments_count"] = attachments_count
+            users.append(UserStats.model_validate(user))
+
+        return users
 
 
 class SQLAlchemyTaskRepository:

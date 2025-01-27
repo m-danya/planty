@@ -196,3 +196,15 @@ class UserCreate(fastapi_users_schemas.BaseUserCreate):
 
 class UserUpdate(fastapi_users_schemas.BaseUserUpdate):
     pass
+
+
+class UserStats(Schema):
+    id: UUID
+    email: str
+    tasks_count: int
+    sections_count: int
+    attachments_count: int
+    model_config = ConfigDict(extra="allow")
+
+
+StatsResponse = list[UserStats]
