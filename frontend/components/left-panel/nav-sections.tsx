@@ -20,15 +20,17 @@ import {
   SidebarMenuSub,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowDownUp, ChevronRight, Pencil, Trash } from "lucide-react";
+import { ArrowDownUp, ChevronRight, Pencil, Plus, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 import { useSections } from "@/hooks/use-sections";
 import { EditSectionDialog } from "./edit-section-dialog";
 import { Api } from "@/api/Api";
 import { useSWRConfig } from "swr";
 import { MoveSectionDialog } from "./move-section-dialog";
+import { CreateSectionDialog } from "./create-section-dialog";
 
 export function NavSections() {
   const {
@@ -41,6 +43,7 @@ export function NavSections() {
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [movingSectionId, setMovingSectionId] = useState(null);
   const { cache, mutate } = useSWRConfig();
+  const [creatingSection, setCreatingSection] = useState(false);
 
   if (isError) return <p>Failed to load sections.</p>;
 
@@ -89,6 +92,21 @@ export function NavSections() {
     mutateSections();
   }
 
+  async function handleSectionCreate(sectionData: { title: string }) {
+    try {
+      const result = await api.createSectionApiSectionPost({
+        title: sectionData.title,
+        parent_id: rootSectionId,
+      });
+      console.log("Section created successfully:", result);
+    } catch (error) {
+      console.error("Failed to create section:", error);
+      alert("Error while creating section");
+    }
+    mutateSections();
+    mutateSWRByPartialKey("/api/section/");
+  }
+
   return (
     <>
       <SidebarGroup className="group-data-[collapsible=icon]:hidden text-nowrap">
@@ -97,14 +115,26 @@ export function NavSections() {
           {isLoading ? (
             <SectionsSkeleton />
           ) : (
-            sections.map((section) => (
-              <Tree
-                key={section.id}
-                section={section}
-                setEditingSectionId={setEditingSectionId}
-                setMovingSectionId={setMovingSectionId}
-              />
-            ))
+            <>
+              {sections.map((section) => (
+                <Tree
+                  key={section.id}
+                  section={section}
+                  setEditingSectionId={setEditingSectionId}
+                  setMovingSectionId={setMovingSectionId}
+                />
+              ))}
+              <SidebarMenuItem>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start"
+                  onClick={() => setCreatingSection(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add section
+                </Button>
+              </SidebarMenuItem>
+            </>
           )}
         </SidebarMenu>
       </SidebarGroup>
@@ -124,6 +154,13 @@ export function NavSections() {
           onOpenChange={setMovingSectionId}
           section={findSectionById(sections, movingSectionId)}
           onSubmit={handleSectionMove}
+        />
+      )}
+      {creatingSection && (
+        <CreateSectionDialog
+          isOpened={creatingSection}
+          onOpenChange={setCreatingSection}
+          onSubmit={handleSectionCreate}
         />
       )}
     </>

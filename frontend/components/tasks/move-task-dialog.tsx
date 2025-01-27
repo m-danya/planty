@@ -19,17 +19,25 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useSections } from "@/hooks/use-sections";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface MoveTaskDialogProps {
   open: boolean;
@@ -54,6 +62,7 @@ export function MoveTaskDialog({
     leavesOnly: true,
   });
   const api = new Api().api;
+  const [comboboxOpen, setComboboxOpen] = React.useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,31 +106,64 @@ export function MoveTaskDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Section</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select section" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {isLoading && (
-                        <SelectItem disabled>Loading sections...</SelectItem>
-                      )}
-                      {isError && (
-                        <SelectItem disabled>Error loading sections</SelectItem>
-                      )}
-                      {!isLoading &&
-                        sections?.map((section: SectionResponse) => (
-                          <SelectItem value={section.id} key={section.id}>
-                            {section.title}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={comboboxOpen}
+                        className="w-full justify-between"
+                      >
+                        {field.value
+                          ? sections?.find(
+                              (section) => section.id === field.value
+                            )?.title
+                          : "Select section..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search section..." />
+                        <CommandList>
+                          <CommandEmpty>No section found.</CommandEmpty>
+                          <CommandGroup>
+                            {isLoading && (
+                              <CommandItem disabled>
+                                Loading sections...
+                              </CommandItem>
+                            )}
+                            {isError && (
+                              <CommandItem disabled>
+                                Error loading sections
+                              </CommandItem>
+                            )}
+                            {!isLoading &&
+                              sections?.map((section) => (
+                                <CommandItem
+                                  key={section.id}
+                                  value={section.title}
+                                  onSelect={() => {
+                                    field.onChange(section.id);
+                                    setComboboxOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      "mr-2 h-4 w-4",
+                                      field.value === section.id
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                  />
+                                  {section.title}
+                                </CommandItem>
+                              ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
