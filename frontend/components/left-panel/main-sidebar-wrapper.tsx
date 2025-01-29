@@ -5,10 +5,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useAuthRedirect } from "@/hooks/use-auth-redirect";
 
-export function MainSidebarWrapper({ children }) {
-  const { mutate: mutateAuth } = useAuthRedirect();
+export function MainSidebarWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <SidebarProvider>
       <AppSidebar />

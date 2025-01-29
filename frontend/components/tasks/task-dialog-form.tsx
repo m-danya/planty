@@ -52,6 +52,7 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
       onCancel,
       titleInputRef,
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ref
   ) => {
     const [title, setTitle] = useState(initialTitle);
@@ -91,9 +92,11 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
       });
     };
 
-    const handleDateSelect = (date: Date) => {
-      setDueTo(date);
-      setIsPopoverOpen(false);
+    const handleDateSelect = (date: Date | undefined) => {
+      if (date) {
+        setDueTo(date);
+        setIsPopoverOpen(false);
+      }
     };
 
     const clearDate = () => {
@@ -146,9 +149,9 @@ export const TaskDialogForm = forwardRef<HTMLInputElement, TaskDialogFormProps>(
                   <Calendar
                     mode="single"
                     weekStartsOn={1}
-                    selected={dueTo}
+                    selected={dueTo ?? undefined}
                     onSelect={handleDateSelect}
-                    defaultMonth={dueTo}
+                    defaultMonth={dueTo ?? undefined}
                     required
                   />
                 </PopoverContent>

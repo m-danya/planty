@@ -9,7 +9,7 @@ import {
 import { format } from "date-fns";
 import { TaskDialogForm } from "./task-dialog-form";
 import React, { useRef } from "react";
-import { RecurrenceInfo } from "@/api/Api";
+import { RecurrenceInfo, TaskUpdateRequest } from "@/api/Api";
 
 interface EditTaskDialogProps {
   isEditing: boolean;
@@ -21,7 +21,7 @@ interface EditTaskDialogProps {
     due_to?: string | null;
     recurrence: RecurrenceInfo | null;
   };
-  handleTaskEdit: (task: any) => void;
+  handleTaskEdit: (task: TaskUpdateRequest) => void;
 }
 
 export function EditTaskDialog({

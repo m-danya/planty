@@ -27,7 +27,7 @@ import { Button } from "@/components/ui/button";
 
 import { useSections } from "@/hooks/use-sections";
 import { EditSectionDialog } from "./edit-section-dialog";
-import { Api } from "@/api/Api";
+import { Api, SectionResponse } from "@/api/Api";
 import { useSWRConfig } from "swr";
 import { MoveSectionDialog } from "./move-section-dialog";
 import { CreateSectionDialog } from "./create-section-dialog";
@@ -40,8 +40,8 @@ export function NavSections() {
     isError,
     mutate: mutateSections,
   } = useSections();
-  const [editingSectionId, setEditingSectionId] = useState(null);
-  const [movingSectionId, setMovingSectionId] = useState(null);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [movingSectionId, setMovingSectionId] = useState<string | null>(null);
   const { cache, mutate } = useSWRConfig();
   const [creatingSection, setCreatingSection] = useState(false);
 
@@ -51,8 +51,7 @@ export function NavSections() {
 
   // TODO: move to utils
   function mutateSWRByPartialKey(partialKey: string) {
-    cache
-      .keys()
+    Array.from(cache.keys())
       .filter((key: string) => key.includes(partialKey))
       .forEach((key: string) => mutate(key));
   }
@@ -77,23 +76,37 @@ export function NavSections() {
     mutateSWRByPartialKey("/api/section/");
   }
 
-  async function handleSectionMove(updateSectionData) {
+  async function handleSectionMove(updateSectionData: {
+    parentId: string;
+    index: number;
+  }) {
     try {
+      if (!movingSectionId) {
+        throw new Error("Moving section ID is required");
+      }
       const result = await api.moveSectionApiSectionMovePost({
         section_id: movingSectionId,
         to_parent_id: updateSectionData.parentId,
         index: updateSectionData.index,
       });
       console.log("Section moved successfully:", result);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Failed to move section:", error);
-      alert(`Error while moving section: ${error.response.data.detail}`);
+      alert(
+        `Error while moving section: ${
+          (error as { response?: { data?: { detail?: string } } })?.response
+            ?.data?.detail || "Unknown error"
+        }`
+      );
     }
     mutateSections();
   }
 
   async function handleSectionCreate(sectionData: { title: string }) {
     try {
+      if (!rootSectionId) {
+        throw new Error("Root section ID is required");
+      }
       const result = await api.createSectionApiSectionPost({
         title: sectionData.title,
         parent_id: rootSectionId,
@@ -116,7 +129,7 @@ export function NavSections() {
             <SectionsSkeleton />
           ) : (
             <>
-              {sections.map((section) => (
+              {sections?.map((section) => (
                 <Tree
                   key={section.id}
                   section={section}
@@ -141,8 +154,9 @@ export function NavSections() {
       {editingSectionId && (
         <EditSectionDialog
           isOpened={!!editingSectionId}
-          //  Warning: boolean value is set
-          onOpenChange={setEditingSectionId}
+          onOpenChange={(open) =>
+            setEditingSectionId(open ? editingSectionId : null)
+          }
           section={findSectionById(sections, editingSectionId)}
           onSubmit={handleSectionEdit}
         />
@@ -150,8 +164,9 @@ export function NavSections() {
       {movingSectionId && (
         <MoveSectionDialog
           isOpened={!!movingSectionId}
-          //  Warning: boolean value is set
-          onOpenChange={setMovingSectionId}
+          onOpenChange={(open) =>
+            setMovingSectionId(open ? movingSectionId : null)
+          }
           section={findSectionById(sections, movingSectionId)}
           onSubmit={handleSectionMove}
         />
@@ -167,12 +182,19 @@ export function NavSections() {
   );
 }
 
+interface TreeProps {
+  section: SectionResponse;
+  noIndent?: boolean;
+  setEditingSectionId: (id: string | null) => void;
+  setMovingSectionId: (id: string | null) => void;
+}
+
 function Tree({
   section,
   noIndent = false,
   setEditingSectionId,
   setMovingSectionId,
-}) {
+}: TreeProps) {
   const hasChildren = section.subsections && section.subsections.length > 0;
   if (!hasChildren) {
     return (
@@ -189,7 +211,7 @@ function Tree({
     );
   }
   const anyChildHasChildren = section.subsections.some(
-    (child) => child.subsections.length > 0
+    (child: SectionResponse) => child.subsections.length > 0
   );
 
   return (
@@ -208,7 +230,7 @@ function Tree({
         </div>
         <CollapsibleContent>
           <SidebarMenuSub className="w-full">
-            {section.subsections.map((child) => (
+            {section.subsections.map((child: SectionResponse) => (
               <Tree
                 key={child.id}
                 section={child}
@@ -224,6 +246,15 @@ function Tree({
   );
 }
 
+interface TreeElementProps {
+  section: SectionResponse;
+  withChevron?: boolean;
+  clickable?: boolean;
+  withIdentIfNoChevron?: boolean;
+  setEditingSectionId: (id: string | null) => void;
+  setMovingSectionId: (id: string | null) => void;
+}
+
 const TreeElement = ({
   section,
   clickable = true,
@@ -232,14 +263,7 @@ const TreeElement = ({
   setEditingSectionId,
   setMovingSectionId,
   ...props
-}: {
-  section: { id: string; title: string };
-  withChevron?: boolean;
-  clickable?: boolean;
-  withIdentIfNoChevron?: boolean;
-  setEditingSectionId: (value: any) => {};
-  setMovingSectionId: (value: any) => {};
-}) => {
+}: TreeElementProps) => {
   const displayFullIdent = !withChevron && withIdentIfNoChevron;
   const displayMiniIdent = !withChevron && !withIdentIfNoChevron;
   const router = useRouter();
@@ -354,8 +378,13 @@ function SectionsSkeleton() {
   );
 }
 
-function findSectionById(sections, id) {
-  for (let section of sections) {
+function findSectionById(
+  sections: SectionResponse[] | undefined,
+  id: string
+): SectionResponse {
+  if (!sections) throw new Error("Sections are undefined");
+
+  for (const section of sections) {
     if (section.id === id) {
       return section;
     }
@@ -368,5 +397,5 @@ function findSectionById(sections, id) {
     }
   }
 
-  return null;
+  throw new Error("Section with id " + id + " not found");
 }

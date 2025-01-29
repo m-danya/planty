@@ -6,7 +6,7 @@ import { SidebarMenuButton } from "@/components/ui/sidebar";
 
 export function UserProfile() {
   const router = useRouter();
-  const { user, loading, loggedIn, mutate } = useUser();
+  const { user } = useUser();
 
   const handleLogout = async () => {
     try {

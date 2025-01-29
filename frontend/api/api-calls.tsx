@@ -1,4 +1,4 @@
-import { Api, RecurrenceInfo } from "@/api/Api";
+import { Api, RecurrenceInfo, TaskUpdateRequest } from "@/api/Api";
 
 const api = new Api().api;
 
@@ -49,21 +49,9 @@ export async function moveTask(
   }
 }
 
-export async function updateTask(updateTaskData: {
-  id: string;
-  title?: string;
-  description?: string;
-  due_to?: string;
-  recurrence: RecurrenceInfo | null;
-}) {
+export async function updateTask(updateTaskData: TaskUpdateRequest) {
   try {
-    const result = await api.updateTaskApiTaskPatch({
-      id: updateTaskData.id,
-      title: updateTaskData.title,
-      description: updateTaskData.description,
-      due_to: updateTaskData.due_to,
-      recurrence: updateTaskData.recurrence,
-    });
+    const result = await api.updateTaskApiTaskPatch(updateTaskData);
     console.log("Task edited successfully:", result);
     return result;
   } catch (error: any) {

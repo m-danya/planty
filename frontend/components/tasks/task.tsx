@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
-import { TaskResponse } from "@/api/Api";
+import { TaskResponse, TaskUpdateRequest } from "@/api/Api";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { DateLabel } from "./date-label";
@@ -17,7 +17,7 @@ interface TaskProps {
   handleToggleTaskArchived: (taskId: string) => void;
   skeleton?: boolean;
   mutateOnTaskMove: () => void;
-  handleTaskEdit: (task: any) => void;
+  handleTaskEdit: (task: TaskUpdateRequest) => void;
 }
 
 export function Task({
@@ -41,7 +41,7 @@ export function Task({
     transition,
   };
 
-  const taskDueTo = task.due_to && parseISO(task.due_to);
+  const taskDueTo = task.due_to ? parseISO(task.due_to) : null;
 
   return (
     <div ref={setNodeRef} style={dndStyle} {...attributes} {...listeners}>
@@ -83,7 +83,7 @@ export function Task({
             <div className="ml-9 text-gray-400 pt-0.5 ">{task.description}</div>
           )}
 
-          {!skeleton && task.due_to && (
+          {!skeleton && task.due_to && taskDueTo && (
             <div className="ml-9">
               <DateLabel date={taskDueTo} isRecurrent={!!task.recurrence} />
             </div>

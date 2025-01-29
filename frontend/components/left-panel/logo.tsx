@@ -1,8 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 export function Logo() {
-  const router = useRouter();
   return (
     <div className="flex justify-center w-full">
       <div className="w-40">

@@ -19,7 +19,7 @@ export function NavSecondary({
   items: {
     title: string;
     url: string;
-    icon: React.ReactElement;
+    icon: React.ElementType;
     badge?: React.ReactNode;
   }[];
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {

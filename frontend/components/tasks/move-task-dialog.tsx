@@ -2,29 +2,8 @@
 
 "use client";
 
-import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Api, SectionResponse } from "@/api/Api";
+import { Api } from "@/api/Api";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useSections } from "@/hooks/use-sections";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -34,10 +13,30 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useSections } from "@/hooks/use-sections";
+import { cn } from "@/lib/utils";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Check, ChevronsUpDown } from "lucide-react";
+import React from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface MoveTaskDialogProps {
   open: boolean;
@@ -91,7 +90,9 @@ export function MoveTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Move "{taskTitle}" to another section</DialogTitle>
+          <DialogTitle>
+            Move &quot;{taskTitle}&quot; to another section
+          </DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form

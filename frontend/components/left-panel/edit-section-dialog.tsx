@@ -8,15 +8,13 @@ import {
 } from "@/components/ui/dialog";
 import { useRef } from "react";
 import { SectionEditDialogForm } from "./section-edit-dialog-form";
+import { SectionResponse } from "@/api/Api";
 
 interface EditSectionDialogProps {
   isOpened: boolean;
   onOpenChange: (open: boolean) => void;
-  section: {
-    id: string;
-    title: string;
-  };
-  onSubmit: (section: any) => void;
+  section: SectionResponse;
+  onSubmit: (section: { id: string; title: string }) => void;
 }
 
 export function EditSectionDialog({

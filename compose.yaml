@@ -1,8 +1,8 @@
 services:
   minio:
     image: minio/minio
-    ports:
-      - "0.0.0.0:9000:9000"
+    # ports:
+    # - "0.0.0.0:9000:9000"
     volumes:
       - minio-volume:/data
     command: server --console-address ":9001" /data
@@ -32,8 +32,8 @@ services:
   db:
     image: postgres:16
     restart: always
-    ports:
-      - ${PLANTY_DB_PORT}:5432
+    # ports:
+    #   - ${PLANTY_DB_PORT}:5432
     environment:
       - POSTGRES_DB=${PLANTY_DB_NAME}
       - POSTGRES_PASSWORD=${PLANTY_DB_PASS}

@@ -7,7 +7,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { MoveRight, Archive, ArchiveRestore, CircleCheck } from "lucide-react";
+import { MoveRight, Archive, ArchiveRestore } from "lucide-react";
 import { TaskResponse } from "@/api/Api";
 
 interface TaskContextMenuProps {

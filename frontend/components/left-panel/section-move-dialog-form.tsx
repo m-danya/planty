@@ -19,7 +19,7 @@ interface SectionMoveDialogFormProps {
   initialParentId?: string;
   initialIndex?: number;
   submitLabel: string;
-  onSubmit: (section) => void;
+  onSubmit: (updateSectionData: { parentId: string; index: number }) => void;
   onCancel: () => void;
   titleInputRef?: React.RefObject<HTMLInputElement>;
 }
@@ -35,22 +35,21 @@ export const SectionMoveDialogForm = forwardRef<
       submitLabel,
       onSubmit,
       onCancel,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       titleInputRef,
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ref
   ) => {
     const [parentId, setParentId] = useState(initialParentId);
     const [index, setIndex] = useState(initialIndex);
 
-    const {
-      sections,
-      rootSectionId,
-      isLoading,
-      isError,
-      // mutate: mutateSections,
-    } = useSections({ asTree: false });
+    const { sections, rootSectionId } = useSections({ asTree: false });
     const handleFinish = (e: React.FormEvent) => {
       e.preventDefault();
+      if (!parentId || !index) {
+        throw new Error("Parent ID or index is required");
+      }
       onSubmit({
         parentId,
         index,
@@ -98,7 +97,7 @@ export const SectionMoveDialogForm = forwardRef<
             <Input
               id="section_index"
               value={index}
-              onChange={(e) => setIndex(e.target.value)}
+              onChange={(e) => setIndex(Number(e.target.value))}
               required
             />
           </div>

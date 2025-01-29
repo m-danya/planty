@@ -19,6 +19,7 @@ export const SectionEditDialogForm = forwardRef<
 >(
   (
     { initialTitle = "", submitLabel, onSubmit, onCancel, titleInputRef },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ref
   ) => {
     const [title, setTitle] = useState(initialTitle);

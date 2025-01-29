@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, Calendar, Search, Settings2, Sparkles } from "lucide-react";
+import { Archive, Calendar, Search, Settings2 } from "lucide-react";
 import * as React from "react";
 
 import { siGithub } from "simple-icons";

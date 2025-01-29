@@ -1,5 +1,3 @@
-import { siGithub } from "simple-icons";
-import { createElement } from "react";
 import { SVGProps } from "react";
 
 interface SimpleIconProps extends SVGProps<SVGSVGElement> {

@@ -3,15 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useUser from "@/hooks/use-user";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -22,8 +15,10 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleLogin = async (e) => {
-    e?.preventDefault();
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement> | null) => {
+    if (e) {
+      e.preventDefault();
+    }
 
     try {
       const body = new URLSearchParams();
@@ -76,7 +71,6 @@ export function LoginForm() {
       }
 
       await mutate();
-
       handleLogin(null);
     } catch (error) {
       console.error("An unexpected error occurred:", error);

@@ -47,16 +47,17 @@ function CalendarView() {
     tasksByDate,
     overdueTasks,
     isLoading,
-    isError,
     mutate: mutateTasksByDate,
   } = useTasksByDate(weekStart, weekEnd, isCurrentWeekSelected);
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    setIsPopoverOpen(false);
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      setIsPopoverOpen(false);
+    }
   };
 
-  function getWeekRange(date: Date): string {
+  function getWeekRange(): string {
     const today = new Date();
     const currentWeekStart = startOfWeek(today, { weekStartsOn: 1 });
     const isCurrentWeek = weekStart.getTime() === currentWeekStart.getTime();
@@ -100,7 +101,7 @@ function CalendarView() {
     return `${baseFormat}  ·  ${format(date, "EEEE", { locale: enUS })}`;
   }
 
-  const weekRange = selectedDate ? getWeekRange(selectedDate) : "";
+  const weekRange = selectedDate ? getWeekRange() : "";
 
   const allTasks = [
     ...(isCurrentWeekSelected && overdueTasks?.length

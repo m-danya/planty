@@ -7,19 +7,14 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useRef } from "react";
-import { SectionEditDialogForm } from "./section-edit-dialog-form";
 import { SectionMoveDialogForm } from "./section-move-dialog-form";
+import { SectionResponse } from "@/api/Api";
 
 interface MoveSectionDialogProps {
   isOpened: boolean;
   onOpenChange: (open: boolean) => void;
-  section: {
-    id: string;
-    title: string;
-    parent_id: string;
-    index: number;
-  };
-  onSubmit: (section: any) => void;
+  section: SectionResponse;
+  onSubmit: (updateSectionData: { parentId: string; index: number }) => void;
 }
 
 export function MoveSectionDialog({
@@ -36,8 +31,11 @@ export function MoveSectionDialog({
     onOpenChange(false);
   };
 
-  const handleSubmit = (updatedSection) => {
-    onSubmit(updatedSection);
+  const handleSubmit = (updateSectionData: {
+    parentId: string;
+    index: number;
+  }) => {
+    onSubmit(updateSectionData);
     onOpenChange(false);
   };
 
@@ -62,7 +60,7 @@ export function MoveSectionDialog({
         </DialogHeader>
         <SectionMoveDialogForm
           // initialTitle={initialTitle}
-          initialParentId={initialParentId}
+          initialParentId={initialParentId || undefined}
           initialIndex={initialIndex}
           submitLabel="Move"
           onSubmit={handleSubmit}

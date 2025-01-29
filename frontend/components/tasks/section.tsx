@@ -1,6 +1,5 @@
 "use client";
 
-import { RecurrenceInfo } from "@/api/Api";
 import { AddTaskDialog } from "@/components/tasks/add-task-dialog";
 import { Task } from "@/components/tasks/task";
 import { useSection } from "@/hooks/use-section";
@@ -27,20 +26,28 @@ import {
   toggleTaskCompleted,
   updateTask,
 } from "@/api/api-calls";
+import { TaskResponse, TaskUpdateRequest } from "@/api/Api";
 
 export function Section({ sectionId }: { sectionId: string }) {
-  const {
-    section,
-    isLoading,
-    isError,
-    mutate: mutateSection,
-  } = useSection(sectionId);
+  const { section, isLoading, mutate: mutateSection } = useSection(sectionId);
 
   const tasksFillers = Array.from({ length: 5 }, (_, index) => ({
     id: index.toString(),
+    title: "Task " + index,
+    description: "Description " + index,
+    due_to: "2025-01-01",
+    recurrence: null,
+    section_id: sectionId,
+    content: "Content " + index,
+    is_completed: false,
+    is_archived: false,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    added_at: new Date().toISOString(),
+    attachments: [],
   }));
 
-  const [tasks, setTasks] = useState(tasksFillers);
+  const [tasks, setTasks] = useState<TaskResponse[]>(tasksFillers);
   const [isAddTaskDialogOpen, setIsAddTaskDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -52,11 +59,6 @@ export function Section({ sectionId }: { sectionId: string }) {
   const dndSensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
   );
-
-  async function handleToggleTaskArchived(task_id: string) {
-    await toggleTaskArchived(task_id);
-    mutateSection();
-  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -72,6 +74,7 @@ export function Section({ sectionId }: { sectionId: string }) {
         await moveTask(active.id as string, sectionId, newIndex);
       } catch (error) {
         alert("Failed to move task");
+        console.log(error);
         // revert changes in UI
         setTasks((tasks) => arrayMove(tasks, newIndex, oldIndex));
       }
@@ -95,7 +98,7 @@ export function Section({ sectionId }: { sectionId: string }) {
                 </h1>
               </div>
               <div className="flex flex-col py-4">
-                {tasks.map((task) => (
+                {tasks.map((task: TaskResponse) => (
                   <div key={task.id}>
                     <div>
                       <Task
@@ -110,7 +113,9 @@ export function Section({ sectionId }: { sectionId: string }) {
                           mutateSection();
                         }}
                         mutateOnTaskMove={mutateSection}
-                        handleTaskEdit={async (updateTaskData) => {
+                        handleTaskEdit={async (
+                          updateTaskData: TaskUpdateRequest
+                        ) => {
                           await updateTask(updateTaskData);
                           mutateSection();
                         }}
