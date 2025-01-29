@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log
+.dockerignore
+README.md
+LICENSE
+.next
+*.swp

@@ -14,13 +14,34 @@ https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
 
 ## How to run
 
-Prerequisites: Docker (with compose plugin), [uv](https://docs.astral.sh/uv/)
+Prerequisites: Docker (with compose plugin)
 
 ```
 git clone https://github.com/m-danya/planty
 cd planty
 cp .env.sample .env
 echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+
+docker compose up -d
+```
+
+Open `http://localhost` to access the app.
+
+## Development notes
+
+### How to run backend and frontend locally
+
+Prerequisites:
+
+- Docker (with compose plugin)
+- [uv](https://docs.astral.sh/uv/)
+- nvm
+
+```
+git clone https://github.com/m-danya/planty
+cd planty
+cp .env.dev.sample .env.dev
+echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env.dev
 
 uv sync
 source .venv/bin/activate
@@ -36,7 +57,6 @@ pytest; mv planty_test.db planty.db
 # or just run this for automatic commenting, running tests and uncommenting:
 sed -i '/Uncomment to /{n;s/# //}' planty/config.py; pytest planty/application; mv planty_test.db planty.db; sed -i '/Uncomment to /{n;s/^\(\s*\)/\1# /}' planty/config.py; echo Done. DB is ready!
 
-# (backend is not dockerized yet)
 # run "FastAPI" configuration in VS code or:
 uvicorn planty.main:app --reload
 ```

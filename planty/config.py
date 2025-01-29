@@ -1,3 +1,4 @@
+import os
 from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -68,7 +69,9 @@ class Settings(BaseSettings):
     shutdown_containers_after_test: bool = False
 
     model_config = SettingsConfigDict(
-        env_file=".env", extra="ignore", env_prefix="PLANTY_"
+        env_file=".env" if os.getenv("PLANTY_MODE") == "PROD" else ".env.dev",
+        extra="ignore",
+        env_prefix="PLANTY_",
     )
 
 

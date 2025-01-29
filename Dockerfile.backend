@@ -1,0 +1,20 @@
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml .
+
+RUN uv sync
+
+COPY planty/ planty/
+COPY alembic/ alembic/
+COPY alembic.ini .
+
+EXPOSE 8000
+
+CMD ["uv", "run", "uvicorn", "planty.main:app", "--host", "0.0.0.0", "--port", "8000"]

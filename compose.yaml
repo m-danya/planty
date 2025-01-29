@@ -47,6 +47,50 @@ services:
       - ./planty/tests/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql
     profiles: [with-postgres]
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - PLANTY_MODE=${PLANTY_MODE}
+      - PLANTY_DB_TYPE=${PLANTY_DB_TYPE}
+      - PLANTY_DB_HOST=${PLANTY_DB_HOST}
+      - PLANTY_DB_PORT=${PLANTY_DB_PORT}
+      - PLANTY_DB_USER=${PLANTY_DB_USER}
+      - PLANTY_DB_NAME=${PLANTY_DB_NAME}
+      - PLANTY_DB_PASS=${PLANTY_DB_PASS}
+      - PLANTY_TEST_DB_HOST=${PLANTY_TEST_DB_HOST}
+      - PLANTY_TEST_DB_PORT=${PLANTY_TEST_DB_PORT}
+      - PLANTY_TEST_DB_USER=${PLANTY_TEST_DB_USER}
+      - PLANTY_TEST_DB_NAME=${PLANTY_TEST_DB_NAME}
+      - PLANTY_TEST_DB_PASS=${PLANTY_TEST_DB_PASS}
+      - PLANTY_FASTAPI_PORT=${PLANTY_FASTAPI_PORT}
+      - PLANTY_AWS_URL=${PLANTY_AWS_URL}
+      - PLANTY_AWS_ACCESS_KEY_ID=${PLANTY_AWS_ACCESS_KEY_ID}
+      - PLANTY_AWS_SECRET_ACCESS_KEY=${PLANTY_AWS_SECRET_ACCESS_KEY}
+      - PLANTY_AWS_ATTACHMENTS_BUCKET=${PLANTY_AWS_ATTACHMENTS_BUCKET}
+      - PLANTY_AUTH_SECRET=${PLANTY_AUTH_SECRET}
+    volumes:
+      - ./planty.db:/app/planty.db
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile.frontend
+
+  caddy:
+    image: caddy:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - frontend
+      - backend
+    environment:
+      - DOMAIN=${CADDY_DOMAIN}
+
 volumes:
   postgres-volume:
   minio-volume:
