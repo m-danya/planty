@@ -21,7 +21,8 @@ jobs:
       - name: Set up .env
         run: |
           cp .env.sample .env
-          echo "PLANTY_AUTH_SECRET=TEST_SECRET" >> .env
+          cp .env.dev.sample .env.dev
+          echo "PLANTY_AUTH_SECRET=TEST_SECRET" >> .env.dev
       #----------------------------------------------
       #  -----  install uv  -----
       #----------------------------------------------
