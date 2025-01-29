@@ -20,7 +20,8 @@ Prerequisites: Docker (with compose plugin)
 git clone https://github.com/m-danya/planty
 cd planty
 cp .env.sample .env
-echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+echo -e "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
+# change other secrets in .env
 
 docker compose up -d
 ```
