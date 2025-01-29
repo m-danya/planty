@@ -24,6 +24,8 @@ echo -e "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
 # change other secrets in .env
 
 docker compose up -d
+
+docker exec -it planty-backend-1 uv run python -m planty.scripts.create_admin
 ```
 
 Open `http://localhost` to access the app.
