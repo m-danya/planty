@@ -23,6 +23,9 @@ cp .env.sample .env
 echo -e "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env
 # change other secrets in .env
 
+# TODO: Use Alembic to create the database, empty file won't work
+# create here planty.db (see below one-liner with pytest for now)
+
 docker compose up -d
 
 docker exec -it planty-backend-1 uv run python -m planty.scripts.create_admin
