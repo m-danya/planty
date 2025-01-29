@@ -78,7 +78,7 @@ async def minio_container() -> AsyncGenerator[None, None]:
             minio_was_started_in_test = True
 
         async with httpx.AsyncClient() as client:
-            for _ in range(10):
+            for _ in range(30):
                 try:
                     response = await client.get(
                         f"{settings.aws_url}/minio/health/ready", timeout=1
