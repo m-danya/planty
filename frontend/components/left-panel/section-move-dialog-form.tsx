@@ -47,7 +47,7 @@ export const SectionMoveDialogForm = forwardRef<
     const { sections, rootSectionId } = useSections({ asTree: false });
     const handleFinish = (e: React.FormEvent) => {
       e.preventDefault();
-      if (!parentId || !index) {
+      if (!parentId || index === undefined) {
         throw new Error("Parent ID or index is required");
       }
       onSubmit({

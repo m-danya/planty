@@ -157,17 +157,17 @@ export function NavSections() {
           onOpenChange={(open) =>
             setEditingSectionId(open ? editingSectionId : null)
           }
-          section={findSectionById(sections, editingSectionId)}
+          section={findSectionByIdGuaranteed(sections, editingSectionId)}
           onSubmit={handleSectionEdit}
         />
       )}
-      {movingSectionId && (
+      {sections && sections.length > 0 && movingSectionId && (
         <MoveSectionDialog
           isOpened={!!movingSectionId}
           onOpenChange={(open) =>
             setMovingSectionId(open ? movingSectionId : null)
           }
-          section={findSectionById(sections, movingSectionId)}
+          section={findSectionByIdGuaranteed(sections, movingSectionId)}
           onSubmit={handleSectionMove}
         />
       )}
@@ -378,24 +378,34 @@ function SectionsSkeleton() {
   );
 }
 
-function findSectionById(
+function findSectionByIdGuaranteed(
   sections: SectionResponse[] | undefined,
   id: string
 ): SectionResponse {
-  if (!sections) throw new Error("Sections are undefined");
+  if (!sections || sections.length === 0)
+    throw new Error("Sections are undefined or empty");
 
+  const found = findSectionByIdRecursive(sections, id);
+  if (!found) throw new Error("Section with id " + id + " not found");
+  return found;
+}
+
+function findSectionByIdRecursive(
+  sections: SectionResponse[],
+  id: string
+): SectionResponse | null {
   for (const section of sections) {
     if (section.id === id) {
       return section;
     }
 
     if (section.subsections) {
-      const found = findSectionById(section.subsections, id);
+      const found = findSectionByIdRecursive(section.subsections, id);
       if (found) {
         return found;
       }
     }
   }
 
-  throw new Error("Section with id " + id + " not found");
+  return null;
 }
