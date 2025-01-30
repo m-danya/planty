@@ -143,20 +143,15 @@ class SectionService:
         self._section_repo = uow.section_repo
         self._task_repo = uow.task_repo
 
-    # TODO: when writing "update_section" don't forget to raise
-    # ChangingRootSectionError if root section is being updated
-
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
-        if parent_id := section_data.parent_id:
-            parent_section = await self._section_repo.get(
-                parent_id, with_direct_subsections=True
-            )
-            if parent_section.user_id != user_id:
-                raise ForbiddenException()
-            # add to the end of parent section:
-            index = await self._section_repo.count_subsections(parent_section.id)
-        else:
-            index = 0
+        parent_section = await self._section_repo.get(
+            section_data.parent_id, with_direct_subsections=True
+        )
+        if parent_section.user_id != user_id:
+            raise ForbiddenException()
+        # add to the end of parent section:
+        index = await self._section_repo.count_subsections(parent_section.id)
+
         section = Section(
             user_id=user_id,
             title=section_data.title,
@@ -170,8 +165,10 @@ class SectionService:
             section, index
         )  # this line checks constraints of parent_section
         await self._section_repo.add(section, index=index)
+        await self._section_repo.update(parent_section)
         return section
 
+    # TODO: raise ChangingRootSectionError if root section is being updated
     async def update_section(
         self, user_id: UUID, section_data: SectionUpdateRequest
     ) -> SectionResponse:

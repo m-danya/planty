@@ -39,7 +39,7 @@ def create_admin(
         hide_input=True,
         confirmation_prompt=True,
     ),
-):
+) -> None:
     asyncio.run(create_admin_user(email, password))
 
 
