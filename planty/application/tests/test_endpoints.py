@@ -118,6 +118,7 @@ async def test_get_archived_tasks(
     "parent_id, status_code, error_detail",
     [
         ("0d966845-254b-4b5c-b8a7-8d34dcd3d527", 201, None),
+        ("45561eb6-3570-44de-af8a-54212e2981e6", 201, None),
         (
             "090eda97-dd2d-45bb-baa0-7814313e5a38",
             422,
@@ -132,18 +133,21 @@ async def test_create_section(
     ac: AsyncClient,
     additional_test_data: dict[str, Any],
 ) -> None:
-    section_data = {
-        "title": str(additional_test_data["sections"][0]["title"]),
-        "parent_id": parent_id,
-    }
-    response = await ac.post("/api/section", json=section_data)
-    assert response.status_code == status_code
-    if not response.is_success:
-        assert response.json()["detail"] == error_detail
-        return
+    # Do it twice to check that the `has_subsections` flag is updated correctly
+    # (there is no other way to check it using endpoints)
+    for _ in range(2):
+        section_data = {
+            "title": str(additional_test_data["sections"][0]["title"]),
+            "parent_id": parent_id,
+        }
+        response = await ac.post("/api/section", json=section_data)
+        assert response.status_code == status_code
+        if not response.is_success:
+            assert response.json()["detail"] == error_detail
+            return
 
-    data = response.json()
-    assert "id" in data
+        data = response.json()
+        assert "id" in data
 
 
 @pytest.mark.parametrize(

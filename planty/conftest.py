@@ -40,6 +40,7 @@ def additional_test_data() -> dict[str, Any]:
 def _load_json_with_data(filename: str) -> dict[str, Any]:
     with open(Path(__file__).parent / "resources" / filename) as f:
         test_data: dict[str, Any] = json.load(f)
+    ids = set()
     for table_key in test_data:
         last_idx: int = 0
         for row in test_data[table_key]:
@@ -58,6 +59,10 @@ def _load_json_with_data(filename: str) -> dict[str, Any]:
                         "(NOTE: this is just a heuristic)"
                     )
                     last_idx = idx
+                if column == "id":
+                    if row[column] in ids:
+                        raise ValueError(f"Duplicate id {row[column]} in {table_key}")
+                    ids.add(row[column])
 
     # TODO: make this dict immutable to prevent accidental modification
     return test_data
