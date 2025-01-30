@@ -7,7 +7,8 @@ import {
   closestCenter,
   DndContext,
   DragEndEvent,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -57,7 +58,10 @@ export function Section({ sectionId }: { sectionId: string }) {
   }, [section]);
 
   const dndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 1 } })
+    useSensor(MouseSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: { distance: 5, delay: 100 },
+    })
   );
 
   async function handleDragEnd(event: DragEndEvent) {
