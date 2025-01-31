@@ -58,9 +58,13 @@ export function Section({ sectionId }: { sectionId: string }) {
   }, [section]);
 
   const dndSensors = useSensors(
-    useSensor(MouseSensor),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
     useSensor(TouchSensor, {
-      activationConstraint: { distance: 5, delay: 100 },
+      activationConstraint: { distance: 5, delay: 500 },
     })
   );
 
