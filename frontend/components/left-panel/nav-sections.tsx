@@ -18,6 +18,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowDownUp, ChevronRight, Pencil, Plus, Trash } from "lucide-react";
@@ -267,9 +268,11 @@ const TreeElement = ({
   const displayFullIdent = !withChevron && withIdentIfNoChevron;
   const displayMiniIdent = !withChevron && !withIdentIfNoChevron;
   const router = useRouter();
+  const { setOpenMobile } = useSidebar();
 
   const handleClick = () => {
     if (clickable) {
+      setOpenMobile(false);
       router.push(`/section/${section.id}`);
     }
   };
