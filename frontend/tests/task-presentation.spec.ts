@@ -14,6 +14,14 @@ test.describe('Tasks', () => {
       description: null,
       due_to: null
     });
+    mockApi.state.tasks.push({
+      ...tomorrow,
+      id: '10000000-0000-4000-8000-000000000098',
+      parent_task_id: null,
+      title: 'Задача на среду',
+      description: null,
+      due_to: '2026-10-28'
+    });
 
     // 1. Render every task state and hierarchy fallback.
     await mockApi.open('/');
@@ -30,7 +38,12 @@ test.describe('Tasks', () => {
 
     const tomorrowRow = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
     await expect(tomorrowRow.locator('.task-date.tomorrow')).toHaveText(/Завтра/);
+    await expect(tomorrowRow.locator('.task-date.tomorrow')).toHaveCSS('color', 'rgb(182, 98, 0)');
     await expect(tomorrowRow).toHaveCSS('padding-left', '29px');
+
+    const weekdayRow = page.getByTestId('task-row').filter({ hasText: 'Задача на среду' });
+    await expect(weekdayRow.locator('.task-date.weekday')).toHaveText('среда');
+    await expect(weekdayRow.locator('.task-date.weekday')).toHaveCSS('color', 'rgb(138, 54, 177)');
 
     // 2. Collapse and expand the parent through the chevron button.
     await chevron.click();

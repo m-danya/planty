@@ -82,7 +82,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .task-title { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
 .task-description { color: #6d726e; margin-top: 2px; font-size: 14px; white-space: pre-wrap; }
 .task-date { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 7px; width: fit-content; }
-.task-date.today { color: #07932e; }.task-date.overdue { color: #db2b3c; }.task-date.tomorrow { color: #8a36b1; }.task-date.future { color: #3973bd; }
+.task-date.today { color: #07932e; }.task-date.overdue { color: #db2b3c; }.task-date.tomorrow { color: #b66200; }.task-date.weekday { color: #8a36b1; }.task-date.future { color: #3973bd; }
 .drop-before::before { content: ''; position: absolute; left: var(--indent); right: 0; top: -2px; height: 3px; background: var(--navy); border-radius: 2px; }
 .drop-before::after { content: ''; position: absolute; left: calc(var(--indent) - 4px); top: -6px; width: 8px; height: 8px; border: 3px solid var(--navy); background: #fff; border-radius: 50%; }
 .drop-child { margin-left: 28px; background: #f7f8f7; box-shadow: 0 4px 14px rgb(30 40 30 / 15%); border-radius: 8px; }
@@ -91,7 +91,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .context-menu button { border: 0; background: none; border-radius: 5px; padding: 8px 10px; width: 100%; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; }
 .context-menu button:hover { background: #eef0ee; }.context-menu button.danger { color: #be2430; }
 .menu-separator { height: 1px; margin: 5px 4px; background: var(--line); }
-.date-today { color: #07932e; font-weight: 600; }.date-tomorrow { color: #8a36b1; font-weight: 600; }
+.date-today { color: #07932e; font-weight: 600; }.date-tomorrow { color: #b66200; font-weight: 600; }
 .menu-date-input { width: calc(100% - 16px); margin: 3px 8px 6px; padding: 7px 9px; border: 1px solid #cdd2cd; border-radius: 7px; }
 .add-task-button { border: 0; background: none; color: #7f847f; display: flex; align-items: center; gap: 10px; font-size: 17px; padding: 15px 9px; cursor: pointer; }
 .add-task-button:hover { color: var(--green-dark); }

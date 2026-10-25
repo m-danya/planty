@@ -112,6 +112,7 @@ backend, database, network access, or pre-existing user data.
   1. Render overdue, today, tomorrow, future, recurring, completed, child, and
      orphan tasks.
     - expect: labels, classes, hierarchy, and accessible actions are correct
+    - expect: tomorrow is brown and nearby weekdays are named and purple
   2. Collapse the parent task with its chevron and expand it again.
     - expect: child rows hide and reappear and aria-expanded follows the state
 

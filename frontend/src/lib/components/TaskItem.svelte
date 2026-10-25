@@ -51,6 +51,7 @@
     if (diff < 0) return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'overdue' };
     if (diff === 0) return { text: t('today'), className: 'today' };
     if (diff === 1) return { text: t('tomorrow'), className: 'tomorrow' };
+    if (diff < 7) return { text: due.toLocaleDateString(locale, { weekday: 'long' }), className: 'weekday' };
     return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'future' };
   }
 

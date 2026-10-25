@@ -10,7 +10,7 @@ test.describe('Tasks', () => {
     const today = page.getByRole('menuitem', { name: 'Назначить на: сегодня' });
     const tomorrow = page.getByRole('menuitem', { name: 'Назначить на: завтра' });
     await expect(today.locator('.date-today')).toHaveCSS('color', 'rgb(7, 147, 46)');
-    await expect(tomorrow.locator('.date-tomorrow')).toHaveCSS('color', 'rgb(138, 54, 177)');
+    await expect(tomorrow.locator('.date-tomorrow')).toHaveCSS('color', 'rgb(182, 98, 0)');
     await today.click();
     await expect.poll(() => mockApi.state.tasks.find((task) => task.id === ids.futureTask)?.due_to)
       .toBe('2026-10-25');
