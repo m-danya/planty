@@ -121,6 +121,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .dialog input, .dialog select { width: 100%; border: 1px solid #cdd2cd; border-radius: 8px; padding: 10px 11px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }.dialog-actions button { border: 0; border-radius: 8px; padding: 9px 15px; cursor: pointer; }.dialog-actions .primary { background: var(--green); color: white; }.dialog-actions .danger { background: #d62d3e; color: white; }
 .section-menu { position: fixed; z-index: 65; width: 220px; }
+.task-menu { position: fixed; }
 
 .login-page { min-height: 100vh; display: grid; grid-template-columns: minmax(340px, 46%) 1fr; background: #fbfcfb; }
 .login-brand { position: relative; overflow: hidden; display: grid; place-items: center; background: linear-gradient(145deg, #079735 0%, #19c64a 60%, #91dd48 100%); }

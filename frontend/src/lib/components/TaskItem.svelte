@@ -28,6 +28,7 @@
   } = $props();
 
   let menuOpen = $state(false);
+  let menuPos = $state<{ x: number; y: number } | null>(null);
   let dragMode = $state<'before' | 'child' | null>(null);
 
   function dateLabel(value: string): { text: string; className: string } {
@@ -43,6 +44,11 @@
 
   function clickRow(event: MouseEvent) {
     if (event.altKey) onEdit(task);
+  }
+
+  function closeMenu() {
+    menuOpen = false;
+    menuPos = null;
   }
 
   function dragOver(event: DragEvent) {
@@ -78,7 +84,7 @@
     dragMode = null;
   }}
   onclick={clickRow}
-  oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; }}
+  oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; menuPos = { x: event.clientX, y: event.clientY }; }}
 >
   <button class="drag-handle" aria-label="Перетащить задачу"><GripVertical size={16} /></button>
   {#if childCount > 0}<ChevronRight class="task-chevron" size={18} />{/if}
@@ -92,13 +98,15 @@
     {/if}
   </div>
   {#if menuOpen}
-    <button class="menu-shield" aria-label="Закрыть меню" onclick={(event) => { event.stopPropagation(); menuOpen = false; }}></button>
-    <div class="context-menu" role="menu" tabindex="-1">
-      <button role="menuitem" onclick={() => { menuOpen = false; onMove(task); }}><MoveRight size={18} />В другой раздел</button>
-      <button role="menuitem" onclick={() => { menuOpen = false; onArchive(task); }}>
+    <button class="menu-shield" aria-label="Закрыть меню" onclick={(event) => { event.stopPropagation(); closeMenu(); }}></button>
+    {#if menuPos}
+    <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.min(menuPos.x, innerWidth - 260)}px;top:${Math.min(menuPos.y, innerHeight - 170)}px`}>
+      <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />В другой раздел</button>
+      <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>
         <Archive size={18} />{task.is_archived ? 'Вернуть из архива' : 'В архив'}
       </button>
-      <button class="danger" role="menuitem" onclick={() => { menuOpen = false; onDelete(task); }}><Trash2 size={18} />Удалить</button>
+      <button class="danger" role="menuitem" onclick={() => { closeMenu(); onDelete(task); }}><Trash2 size={18} />Удалить</button>
     </div>
+    {/if}
   {/if}
 </div>

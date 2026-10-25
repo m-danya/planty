@@ -10,6 +10,9 @@
   and the production frontend build. Install Python and frontend dependencies
   and Playwright Chromium beforehand; the script checks the project but does
   not bootstrap the environment.
+- Never commit or push unless the user explicitly asks. Completing a task,
+  passing checks, or fixing CI on its own is not authorization to commit or
+  push; leave changes in the working tree and report them.
 - Write commit messages using the 50/72 rule: keep the imperative subject at
   50 characters or fewer, separate it from the body with a blank line, and
   wrap body lines at 72 characters. Use the body to explain why the change is
