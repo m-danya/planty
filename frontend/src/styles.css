@@ -62,10 +62,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .task-list { border-top: 1px solid var(--line); }
 .task-row { --indent: calc(var(--depth) * 28px); position: relative; display: flex; min-height: 78px; align-items: flex-start; padding: 15px 6px 13px calc(1px + var(--indent)); border-bottom: 1px solid var(--line); transition: background .16s, transform .16s; }
 .task-row:hover { background: #fcfdfc; }
-.drag-handle { width: 20px; height: 26px; border: 0; background: none; padding: 5px 1px; color: #adb1ad; opacity: 0; cursor: grab; }
+.drag-handle { width: 16px; height: 26px; border: 0; background: none; padding: 5px 0; color: #adb1ad; opacity: 0; cursor: grab; }
 .task-row:hover .drag-handle { opacity: 1; }
-.task-chevron { margin: 4px 4px 0 -3px; color: #747974; }
-.complete-button { flex: 0 0 auto; width: 25px; height: 25px; border: 1.6px solid #aeb4af; background: white; border-radius: 50%; cursor: pointer; margin: 1px 12px 0 1px; transition: border-color .15s, background .15s; }
+.task-chevron-slot { flex: 0 0 22px; width: 22px; height: 22px; margin: 2px 5px 0 0; display: flex; align-items: center; justify-content: center; }
+.task-chevron { color: #747974; }
+button.task-chevron { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #747974; cursor: pointer; }
+.task-chevron svg { transition: transform .15s ease; }
+button.task-chevron.expanded svg { transform: rotate(90deg); }
+.complete-button { flex: 0 0 auto; width: 25px; height: 25px; border: 1.6px solid #aeb4af; background: white; border-radius: 50%; cursor: pointer; margin: 1px 8px 0 0; transition: border-color .15s, background .15s; }
 .complete-button:hover { border-color: var(--green); background: #edfbf0; }
 .completed .complete-button { background: var(--green); border-color: var(--green); box-shadow: inset 0 0 0 5px #fff; }
 .completed .task-title { text-decoration: line-through; color: #8b908c; }

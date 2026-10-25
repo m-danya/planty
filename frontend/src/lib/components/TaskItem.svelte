@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Archive, CalendarDays, ChevronRight, GripVertical, MoveRight, Repeat2, Trash2 } from '@lucide/svelte';
+  import { Archive, CalendarDays, ChevronRight, GripVertical, MoveRight, Plus, Repeat2, Trash2 } from '@lucide/svelte';
   import type { Task } from '$lib/types';
   import { recurrenceLabel } from '$lib/date-parser';
 
@@ -13,7 +13,10 @@
     onDelete,
     onMove,
     onDragStart,
-    onDropTask
+    onDropTask,
+    collapsed = false,
+    onCollapseToggle,
+    onAddSubtask
   }: {
     task: Task;
     depth?: number;
@@ -25,6 +28,9 @@
     onMove: (task: Task) => void;
     onDragStart: (task: Task) => void;
     onDropTask: (target: Task, mode: 'before' | 'child') => void;
+    collapsed?: boolean;
+    onCollapseToggle?: (task: Task) => void;
+    onAddSubtask?: (task: Task) => void;
   } = $props();
 
   let menuOpen = $state(false);
@@ -87,7 +93,15 @@
   oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; menuPos = { x: event.clientX, y: event.clientY }; }}
 >
   <button class="drag-handle" aria-label="Перетащить задачу"><GripVertical size={16} /></button>
-  {#if childCount > 0}<ChevronRight class="task-chevron" size={18} />{/if}
+  <div class="task-chevron-slot">
+    {#if childCount > 0}
+      {#if onCollapseToggle}
+        <button class="task-chevron" class:expanded={!collapsed} aria-label={collapsed ? 'Раскрыть подзадачи' : 'Свернуть подзадачи'} aria-expanded={!collapsed} onclick={(event) => { event.stopPropagation(); onCollapseToggle(task); }}><ChevronRight size={16} /></button>
+      {:else}
+        <span class="task-chevron"><ChevronRight size={16} /></span>
+      {/if}
+    {/if}
+  </div>
   <button class="complete-button" aria-label={task.is_completed ? 'Вернуть задачу' : 'Выполнить задачу'} onclick={(event) => { event.stopPropagation(); onToggle(task); }}></button>
   <div class="task-copy">
     <div class="task-title">{task.title}</div>
@@ -102,6 +116,9 @@
     {#if menuPos}
     <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.min(menuPos.x, innerWidth - 260)}px;top:${Math.min(menuPos.y, innerHeight - 170)}px`}>
       <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />В другой раздел</button>
+      {#if childCount > 0 && onAddSubtask}
+        <button role="menuitem" onclick={() => { closeMenu(); onAddSubtask(task); }}><Plus size={18} />Добавить подзадачу</button>
+      {/if}
       <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>
         <Archive size={18} />{task.is_archived ? 'Вернуть из архива' : 'В архив'}
       </button>

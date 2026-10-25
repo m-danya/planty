@@ -13,7 +13,10 @@
     onDelete,
     onMove,
     onDragStart,
-    onDropTask
+    onDropTask,
+    collapsedIds,
+    onCollapseToggle,
+    onAddSubtask
   }: {
     tasks: Task[];
     parentId?: string | null;
@@ -25,6 +28,9 @@
     onMove: (task: Task) => void;
     onDragStart: (task: Task) => void;
     onDropTask: (target: Task, mode: 'before' | 'child') => void;
+    collapsedIds?: Set<string>;
+    onCollapseToggle?: (task: Task) => void;
+    onAddSubtask?: (task: Task) => void;
   } = $props();
 
   const directTasks = $derived(tasks.filter((task) => task.parent_task_id === parentId || (parentId === null && task.parent_task_id && !tasks.some((candidate) => candidate.id === task.parent_task_id))));
@@ -32,8 +38,8 @@
 
 {#each directTasks as task (task.id)}
   {@const children = tasks.filter((candidate) => candidate.parent_task_id === task.id)}
-  <TaskItem {task} {depth} childCount={children.length} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} />
-  {#if children.length}
-    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} />
+  <TaskItem {task} {depth} childCount={children.length} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} collapsed={collapsedIds?.has(task.id) ?? false} {onCollapseToggle} {onAddSubtask} />
+  {#if children.length && !collapsedIds?.has(task.id)}
+    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} {collapsedIds} {onCollapseToggle} {onAddSubtask} />
   {/if}
 {/each}

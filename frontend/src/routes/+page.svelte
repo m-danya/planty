@@ -31,6 +31,8 @@
   let dialogTitle = $state('');
   let dialogParent = $state('');
   let sectionMenu = $state<{ section: Section; x: number; y: number } | null>(null);
+  let collapsed = $state<Set<string>>(new Set());
+  let subtaskParent = $state<Task | null>(null);
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
 
   const root = $derived(sectionsTree.find((section) => section.parent_id === null) ?? null);
@@ -60,14 +62,14 @@
       const typing = target?.matches('input, textarea, select, [contenteditable="true"]');
       if (!typing && (event.code === 'KeyQ' || event.key.toLocaleLowerCase('ru-RU') === 'q' || event.key.toLocaleLowerCase('ru-RU') === 'й')) {
         event.preventDefault();
-        if (selected || leafSections.length) { editingTask = null; composerOpen = true; }
+        if (selected || leafSections.length) { editingTask = null; subtaskParent = null; composerOpen = true; }
       }
       if (!typing && event.key === '/') {
         event.preventDefault();
         void changeView('search');
         queueMicrotask(() => document.querySelector<HTMLInputElement>('.search-input')?.focus());
       }
-      if (event.key === 'Escape') { composerOpen = false; editingTask = null; moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
+      if (event.key === 'Escape') { composerOpen = false; editingTask = null; subtaskParent = null; moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
     };
     window.addEventListener('keydown', keyHandler);
     return () => window.removeEventListener('keydown', keyHandler);
@@ -135,10 +137,11 @@
         await api.updateTask(editingTask.id, draft);
         if (editingTask.section_id !== sectionId) await api.moveTask(editingTask.id, sectionId, 0, editingTask.parent_task_id);
       } else {
-        await api.createTask(sectionId || selected!.id, draft);
+        await api.createTask(sectionId || selected!.id, draft, subtaskParent?.id ?? null);
       }
       composerOpen = false;
       editingTask = null;
+      subtaskParent = null;
       if (selected?.id === sectionId || !sectionId) await refreshSection();
       notify('Задача сохранена');
     });
@@ -157,7 +160,16 @@
     else await changeView('calendar');
   }
 
-  function editTask(task: Task) { editingTask = task; composerOpen = true; }
+  function editTask(task: Task) { editingTask = task; subtaskParent = null; composerOpen = true; }
+
+  function openAddSubtask(task: Task) { subtaskParent = task; editingTask = null; composerOpen = true; }
+
+  function toggleCollapse(task: Task) {
+    const next = new Set(collapsed);
+    if (next.has(task.id)) next.delete(task.id);
+    else next.add(task.id);
+    collapsed = next;
+  }
 
   function openMoveTask(task: Task) {
     moveTaskTarget = task;
@@ -247,19 +259,19 @@
           <h1>{heading}</h1>
           {#if view === 'section'}<span class="task-count">{tasks.length}</span>{/if}
           <div class="heading-actions">
-            {#if view === 'section'}<button onclick={() => { editingTask = null; composerOpen = true; }} aria-label="Добавить задачу"><Plus /></button>{/if}
+            {#if view === 'section'}<button onclick={() => { editingTask = null; subtaskParent = null; composerOpen = true; }} aria-label="Добавить задачу"><Plus /></button>{/if}
             <button aria-label="Ещё"><Ellipsis /></button>
           </div>
         </header>
 
         {#if view === 'section'}
           {#if composerOpen && selected}
-            <TaskComposer task={editingTask} section={editingTask?.section_id ?? selected.id} sections={leafSections} onSave={saveTask} onCancel={() => { composerOpen = false; editingTask = null; }} />
+            <TaskComposer task={editingTask} section={subtaskParent ? subtaskParent.section_id : editingTask?.section_id ?? selected.id} sections={subtaskParent ? [] : leafSections} onSave={saveTask} onCancel={() => { composerOpen = false; editingTask = null; subtaskParent = null; }} />
           {/if}
           <div class="task-list" role="list">
-            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} />
+            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} collapsedIds={collapsed} onCollapseToggle={toggleCollapse} onAddSubtask={openAddSubtask} />
           </div>
-          {#if selected && !composerOpen}<button class="add-task-button" onclick={() => { editingTask = null; composerOpen = true; }}><Plus />Добавить задачу <kbd>Q</kbd></button>{/if}
+          {#if selected && !composerOpen}<button class="add-task-button" onclick={() => { editingTask = null; subtaskParent = null; composerOpen = true; }}><Plus />Добавить задачу <kbd>Q</kbd></button>{/if}
           {#if !selected}<div class="empty-state"><div class="empty-icon">🌱</div>Создайте раздел, чтобы добавить первую задачу.</div>{/if}
         {:else if view === 'search'}
           <div class="search-wrap"><Search /><input class="search-input" bind:value={query} oninput={search} placeholder="Поиск по задачам" aria-label="Поиск по задачам" /></div>

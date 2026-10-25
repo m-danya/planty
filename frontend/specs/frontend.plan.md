@@ -89,7 +89,10 @@ backend, database, network access, or pre-existing user data.
   1. Drop one task onto another and try to create a cycle.
     - expect: the first task becomes an indented child
     - expect: the cyclic move is rejected before an API call
-  2. Drop at the top edge of a row.
+  2. Create another subtask through the parent's context menu.
+    - expect: the composer opens without a section selector
+    - expect: the create request carries the parent task id
+  3. Drop at the top edge of a row.
     - expect: the task becomes a sibling with a null parent
 
 #### 3.5. task-presentation
@@ -100,6 +103,8 @@ backend, database, network access, or pre-existing user data.
   1. Render overdue, today, tomorrow, future, recurring, completed, child, and
      orphan tasks.
     - expect: labels, classes, hierarchy, and accessible actions are correct
+  2. Collapse the parent task with its chevron and expand it again.
+    - expect: child rows hide and reappear and aria-expanded follows the state
 
 #### 3.6. task-errors
 

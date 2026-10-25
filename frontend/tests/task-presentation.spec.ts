@@ -25,9 +25,20 @@ test.describe('Tasks', () => {
     await expect(todayRow.locator('.task-chevron')).toBeVisible();
     await expect(todayRow.getByText('Собрать всё в одном месте')).toBeVisible();
 
+    const chevron = todayRow.getByRole('button', { name: 'Свернуть подзадачи' });
+    await expect(chevron).toHaveAttribute('aria-expanded', 'true');
+
     const tomorrowRow = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
     await expect(tomorrowRow.locator('.task-date.tomorrow')).toHaveText(/Завтра/);
     await expect(tomorrowRow).toHaveCSS('padding-left', '29px');
+
+    // 2. Collapse and expand the parent through the chevron button.
+    await chevron.click();
+    await expect(tomorrowRow).toHaveCount(0);
+    const expandedChevron = todayRow.getByRole('button', { name: 'Раскрыть подзадачи' });
+    await expect(expandedChevron).toHaveAttribute('aria-expanded', 'false');
+    await expandedChevron.click();
+    await expect(tomorrowRow).toBeVisible();
 
     const overdueRow = page.getByTestId('task-row').filter({ hasText: 'Просроченная задача' });
     await expect(overdueRow.locator('.task-date.overdue')).toContainText('24 окт.');
