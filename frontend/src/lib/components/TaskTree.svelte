@@ -25,7 +25,8 @@
     onSaveAndContinue,
     continuationAfter = null,
     onSaveContinuation,
-    onCancelContinuation
+    onCancelContinuation,
+    onSchedule
   }: {
     tasks: Task[];
     parentId?: string | null;
@@ -48,6 +49,7 @@
     continuationAfter?: Task | null;
     onSaveContinuation?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancelContinuation?: () => void;
+    onSchedule?: (task: Task, dueTo: string) => void;
   } = $props();
 
   const directTasks = $derived(tasks.filter((task) => task.parent_task_id === parentId || (parentId === null && task.parent_task_id && !tasks.some((candidate) => candidate.id === task.parent_task_id))));
@@ -60,10 +62,10 @@
       <TaskComposer {task} section={task.section_id} sections={editSections} onSave={onSaveEdit} {onSaveAndContinue} onCancel={onCancelEdit} />
     </div>
   {:else}
-    <TaskItem {task} {depth} childCount={children.length} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} collapsed={collapsedIds?.has(task.id) ?? false} {onCollapseToggle} {onAddSubtask} />
+    <TaskItem {task} {depth} childCount={children.length} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} collapsed={collapsedIds?.has(task.id) ?? false} {onCollapseToggle} {onAddSubtask} {onSchedule} />
   {/if}
   {#if children.length && !collapsedIds?.has(task.id)}
-    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} {collapsedIds} {onCollapseToggle} {onAddSubtask} {editingTask} {editSections} {onSaveEdit} {onCancelEdit} {onSaveAndContinue} {continuationAfter} {onSaveContinuation} {onCancelContinuation} />
+    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {onDropTask} {collapsedIds} {onCollapseToggle} {onAddSubtask} {editingTask} {editSections} {onSaveEdit} {onCancelEdit} {onSaveAndContinue} {continuationAfter} {onSaveContinuation} {onCancelContinuation} {onSchedule} />
   {/if}
   {#if continuationAfter?.id === task.id && onSaveContinuation && onCancelContinuation}
     <div class="inline-edit" style={`--depth: ${depth}`} role="listitem">

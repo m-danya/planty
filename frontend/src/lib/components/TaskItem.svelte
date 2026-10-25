@@ -17,7 +17,8 @@
     onDropTask,
     collapsed = false,
     onCollapseToggle,
-    onAddSubtask
+    onAddSubtask,
+    onSchedule
   }: {
     task: Task;
     depth?: number;
@@ -32,11 +33,14 @@
     collapsed?: boolean;
     onCollapseToggle?: (task: Task) => void;
     onAddSubtask?: (task: Task) => void;
+    onSchedule?: (task: Task, dueTo: string) => void;
   } = $props();
 
   let menuOpen = $state(false);
   let menuPos = $state<{ x: number; y: number } | null>(null);
   let dragMode = $state<'before' | 'child' | null>(null);
+  let customDateOpen = $state(false);
+  let dateInput = $state<HTMLInputElement>();
 
   function dateLabel(value: string): { text: string; className: string } {
     const due = new Date(`${value}T12:00:00`);
@@ -57,6 +61,23 @@
   function closeMenu() {
     menuOpen = false;
     menuPos = null;
+    customDateOpen = false;
+  }
+
+  function localDate(offset: number): string {
+    const value = new Date();
+    value.setDate(value.getDate() + offset);
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`;
+  }
+
+  function schedule(dueTo: string) {
+    closeMenu();
+    onSchedule?.(task, dueTo);
+  }
+
+  function openDatePicker() {
+    customDateOpen = true;
+    queueMicrotask(() => dateInput?.showPicker());
   }
 
   function dragOver(event: DragEvent) {
@@ -116,10 +137,20 @@
   {#if menuOpen}
     <button class="menu-shield" aria-label={t('closeMenu')} onclick={(event) => { event.stopPropagation(); closeMenu(); }}></button>
     {#if menuPos}
-    <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.min(menuPos.x, innerWidth - 260)}px;top:${Math.min(menuPos.y, innerHeight - 170)}px`}>
+    <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.max(8, Math.min(menuPos.x, innerWidth - 260))}px;top:${Math.max(8, Math.min(menuPos.y, innerHeight - 340))}px`}>
       <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />{t('otherSection')}</button>
       {#if onAddSubtask}
         <button role="menuitem" onclick={() => { closeMenu(); onAddSubtask(task); }}><Plus size={18} />{t('addSubtask')}</button>
+      {/if}
+      {#if onSchedule}
+        <div class="menu-separator"></div>
+        <button role="menuitem" onclick={() => schedule(localDate(0))}><CalendarDays size={18} />{t('assignTo')} <span class="date-today">{t('todayLower')}</span></button>
+        <button role="menuitem" onclick={() => schedule(localDate(1))}><CalendarDays size={18} />{t('assignTo')} <span class="date-tomorrow">{t('tomorrowLower')}</span></button>
+        <button role="menuitem" onclick={openDatePicker}><CalendarDays size={18} />{t('assignOtherDay')}</button>
+        {#if customDateOpen}
+          <input bind:this={dateInput} class="menu-date-input" type="date" aria-label={t('chooseDueDate')} value={task.due_to ?? localDate(0)} onchange={(event) => schedule(event.currentTarget.value)} />
+        {/if}
+        <div class="menu-separator"></div>
       {/if}
       <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>
         <Archive size={18} />{task.is_archived ? t('restoreArchive') : t('toArchive')}

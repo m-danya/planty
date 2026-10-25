@@ -59,7 +59,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ section_id, parent_task_id, ...draft })
     }),
-  updateTask: (id: string, draft: TaskDraft) =>
+  updateTask: (id: string, draft: Partial<TaskDraft>) =>
     request<{ task: Task }>('/task', { method: 'PATCH', body: JSON.stringify({ id, ...draft }) }),
   deleteTask: (task_id: string) =>
     request<void>('/task', { method: 'DELETE', body: JSON.stringify({ task_id }) }),

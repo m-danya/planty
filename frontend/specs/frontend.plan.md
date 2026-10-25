@@ -123,6 +123,17 @@ backend, database, network access, or pre-existing user data.
   1. Fail task creation and completion requests once.
     - expect: API details appear as toasts and local UI state is not corrupted
 
+#### 3.7. task-scheduling-menu
+
+**File:** `tests/task-scheduling-menu.spec.ts`
+
+**Steps:**
+  1. Open a task context menu and schedule it for today and tomorrow.
+    - expect: the shortcuts use the same date colors as task rows
+    - expect: each shortcut updates the task due date and refreshed label
+  2. Open the other-day calendar and choose an arbitrary date.
+    - expect: the selected local date is sent and rendered on the task
+
 ### 4. Sections
 
 **Seed:** `tests/fixtures.ts`

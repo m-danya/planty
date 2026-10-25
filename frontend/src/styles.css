@@ -90,6 +90,9 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .context-menu { position: absolute; z-index: 51; top: 45px; left: 18px; min-width: 250px; padding: 6px; background: #fff; border: 1px solid #cbd6cc; box-shadow: 0 4px 15px rgb(20 40 20 / 12%); border-radius: 7px; }
 .context-menu button { border: 0; background: none; border-radius: 5px; padding: 8px 10px; width: 100%; display: flex; align-items: center; gap: 10px; cursor: pointer; text-align: left; }
 .context-menu button:hover { background: #eef0ee; }.context-menu button.danger { color: #be2430; }
+.menu-separator { height: 1px; margin: 5px 4px; background: var(--line); }
+.date-today { color: #07932e; font-weight: 600; }.date-tomorrow { color: #8a36b1; font-weight: 600; }
+.menu-date-input { width: calc(100% - 16px); margin: 3px 8px 6px; padding: 7px 9px; border: 1px solid #cdd2cd; border-radius: 7px; }
 .add-task-button { border: 0; background: none; color: #7f847f; display: flex; align-items: center; gap: 10px; font-size: 17px; padding: 15px 9px; cursor: pointer; }
 .add-task-button:hover { color: var(--green-dark); }
 .empty-state { color: #747a75; text-align: center; padding: 70px 20px; }
