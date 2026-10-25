@@ -86,6 +86,20 @@ class SQLAlchemyTaskRepository:
             raise TaskNotFoundException(task_id=task_id)
         return await self.get_entity(task_model)
 
+    async def get_children(self, task_id: UUID) -> list[Task]:
+        result = await self._db_session.execute(
+            select(TaskModel)
+            .where(TaskModel.parent_task_id == task_id)
+            .order_by(asc(TaskModel.index))
+        )
+        return await self.get_entities(result.scalars().all())
+
+    async def has_tasks_in_section(self, section_id: UUID) -> bool:
+        result = await self._db_session.execute(
+            select(TaskModel.id).where(TaskModel.section_id == section_id).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
     async def get_entity(self, task_model: TaskModel) -> Task:
         return task_model.to_entity()
 
@@ -148,6 +162,7 @@ class SQLAlchemyTaskRepository:
     def _fill_in_model_except_index(self, task: Task, task_model: TaskModel) -> None:
         task_model.user_id = task.user_id
         task_model.section_id = task.section_id
+        task_model.parent_task_id = task.parent_task_id
         task_model.title = task.title
         task_model.description = task.description
         task_model.is_completed = task.is_completed
@@ -236,6 +251,15 @@ class SQLAlchemySectionRepository:
         section_model = SectionModel.from_entity(section, index=index)
         self._db_session.add(section_model)
 
+    async def remove(self, section: Section) -> None:
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.id == section.id)
+        )
+        section_model = result.scalar_one_or_none()
+        if section_model is None:
+            raise SectionNotFoundException(section_id=section.id)
+        await self._db_session.delete(section_model)
+
     async def get(
         self,
         section_id: UUID,
@@ -257,7 +281,9 @@ class SQLAlchemySectionRepository:
             subsection_models = (
                 (
                     await self._db_session.execute(
-                        select(SectionModel).where(SectionModel.parent_id == section_id)
+                        select(SectionModel)
+                        .where(SectionModel.parent_id == section_id)
+                        .order_by(asc(SectionModel.index))
                     )
                 )
                 .scalars()

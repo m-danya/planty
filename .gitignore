@@ -164,3 +164,4 @@ cython_debug/
 
 planty.db
 planty_test.db
+.playwright-cli/

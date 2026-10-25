@@ -30,6 +30,9 @@ from planty.domain.calendar import divide_tasks_by_dates
 from planty.domain.exceptions import (
     ChangingRootSectionError,
     MisplaceSectionHierarchyError,
+    SectionNotEmptyError,
+    TaskCantBeOwnParentError,
+    TaskHasSubtasksError,
 )
 from planty.domain.task import Section, Task
 
@@ -149,15 +152,24 @@ class SectionService:
         return convert_to_response(sections)
 
     async def create_task(self, user_id: UUID, task: TaskCreateRequest) -> UUID:
+        task_request = task
         task = Task(
             user_id=user_id,
-            section_id=task.section_id,
-            title=task.title,
+            section_id=task_request.section_id,
+            parent_task_id=task_request.parent_task_id,
+            title=task_request.title,
+            description=task_request.description,
             is_completed=False,
-            due_to=task.due_to,
-            recurrence=task.recurrence,
+            due_to=task_request.due_to,
+            recurrence=task_request.recurrence,
         )
         section = await self._section_repo.get(task.section_id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        if task.parent_task_id is not None:
+            parent = await self._task_repo.get(task.parent_task_id)
+            if parent.user_id != user_id or parent.section_id != section.id:
+                raise ForbiddenException()
         section.insert_task(task)
         await self._section_repo.update(section)
         return task.id
@@ -177,7 +189,9 @@ class SectionService:
             task = Task(
                 user_id=user_id,
                 section_id=task_request.section_id,
+                parent_task_id=task_request.parent_task_id,
                 title=task_request.title,
+                description=task_request.description,
                 is_completed=False,
                 due_to=task_request.due_to,
                 recurrence=task_request.recurrence,
@@ -195,6 +209,8 @@ class SectionService:
         if task.user_id != user_id:
             raise ForbiddenException()
         section = await self._section_repo.get(task.section_id)
+        if await self._task_repo.get_children(task.id):
+            raise TaskHasSubtasksError()
         task = section.remove_task(task)
         await self._task_repo.remove(task)
         await self._section_repo.update(section)
@@ -210,13 +226,69 @@ class SectionService:
         else:
             section_to = await self._section_repo.get(request.section_to_id)
 
+        async def collect_descendants(parent_id: UUID) -> list[Task]:
+            descendants: list[Task] = []
+            for candidate in await self._task_repo.get_children(parent_id):
+                descendants.append(candidate)
+                descendants.extend(await collect_descendants(candidate.id))
+            return descendants
+
+        descendants = await collect_descendants(task.id)
+
+        if section_to.user_id != user_id:
+            raise ForbiddenException()
+        if request.parent_task_id is not None:
+            if request.parent_task_id == task.id:
+                raise TaskCantBeOwnParentError()
+            parent = await self._task_repo.get(request.parent_task_id)
+            if parent.user_id != user_id or parent.section_id != section_to.id:
+                raise ForbiddenException()
+            ancestor = parent
+            while ancestor.parent_task_id is not None:
+                if ancestor.parent_task_id == task.id:
+                    raise TaskCantBeOwnParentError()
+                ancestor = await self._task_repo.get(ancestor.parent_task_id)
+
         Section.move_task(task, section_from, section_to, request.index)
+        task.move_to(section_to.id, request.parent_task_id)
+
+        if not same_section:
+            descendant_index = request.index + 1
+            for descendant in descendants:
+                if descendant.is_archived:
+                    descendant.move_to(section_to.id, descendant.parent_task_id)
+                    await self._task_repo.update_or_create(descendant, must_exist=True)
+                else:
+                    section_from.remove_task(descendant)
+                    section_to.insert_task(descendant, descendant_index)
+                    descendant.move_to(section_to.id, descendant.parent_task_id)
+                    descendant_index += 1
 
         if same_section:
             await self._section_repo.update(section_from)
         else:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
+
+    async def remove_section(self, user_id: UUID, section_id: UUID) -> None:
+        section = await self._section_repo.get(section_id, with_direct_subsections=True)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        if section.is_root():
+            raise ChangingRootSectionError()
+        if (
+            section.has_tasks
+            or section.has_subsections
+            or await self._task_repo.has_tasks_in_section(section.id)
+        ):
+            raise SectionNotEmptyError()
+        assert section.parent_id
+        parent = await self._section_repo.get(
+            section.parent_id, with_direct_subsections=True
+        )
+        parent.remove_subsection(section)
+        await self._section_repo.remove(section)
+        await self._section_repo.update(parent)
 
     async def move_section(self, user_id: UUID, request: SectionMoveRequest) -> None:
         # move `section` from `section_from` to `section to` with given `index``

@@ -8,9 +8,6 @@ Planty is an open-source task management app inspired by Todoist and GTD system.
 
 This project is being **actively developed** and is not yet a fully working product.
 
-Here is a quick demo (last updated: December 12, 2024):
-
-https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
 
 ## How to run
 
@@ -75,6 +72,10 @@ npm i
 npm run dev
 ```
 
+The production frontend is a static SvelteKit build. `npm run build` writes it
+to `frontend/build`; the frontend Docker image serves those files with Caddy
+and does not run Node.js.
+
 Use [nvm](https://github.com/nvm-sh/nvm) to manage nodejs versions:
 
 ```
@@ -113,10 +114,25 @@ ruff format
 
 ### Generate types for frontend from openapi.json
 
-1. Start backend, save 127.0.0.1:8000/openapi.json to `frontend` directory (TODO: automate)
-2. Run this:
+The Svelte frontend keeps its small typed API wrapper in `frontend/src/lib/api.ts`.
 
-```
-cd frontend
-npx swagger-typescript-api -p ./openapi.json -o ./api --axios
-```
+### History of the project
+
+Planty started in 2024 as a pet project developed without coding agents: a
+self-hosted, open-source task manager inspired by Todoist and GTD. The original
+goals were to put Domain-Driven Design into practice and to build an alternative
+to Todoist's task limits.
+
+Later that year, as the backend became more complete, I used ChatGPT to help me
+try building the frontend in Next.js. Coding agents had not become widespread
+yet, so I used ChatGPT and copied the frontend code manually.
+
+Now, in 2026, after coding agents had advanced significantly, I decided to
+rebuild the frontend from scratch with their help, this time using SvelteKit.
+
+Here is a demo of the original Next.js frontend from December 12, 2024, kept as
+a snapshot of the project's history:
+
+https://github.com/user-attachments/assets/6e2622b6-cec3-46f8-bd35-dc2c760b33b0
+
+<!-- TODO: Record and add an up-to-date demo of the SvelteKit frontend. -->

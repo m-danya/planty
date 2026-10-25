@@ -23,6 +23,9 @@ class TaskModel(Base):
     added_at: Mapped[datetime] = mapped_column(DateTime)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
     section_id: Mapped[UUID] = mapped_column(ForeignKey("section.id"))
+    parent_task_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("task.id"), nullable=True
+    )
     title: Mapped[str]
     description: Mapped[Optional[str]]
     is_completed: Mapped[bool]
@@ -43,6 +46,7 @@ class TaskModel(Base):
             id=task.id,
             user_id=task.user_id,
             section_id=task.section_id,
+            parent_task_id=task.parent_task_id,
             added_at=task.added_at,
             title=task.title,
             description=task.description,
@@ -71,6 +75,7 @@ class TaskModel(Base):
             id=self.id,
             user_id=self.user_id,
             section_id=self.section_id,
+            parent_task_id=self.parent_task_id,
             title=self.title,
             description=self.description,
             is_completed=self.is_completed,

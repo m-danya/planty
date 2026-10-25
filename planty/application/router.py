@@ -11,6 +11,7 @@ from planty.application.schemas import (
     SectionCreateRequest,
     SectionCreateResponse,
     SectionMoveRequest,
+    SectionRemoveRequest,
     SectionResponse,
     SectionsListResponse,
     SectionUpdateRequest,
@@ -180,6 +181,16 @@ async def patch_section(
         section = await section_service.update_section(user.id, section_data)
         await uow.commit()
         return SectionUpdateResponse(section=section)
+
+
+@router.delete("/section", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_section(
+    request: SectionRemoveRequest, user: User = Depends(current_user)
+) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        await section_service.remove_section(user.id, request.section_id)
+        await uow.commit()
 
 
 @router.post("/section/move")

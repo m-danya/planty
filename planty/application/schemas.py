@@ -16,6 +16,7 @@ class Schema(BaseModel):
 
 class TaskCreateRequest(Schema):
     section_id: UUID
+    parent_task_id: Optional[UUID] = None
     title: str
     description: Optional[str] = None
     due_to: Optional[date] = None
@@ -34,12 +35,17 @@ class TaskMoveRequest(Schema):
     task_id: UUID
     section_to_id: UUID
     index: NonNegativeInt
+    parent_task_id: Optional[UUID] = None
 
 
 class SectionMoveRequest(Schema):
     section_id: UUID
     to_parent_id: UUID
     index: NonNegativeInt
+
+
+class SectionRemoveRequest(Schema):
+    section_id: UUID
 
 
 class TaskToggleCompletedRequest(Schema):
@@ -102,6 +108,7 @@ class SectionCreateResponse(Schema):
 class TaskResponse(Schema):
     id: UUID
     section_id: UUID
+    parent_task_id: Optional[UUID]
     title: str
     description: Optional[str]
     content: Optional[str]

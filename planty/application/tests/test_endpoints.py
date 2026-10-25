@@ -95,6 +95,121 @@ async def test_update_another_user_task(
     assert response.status_code == 403
 
 
+async def test_move_task_as_subtask(ac: AsyncClient) -> None:
+    child_id = "f4186c04-3f2d-4217-a6ed-5c40bc9946d2"
+    parent_id = "7874f13d-ef4b-4fbd-87a8-db6bbf407976"
+    section_id = "090eda97-dd2d-45bb-baa0-7814313e5a38"
+
+    response = await ac.post(
+        "/api/task/move",
+        json={
+            "task_id": child_id,
+            "section_to_id": section_id,
+            "index": 0,
+            "parent_task_id": parent_id,
+        },
+    )
+    assert response.is_success
+
+    response = await ac.get(f"/api/section/{section_id}")
+    child = next(task for task in response.json()["tasks"] if task["id"] == child_id)
+    assert child["parent_task_id"] == parent_id
+
+
+async def test_task_cannot_become_own_subtask(ac: AsyncClient) -> None:
+    task_id = "e6a76c36-7dae-47ee-b657-1a0b02ca40df"
+    response = await ac.post(
+        "/api/task/move",
+        json={
+            "task_id": task_id,
+            "section_to_id": "090eda97-dd2d-45bb-baa0-7814313e5a38",
+            "index": 0,
+            "parent_task_id": task_id,
+        },
+    )
+    assert response.status_code == 422
+
+
+async def test_moving_parent_to_another_section_moves_subtasks(ac: AsyncClient) -> None:
+    child_id = "f4186c04-3f2d-4217-a6ed-5c40bc9946d2"
+    parent_id = "7874f13d-ef4b-4fbd-87a8-db6bbf407976"
+    source_id = "090eda97-dd2d-45bb-baa0-7814313e5a38"
+    target_id = "b9547aee-cba5-418e-b450-7914e44c9231"
+
+    response = await ac.post(
+        "/api/task/move",
+        json={
+            "task_id": child_id,
+            "section_to_id": source_id,
+            "index": 0,
+            "parent_task_id": parent_id,
+        },
+    )
+    assert response.is_success
+
+    response = await ac.post(
+        "/api/task/move",
+        json={
+            "task_id": parent_id,
+            "section_to_id": target_id,
+            "index": 0,
+            "parent_task_id": None,
+        },
+    )
+    assert response.is_success
+
+    response = await ac.get(f"/api/section/{target_id}")
+    moved = {task["id"]: task for task in response.json()["tasks"]}
+    assert {parent_id, child_id} <= moved.keys()
+    assert moved[child_id]["parent_task_id"] == parent_id
+
+
+async def test_remove_empty_section(ac: AsyncClient) -> None:
+    response = await ac.request(
+        "DELETE",
+        "/api/section",
+        json={"section_id": "6754b40e-aa0d-4b0d-9dba-4d15c751b270"},
+    )
+    assert response.status_code == 204
+
+    response = await ac.get("/api/section/6754b40e-aa0d-4b0d-9dba-4d15c751b270")
+    assert response.status_code == 404
+
+
+async def test_remove_nonempty_section_is_rejected(ac: AsyncClient) -> None:
+    response = await ac.request(
+        "DELETE",
+        "/api/section",
+        json={"section_id": "090eda97-dd2d-45bb-baa0-7814313e5a38"},
+    )
+    assert response.status_code == 422
+
+
+async def test_remove_section_with_only_archived_task_is_rejected(
+    ac: AsyncClient,
+) -> None:
+    root_id = "0d966845-254b-4b5c-b8a7-8d34dcd3d527"
+    response = await ac.post(
+        "/api/section", json={"title": "Archive holder", "parent_id": root_id}
+    )
+    assert response.is_success
+    section_id = response.json()["id"]
+
+    response = await ac.post(
+        "/api/task", json={"title": "Archived child", "section_id": section_id}
+    )
+    assert response.is_success
+    task_id = response.json()["id"]
+
+    response = await ac.post("/api/task/toggle_archived", json={"task_id": task_id})
+    assert response.is_success
+
+    response = await ac.request(
+        "DELETE", "/api/section", json={"section_id": section_id}
+    )
+    assert response.status_code == 422
+
+
 async def test_get_sections(
     ac: AsyncClient,
 ) -> None:
