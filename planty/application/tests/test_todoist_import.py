@@ -3,14 +3,50 @@ from pathlib import Path
 from typing import Any
 
 from httpx import AsyncClient
+import pytest
 from pytest_mock import MockerFixture
 from sqlalchemy import func, select
 
+from planty.application.services.todoist_import import _parse_todoist_date
 from planty.application.tests.fixtures.generate_todoist_backup import (
     build_todoist_backup_zip,
 )
 from planty.infrastructure.database import raw_async_session_maker
 from planty.infrastructure.models import SectionModel
+
+
+@pytest.mark.parametrize(
+    ("raw_value", "expected"),
+    [
+        ("1 нояб.", date(2026, 11, 1)),
+        ("19 нояб", date(2026, 11, 19)),
+        ("1 февр 2027", date(2027, 2, 1)),
+        ("13 нояб. 2026", date(2026, 11, 13)),
+        ("21 февр 2027", date(2027, 2, 21)),
+        ("8 нояб", date(2026, 11, 8)),
+    ],
+)
+def test_parse_todoist_date_supports_common_month_abbreviations(
+    raw_value: str, expected: date
+) -> None:
+    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+
+    assert due_to == expected
+    assert recurrence is None
+
+
+def test_parse_todoist_date_supports_recurring_weeks() -> None:
+    today = date(2026, 10, 25)
+
+    due_to, recurrence = _parse_todoist_date("каждые 2 недели", today)
+
+    assert due_to == today
+    assert recurrence is not None
+    assert recurrence.model_dump() == {
+        "period": 2,
+        "type": "weeks",
+        "flexible_mode": False,
+    }
 
 
 def _find_section(tree: list[dict[str, Any]], title: str) -> dict[str, Any]:

@@ -25,6 +25,7 @@ MONTHS = {
     "янв": 1,
     "января": 1,
     "фев": 2,
+    "февр": 2,
     "февраля": 2,
     "мар": 3,
     "марта": 3,
@@ -43,6 +44,7 @@ MONTHS = {
     "окт": 10,
     "октября": 10,
     "ноя": 11,
+    "нояб": 11,
     "ноября": 11,
     "дек": 12,
     "декабря": 12,
@@ -295,6 +297,17 @@ def _parse_todoist_date(
             period=int(every_days.group(2) or 1),
             type="days",
             flexible_mode=bool(every_days.group(1)),
+        )
+        return today, recurrence
+
+    every_weeks = re.fullmatch(
+        r"кажд(?:ую|ые)(!)?\s*(?:(\d+)\s*)?недел(?:ю|и|ь)", value
+    )
+    if every_weeks:
+        recurrence = RecurrenceInfo(
+            period=int(every_weeks.group(2) or 1),
+            type="weeks",
+            flexible_mode=bool(every_weeks.group(1)),
         )
         return today, recurrence
 
