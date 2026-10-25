@@ -92,7 +92,22 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .context-menu button:hover { background: #eef0ee; }.context-menu button.danger { color: #be2430; }
 .menu-separator { height: 1px; margin: 5px 4px; background: var(--line); }
 .date-today { color: #07932e; font-weight: 600; }.date-tomorrow { color: #b66200; font-weight: 600; }
-.menu-date-input { width: calc(100% - 16px); margin: 3px 8px 6px; padding: 7px 9px; border: 1px solid #cdd2cd; border-radius: 7px; }
+.calendar-picker { position: fixed; z-index: 54; width: 310px; padding: 14px; border: 1px solid #d7ddd8; border-radius: 14px; background: #fff; box-shadow: 0 18px 55px rgb(25 40 28 / 24%); }
+.calendar-picker-header { display: flex; align-items: center; gap: 8px; min-height: 34px; margin-bottom: 12px; }
+.calendar-picker-icon { display: grid; place-items: center; color: var(--green-dark); }
+.calendar-picker-header h3 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+.calendar-picker-nav { margin-left: auto; display: flex; gap: 2px; }
+.calendar-picker-nav button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; border: 0; border-radius: 7px; background: transparent; color: #626963; cursor: pointer; }
+.calendar-picker-nav button:hover { background: #edf3ee; color: var(--green-dark); }
+.calendar-weekdays, .calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); }
+.calendar-weekdays { margin-bottom: 5px; color: #8a908b; font-size: 11px; font-weight: 650; text-align: center; text-transform: uppercase; }
+.calendar-days { gap: 3px; }
+.calendar-days button { position: relative; aspect-ratio: 1; padding: 0; border: 0; border-radius: 9px; background: transparent; color: #303530; cursor: pointer; font-size: 13px; }
+.calendar-days button:hover { background: #edf6ee; color: var(--green-dark); }
+.calendar-days button.outside { color: #b9beba; }
+.calendar-days button.today { color: var(--green-dark); font-weight: 750; box-shadow: inset 0 0 0 1px #8fd2a0; }
+.calendar-days button.selected { color: #fff; background: var(--green); box-shadow: none; font-weight: 700; }
+.calendar-days button.selected:hover { color: #fff; background: #0fa93a; }
 .add-task-button { border: 0; background: none; color: #7f847f; display: flex; align-items: center; gap: 10px; font-size: 17px; padding: 15px 9px; cursor: pointer; }
 .add-task-button:hover { color: var(--green-dark); }
 .empty-state { color: #747a75; text-align: center; padding: 70px 20px; }
@@ -177,6 +192,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
   .main-content { margin-left: 0; padding: 27px 18px 70px; }.page-heading h1 { font-size: 25px; }
   .login-page { grid-template-columns: 1fr; }.login-brand { display: none; }.login-panel { padding: 25px; }
   .composer { padding: 12px; }.composer select { max-width: 170px; }.task-row { --indent: calc(var(--depth) * 18px); }.drag-handle { display: none; }
+  .calendar-picker { left: 12px !important; right: 12px; top: auto !important; bottom: 12px; width: auto; max-width: 360px; margin: 0 auto; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

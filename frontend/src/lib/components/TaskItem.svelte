@@ -3,6 +3,7 @@
   import type { Task } from '$lib/types';
   import { recurrenceLabel } from '$lib/date-parser';
   import { getLocale, t } from '$lib/i18n.svelte';
+  import DatePicker from './DatePicker.svelte';
 
   let {
     task,
@@ -40,7 +41,6 @@
   let menuPos = $state<{ x: number; y: number } | null>(null);
   let dragMode = $state<'before' | 'child' | null>(null);
   let customDateOpen = $state(false);
-  let dateInput = $state<HTMLInputElement>();
 
   function dateLabel(value: string): { text: string; className: string } {
     const due = new Date(`${value}T12:00:00`);
@@ -77,8 +77,16 @@
   }
 
   function openDatePicker() {
-    customDateOpen = true;
-    queueMicrotask(() => dateInput?.showPicker());
+    customDateOpen = !customDateOpen;
+  }
+
+  function calendarPosition(): { x: number; y: number } {
+    if (!menuPos) return { x: 8, y: 8 };
+    const width = 310;
+    const height = 390;
+    const right = menuPos.x + 268;
+    const x = right + width <= innerWidth - 8 ? right : Math.max(8, menuPos.x - width - 8);
+    return { x, y: Math.max(8, Math.min(menuPos.y, innerHeight - height - 8)) };
   }
 
   function dragOver(event: DragEvent) {
@@ -147,10 +155,7 @@
         <div class="menu-separator"></div>
         <button role="menuitem" onclick={() => schedule(localDate(0))}><CalendarDays size={18} />{t('assignTo')} <span class="date-today">{t('todayLower')}</span></button>
         <button role="menuitem" onclick={() => schedule(localDate(1))}><CalendarDays size={18} />{t('assignTo')} <span class="date-tomorrow">{t('tomorrowLower')}</span></button>
-        <button role="menuitem" onclick={openDatePicker}><CalendarDays size={18} />{t('assignOtherDay')}</button>
-        {#if customDateOpen}
-          <input bind:this={dateInput} class="menu-date-input" type="date" aria-label={t('chooseDueDate')} value={task.due_to ?? localDate(0)} onchange={(event) => schedule(event.currentTarget.value)} />
-        {/if}
+        <button role="menuitem" aria-expanded={customDateOpen} onclick={openDatePicker}><CalendarDays size={18} />{t('assignOtherDay')}</button>
         <div class="menu-separator"></div>
       {/if}
       <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>
@@ -158,6 +163,10 @@
       </button>
       <button class="danger" role="menuitem" onclick={() => { closeMenu(); onDelete(task); }}><Trash2 size={18} />{t('delete')}</button>
     </div>
+    {#if customDateOpen}
+      {@const calendar = calendarPosition()}
+      <DatePicker value={task.due_to} x={calendar.x} y={calendar.y} onSelect={schedule} onClose={() => customDateOpen = false} />
+    {/if}
     {/if}
   {/if}
 </div>

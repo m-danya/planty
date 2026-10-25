@@ -134,6 +134,7 @@ backend, database, network access, or pre-existing user data.
     - expect: the shortcuts use the same date colors as task rows
     - expect: each shortcut updates the task due date and refreshed label
   2. Open the other-day calendar and choose an arbitrary date.
+    - expect: the styled calendar supports month navigation and selection
     - expect: the selected local date is sent and rendered on the task
 
 ### 4. Sections

@@ -24,12 +24,16 @@ test.describe('Tasks', () => {
     row = page.getByTestId('task-row').filter({ hasText: 'Задача на будущее' });
     await expect(row.locator('.task-date.tomorrow')).toContainText('Завтра');
 
-    // 2. Pick an arbitrary local date from the native calendar input.
+    // 2. Navigate the custom calendar and pick an arbitrary local date.
     await row.click({ button: 'right' });
     await page.getByRole('menuitem', { name: 'Назначить на другой день' }).click();
-    const dateInput = page.getByLabel('Выбрать дату');
-    await expect(dateInput).toBeVisible();
-    await dateInput.fill('2026-12-24');
+    const calendar = page.getByRole('dialog', { name: 'Выбрать дату' });
+    await expect(calendar).toBeVisible();
+    await expect(calendar.getByRole('heading')).toContainText('Октябрь 2026');
+    await calendar.getByRole('button', { name: 'Следующий месяц' }).click();
+    await calendar.getByRole('button', { name: 'Следующий месяц' }).click();
+    await expect(calendar.getByRole('heading')).toContainText('Декабрь 2026');
+    await calendar.getByRole('button', { name: /24 декабря 2026/ }).click();
 
     await expect.poll(() => mockApi.requests('PATCH', '/api/task').at(-1)?.body).toMatchObject({
       id: ids.futureTask,
