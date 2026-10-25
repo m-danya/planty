@@ -9,11 +9,6 @@ PARALLEL_DBS_PREFIX = "planty_test_random_"
 class Settings(BaseSettings):
     mode: Literal["DEV", "TEST", "PROD"]
 
-    aws_url: str
-    aws_secret_access_key: str
-    aws_access_key_id: str
-    aws_attachments_bucket: str
-
     db_type: Literal["sqlite", "postgresql"]
 
     # (if `DB_TYPE` is "sqlite", then only `DB_NAME` is used)
@@ -64,9 +59,6 @@ class Settings(BaseSettings):
                 )
 
     auth_secret: str
-
-    # TODO: should the default value be `True`?
-    shutdown_containers_after_test: bool = False
 
     model_config = SettingsConfigDict(
         env_file=".env" if os.getenv("PLANTY_MODE") == "PROD" else ".env.dev",

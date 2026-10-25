@@ -11,10 +11,9 @@ from typing import Any, Protocol, TypeVar
 # substitute the `PLANTY_MODE` _before_ the Settings object is created.
 os.environ["PLANTY_MODE"] = "TEST"
 
-from planty.domain.task import Attachment, Section, Task, User  # noqa: E402
+from planty.domain.task import Section, Task, User  # noqa: E402
 from planty.infrastructure.repositories import SQLAlchemySectionRepository  # noqa: E402
 from planty.infrastructure.models import (  # noqa: E402
-    AttachmentModel,
     SectionModel,
     TaskModel,
     UserModel,
@@ -89,13 +88,6 @@ def sections_data(
     return test_data["sections"]
 
 
-@pytest.fixture(scope="session")
-def attachments_data(
-    test_data: dict[str, list[dict[str, Any]]],
-) -> list[dict[str, Any]]:
-    return test_data["attachments"]
-
-
 def _patch_models_data(models_data: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # models_data must not be modified
     models_data = deepcopy(models_data)
@@ -113,28 +105,10 @@ def all_users(users_data: list[dict[str, Any]]) -> list[User]:
     return [UserModel(**user).to_entity() for user in users_data]
 
 
-@pytest.fixture(scope="session")
-def all_attachments(attachments_data: list[dict[str, Any]]) -> list[Attachment]:
-    attachments_data = _patch_models_data(attachments_data)
-    return [
-        AttachmentModel(**attachment).to_entity() for attachment in attachments_data
-    ]
-
-
 @pytest.fixture
-def all_tasks(
-    tasks_data: list[dict[str, Any]], all_attachments: list[Attachment]
-) -> list[Task]:
+def all_tasks(tasks_data: list[dict[str, Any]]) -> list[Task]:
     tasks_data = _patch_models_data(tasks_data)
-    tasks = []
-    for task_data in tasks_data:
-        task = TaskModel(**task_data).to_entity(
-            attachments=[
-                a for a in all_attachments if str(a.task_id) == task_data["id"]
-            ]
-        )
-        tasks.append(task)
-    return tasks
+    return [TaskModel(**task_data).to_entity() for task_data in tasks_data]
 
 
 @pytest.fixture

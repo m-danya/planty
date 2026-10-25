@@ -1,19 +1,13 @@
 from datetime import date
 from uuid import UUID
 
-import aiobotocore
-import aiobotocore.session
-
 from planty.application.exceptions import (
-    AttachmentNotFoundException,
     ForbiddenException,
     IncorrectDateInterval,
     TaskNotFoundException,
 )
 from planty.application.schemas import (
     ArchivedTasks,
-    AttachmentUploadInfo,
-    RequestAttachmentUpload,
     ArchivedTasksResponse,
     SectionCreateRequest,
     SectionMoveRequest,
@@ -28,10 +22,6 @@ from planty.application.schemas import (
     TaskSearchResponse,
     SectionsListResponse,
 )
-from planty.application.services.attachments import (
-    delete_attachment,
-    generate_presigned_post_url,
-)
 from planty.application.services.responses_converter import (
     convert_to_response,
 )
@@ -41,14 +31,13 @@ from planty.domain.exceptions import (
     ChangingRootSectionError,
     MisplaceSectionHierarchyError,
 )
-from planty.domain.task import Attachment, Section, Task
+from planty.domain.task import Section, Task
 
 
 class TaskService:
     def __init__(self, uow: IUnitOfWork):
         self._task_repo = uow.task_repo
         self._user_repo = uow.user_repo
-        self._s3_session = aiobotocore.session.get_session()
 
     async def update_task(
         self, user_id: UUID, task_update_request: TaskUpdateRequest
@@ -98,44 +87,6 @@ class TaskService:
     ) -> TaskSearchResponse:
         tasks = await self._task_repo.search(user_id, query)
         return convert_to_response(tasks)
-
-    async def add_attachment(
-        self, user_id: UUID, request: RequestAttachmentUpload
-    ) -> AttachmentUploadInfo:
-        task = await self._task_repo.get(request.task_id)
-        if task.user_id != user_id:
-            raise ForbiddenException()
-        post_url, post_fields, file_key = await generate_presigned_post_url(
-            self._s3_session
-        )
-        task.add_attachment(
-            Attachment(
-                task_id=task.id,
-                aes_key_b64=request.aes_key_b64,
-                aes_iv_b64=request.aes_iv_b64,
-                s3_file_key=file_key,
-            )
-        )
-        await self._task_repo.update_or_create(task)
-        return AttachmentUploadInfo(post_url=post_url, post_fields=post_fields)
-
-    async def remove_attachment(
-        self, user_id: UUID, task_id: UUID, attachment_id: UUID
-    ) -> None:
-        task = await self._task_repo.get(task_id)
-        if task.user_id != user_id:
-            raise ForbiddenException()
-        try:
-            attachment: Attachment = next(
-                a for a in task.attachments if a.id == attachment_id
-            )
-        except StopIteration:
-            raise AttachmentNotFoundException(id=attachment_id)
-        # remove from minio
-        await delete_attachment(self._s3_session, attachment.s3_file_key)
-        task.remove_attachment(attachment)
-        await self._task_repo.update_or_create(task)
-        await self._task_repo.delete_attachment(attachment)
 
 
 class SectionService:

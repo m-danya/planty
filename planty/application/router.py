@@ -8,8 +8,6 @@ from fastapi.templating import Jinja2Templates
 from planty.application.auth import admin_user, current_user
 from planty.application.schemas import (
     ArchivedTasksResponse,
-    AttachmentUploadInfo,
-    RequestAttachmentUpload,
     SectionCreateRequest,
     SectionCreateResponse,
     SectionMoveRequest,
@@ -141,41 +139,6 @@ async def toggle_task_archived(
         )
         await uow.commit()
     return section
-
-
-@router.post(
-    "/task/attachment",
-    description=(
-        "This endpoint allows the frontend to obtain a pre-signed POST URL along "
-        "with the required fields for uploading an attachment to an S3-compatible "
-        "storage. The frontend is responsible for encrypting the file client-side "
-        "using AES-128 CBC with the provided key and IV. After encryption, the frontend "
-        "directly uploads the file to the S3 storage using the pre-signed URL and fields. "
-        "\n\nThe frontend can include the 'Content-Disposition' header in the "
-        "upload request to specify the file name, ensuring that the file is downloaded "
-        "later with the correct name."
-        "\n\nThe approach with client-side encryption allows using even non-trusted "
-        "S3 Storage providers for user files."
-    ),
-)
-async def get_attachment_uploading_info(
-    request: RequestAttachmentUpload, user: User = Depends(current_user)
-) -> AttachmentUploadInfo:
-    async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        upload_info = await task_service.add_attachment(user.id, request)
-        await uow.commit()
-    return upload_info
-
-
-@router.delete("/task/{task_id}/attachment/{attachment_id}")
-async def remove_attachment(
-    task_id: UUID, attachment_id: UUID, user: User = Depends(current_user)
-) -> None:
-    async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        await task_service.remove_attachment(user.id, task_id, attachment_id)
-        await uow.commit()
 
 
 @router.get("/tasks/archived")

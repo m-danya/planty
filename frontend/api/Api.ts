@@ -20,41 +20,6 @@ export interface ArchivedTasksResponse {
   tasks: TaskResponse[];
 }
 
-/** AttachmentResponse */
-export interface AttachmentResponse {
-  /**
-   * Id
-   * @format uuid
-   */
-  id?: string;
-  /** Aes Key B64 */
-  aes_key_b64: string;
-  /** Aes Iv B64 */
-  aes_iv_b64: string;
-  /** S3 File Key */
-  s3_file_key: string;
-  /**
-   * Task Id
-   * @format uuid
-   */
-  task_id: string;
-  /**
-   * Added At
-   * @format date-time
-   */
-  added_at: string;
-  /** Url */
-  url: string;
-}
-
-/** AttachmentUploadInfo */
-export interface AttachmentUploadInfo {
-  /** Post Url */
-  post_url: string;
-  /** Post Fields */
-  post_fields: object;
-}
-
 /** Body_auth_db_cookie_login_api_auth_login_post */
 export interface BodyAuthDbCookieLoginApiAuthLoginPost {
   /** Grant Type */
@@ -94,19 +59,6 @@ export interface RecurrenceInfo {
   type: "days" | "weeks" | "months" | "years";
   /** Flexible Mode */
   flexible_mode: boolean;
-}
-
-/** RequestAttachmentUpload */
-export interface RequestAttachmentUpload {
-  /**
-   * Task Id
-   * @format uuid
-   */
-  task_id: string;
-  /** Aes Key B64 */
-  aes_key_b64: string;
-  /** Aes Iv B64 */
-  aes_iv_b64: string;
 }
 
 /** SectionCreateRequest */
@@ -278,8 +230,6 @@ export interface TaskResponse {
   /** Due To */
   due_to: string | null;
   recurrence: RecurrenceInfo | null;
-  /** Attachments */
-  attachments: AttachmentResponse[];
 }
 
 /** TaskToggleArchivedRequest */
@@ -743,48 +693,6 @@ export class Api<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         body: data,
         secure: true,
         type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * @description This endpoint allows the frontend to obtain a pre-signed POST URL along with the required fields for uploading an attachment to an S3-compatible storage. The frontend is responsible for encrypting the file client-side using AES-128 CBC with the provided key and IV. After encryption, the frontend directly uploads the file to the S3 storage using the pre-signed URL and fields. The frontend can include the 'Content-Disposition' header in the upload request to specify the file name, ensuring that the file is downloaded later with the correct name. The approach with client-side encryption allows using even non-trusted S3 Storage providers for user files.
-     *
-     * @tags User tasks
-     * @name GetAttachmentUploadingInfoApiTaskAttachmentPost
-     * @summary Get Attachment Uploading Info
-     * @request POST:/api/task/attachment
-     * @secure
-     */
-    getAttachmentUploadingInfoApiTaskAttachmentPost: (data: RequestAttachmentUpload, params: RequestParams = {}) =>
-      this.request<AttachmentUploadInfo, HTTPValidationError>({
-        path: `/api/task/attachment`,
-        method: "POST",
-        body: data,
-        secure: true,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @tags User tasks
-     * @name RemoveAttachmentApiTaskTaskIdAttachmentAttachmentIdDelete
-     * @summary Remove Attachment
-     * @request DELETE:/api/task/{task_id}/attachment/{attachment_id}
-     * @secure
-     */
-    removeAttachmentApiTaskTaskIdAttachmentAttachmentIdDelete: (
-      taskId: string,
-      attachmentId: string,
-      params: RequestParams = {},
-    ) =>
-      this.request<any, HTTPValidationError>({
-        path: `/api/task/${taskId}/attachment/${attachmentId}`,
-        method: "DELETE",
-        secure: true,
         format: "json",
         ...params,
       }),

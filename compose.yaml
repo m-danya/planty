@@ -1,35 +1,4 @@
 services:
-  minio:
-    image: minio/minio
-    ports:
-      # TODO: change to 0.0.0.0 when attachments are ready to use
-      - "127.0.0.1:9000:9000"
-    volumes:
-      - minio-volume:/data
-    command: server --console-address ":9001" /data
-    environment:
-      MINIO_ROOT_USER: ${PLANTY_AWS_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${PLANTY_AWS_SECRET_ACCESS_KEY}
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 1s
-      timeout: 1s
-      retries: 5
-      start_period: 10s
-
-  minio-createbuckets:
-    image: minio/mc
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 ${PLANTY_AWS_ACCESS_KEY_ID} ${PLANTY_AWS_SECRET_ACCESS_KEY};
-      /usr/bin/mc mb myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
-      /usr/bin/mc anonymous set download myminio/${PLANTY_AWS_ATTACHMENTS_BUCKET};
-      exit 0;
-      "
-
   db:
     image: postgres:16
     restart: always
@@ -66,10 +35,6 @@ services:
       - PLANTY_TEST_DB_NAME=${PLANTY_TEST_DB_NAME}
       - PLANTY_TEST_DB_PASS=${PLANTY_TEST_DB_PASS}
       - PLANTY_FASTAPI_PORT=${PLANTY_FASTAPI_PORT}
-      - PLANTY_AWS_URL=${PLANTY_AWS_URL}
-      - PLANTY_AWS_ACCESS_KEY_ID=${PLANTY_AWS_ACCESS_KEY_ID}
-      - PLANTY_AWS_SECRET_ACCESS_KEY=${PLANTY_AWS_SECRET_ACCESS_KEY}
-      - PLANTY_AWS_ATTACHMENTS_BUCKET=${PLANTY_AWS_ATTACHMENTS_BUCKET}
       - PLANTY_AUTH_SECRET=${PLANTY_AUTH_SECRET}
     volumes:
       - ./planty.db:/app/planty.db
@@ -94,4 +59,3 @@ services:
 
 volumes:
   postgres-volume:
-  minio-volume:

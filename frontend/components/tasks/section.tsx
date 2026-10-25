@@ -45,7 +45,6 @@ export function Section({ sectionId }: { sectionId: string }) {
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     added_at: new Date().toISOString(),
-    attachments: [],
   }));
 
   const [tasks, setTasks] = useState<TaskResponse[]>(tasksFillers);

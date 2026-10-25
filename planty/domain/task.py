@@ -59,8 +59,6 @@ class Task(Entity):
     due_to: Optional[date] = None
     recurrence: Optional[RecurrenceInfo] = None
 
-    attachments: list["Attachment"] = Field(default_factory=list)
-
     @model_validator(mode="before")
     @classmethod
     def check_recurrence_due_date(cls, values: Any) -> Any:
@@ -100,12 +98,6 @@ class Task(Entity):
 
     def toggle_archived(self) -> None:
         self.is_archived = not self.is_archived
-
-    def add_attachment(self, attachment: "Attachment") -> None:
-        self.attachments.append(attachment)
-
-    def remove_attachment(self, attachment: "Attachment") -> None:
-        self.attachments.remove(attachment)
 
     def archive(self) -> None:
         self.is_archived = True
@@ -245,19 +237,3 @@ class Section(Entity):
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)
-
-
-class Attachment(Entity):
-    id: UUID = Field(default_factory=generate_uuid)
-    aes_key_b64: str
-    aes_iv_b64: str
-    s3_file_key: str
-    task_id: UUID
-
-    added_at: datetime = Field(default_factory=get_datetime_now)
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Attachment) and self.id == other.id
-
-    def __hash__(self) -> int:
-        return hash(self.id)

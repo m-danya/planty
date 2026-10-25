@@ -16,9 +16,6 @@ from planty.application.schemas import (
     TasksByDatesResponse,
     TasksByDates,
 )
-from planty.application.services.attachments import (
-    get_attachment_url,
-)
 from planty.domain.task import Section, Task
 from typing import Any
 
@@ -105,8 +102,6 @@ def convert_to_response(obj: possible_in_types) -> possible_out_types:
 
 def _adjust_task_dict(task: dict[str, Any]) -> None:
     task.pop("user_id")
-    for attachment in task.get("attachments", []):
-        attachment["url"] = get_attachment_url(attachment["s3_file_key"])
 
 
 def _adjust_section_dict(section: dict[str, Any]) -> None:

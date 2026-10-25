@@ -399,16 +399,5 @@
       "due_to": "2024-12-11",
       "index": 4
     }
-  ],
-  "attachments": [
-    {
-      "id": "2bfa26ba-ed8c-4353-adb2-c451957fc3e1",
-      "aes_key_b64": "someBase64EncodedAESKey==",
-      "aes_iv_b64": "someBase64EncodedIV==",
-      "s3_file_key": "1f393472-61ff-4d86-acc5-c225cd1b57da",
-      "task_id": "de59bdb5-5f91-48dc-a034-246b8f86be25",
-      "added_at": "2024-03-28T04:11:17.677Z",
-      "index": 0
-    }
   ]
 }

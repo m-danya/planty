@@ -5,7 +5,6 @@ description = "Task management system"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "aiobotocore>=2.16.1",
     "aiosqlite>=0.20.0",
     "alembic>=1.14.0",
     "asyncpg>=0.30.0",
@@ -20,7 +19,6 @@ dependencies = [
     "python-dateutil>=2.9.0.post0",
     "sqlalchemy>=2.0.36",
     "typer>=0.15.1",
-    "types-aiobotocore[s3]>=2.16.1",
     "types-docker>=7.1.0.20241229",
     "types-python-dateutil>=2.9.0.20241206",
 ]
