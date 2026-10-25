@@ -47,21 +47,17 @@ cp .env.dev.sample .env.dev
 echo "\nPLANTY_AUTH_SECRET=$(openssl rand -base64 32)" >> .env.dev
 
 uv sync
-source .venv/bin/activate
 
 # Run Alembic migrations
-# alembic upgrade head
+# uv run alembic upgrade head
 
 # Alembic migrations are not being maintained yet due to a high pace of changes
 # during initial development. To get db with sample data from tests, uncomment a
 # line in `config.py` to avoid using in-memory db for tests and run this:
-pytest; mv planty_test.db planty.db
-
-# or just run this for automatic commenting, running tests and uncommenting:
-sed -i '/Uncomment to /{n;s/# //}' planty/config.py; pytest planty/application; mv planty_test.db planty.db; sed -i '/Uncomment to /{n;s/^\(\s*\)/\1# /}' planty/config.py; echo Done. DB is ready!
+uv run pytest planty/application && cp -f planty_test.db planty.db
 
 # run "FastAPI" configuration in VS code or:
-uvicorn planty.main:app --reload
+uv run uvicorn planty.main:app --reload
 ```
 
 To start the frontend, run the following commands:
@@ -92,15 +88,15 @@ the system with `docker compose compose.yaml --profile with-postgres up -d`.
 ### Run tests and type checking
 
 ```
-pytest
-mypy .
+uv run pytest
+uv run mypy planty
 ```
 
 Measuring code coverage:
 
 ```
-coverage run -m pytest
-coverage report # or "coverage html"
+uv run coverage run -m pytest
+uv run coverage report # or "uv run coverage html"
 ```
 
 ### Run linting & formatting
@@ -108,8 +104,8 @@ coverage report # or "coverage html"
 (or just use Ruff extension for VS Code)
 
 ```
-ruff check --extend-select I --fix
-ruff format
+uv run ruff check --extend-select I --fix
+uv run ruff format
 ```
 
 ### Generate types for frontend from openapi.json
