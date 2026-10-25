@@ -4,6 +4,7 @@ const messages = {
   ru: {
     search: 'Поиск', calendar: 'Календарь', archive: 'Архив', sections: 'Разделы', logout: 'Выйти',
     settings: 'Настройки профиля', language: 'Язык интерфейса', russian: 'Русский', english: 'Английский', done: 'Готово',
+    autoArchive: 'Автоматически переносить выполненные задачи в архив',
     todoistImport: 'Импорт из Todoist', todoistImportHint: 'Выберите ZIP-архив резервной копии Todoist.',
     chooseTodoistBackup: 'Выбрать архив Todoist', eraseCurrentData: 'Стереть все текущие данные',
     importTodoist: 'Импортировать данные из Todoist', importing: 'Импортируем…',
@@ -45,6 +46,7 @@ const messages = {
   en: {
     search: 'Search', calendar: 'Calendar', archive: 'Archive', sections: 'Sections', logout: 'Log out',
     settings: 'Profile settings', language: 'Interface language', russian: 'Russian', english: 'English', done: 'Done',
+    autoArchive: 'Automatically move completed tasks to the archive',
     todoistImport: 'Import from Todoist', todoistImportHint: 'Choose a Todoist backup ZIP archive.',
     chooseTodoistBackup: 'Choose Todoist backup', eraseCurrentData: 'Erase all current data',
     importTodoist: 'Import data from Todoist', importing: 'Importing…',

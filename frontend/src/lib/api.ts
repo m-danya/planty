@@ -68,10 +68,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ task_id, section_to_id, index, parent_task_id })
     }),
-  toggleTask: (task_id: string) =>
+  toggleTask: (task_id: string, autoArchive = true) =>
     request<Section>('/task/toggle_completed', {
       method: 'POST',
-      body: JSON.stringify({ task_id, auto_archive: false })
+      body: JSON.stringify({ task_id, auto_archive: autoArchive })
     }),
   archiveTask: (task_id: string) =>
     request<Section>('/task/toggle_archived', { method: 'POST', body: JSON.stringify({ task_id }) }),

@@ -146,6 +146,8 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .dialog h2 { font-size: 20px; margin: 0 0 18px; }.dialog label { display: grid; gap: 7px; color: #565c57; font-size: 14px; margin-bottom: 14px; }
 .dialog input, .dialog select { width: 100%; border: 1px solid #cdd2cd; border-radius: 8px; padding: 10px 11px; }
 .settings-dialog { width: min(430px, 100%); }
+.settings-dialog .settings-toggle { display: flex; grid-template-columns: none; flex-direction: row; align-items: center; gap: 9px; cursor: pointer; }
+.settings-toggle input { width: 18px; height: 18px; accent-color: var(--green); }
 .import-settings { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .import-settings h3 { margin: 0 0 5px; font-size: 16px; }
 .import-settings p { margin: 0 0 13px; color: var(--muted); font-size: 13px; }

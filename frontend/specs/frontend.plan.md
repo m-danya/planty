@@ -78,6 +78,7 @@ backend, database, network access, or pre-existing user data.
 
 **Steps:**
   1. Complete, archive, restore, and delete tasks through visible controls.
+    - expect: completion auto-archives by default, but the local setting can disable it
     - expect: every refreshed view reflects the mock server state
     - expect: cancelling deletion leaves the task intact
 
@@ -201,10 +202,11 @@ backend, database, network access, or pre-existing user data.
   1. Open the application without a stored preference.
     - expect: navigation and system section names are fully Russian
     - expect: section task counts appear only in the native tooltip
+    - expect: auto-archive is enabled by default and can be disabled in `localStorage`
   2. Change the profile language to English.
     - expect: the visible shell updates immediately
   3. Reload the page.
-    - expect: the language remains selected through `localStorage`
+    - expect: the language and auto-archive preferences remain selected through `localStorage`
 
 #### 7.2. todoist-import
 

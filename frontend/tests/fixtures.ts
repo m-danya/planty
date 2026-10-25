@@ -372,7 +372,15 @@ export class MockApi {
     }
     if (url.pathname === '/api/task/toggle_completed' && method === 'POST') {
       const found = this.state.tasks.find((candidate) => candidate.id === body?.task_id);
-      if (found) found.is_completed = !found.is_completed;
+      if (found) {
+        if (found.is_completed) {
+          found.is_completed = false;
+          if (body?.auto_archive) found.is_archived = false;
+        } else {
+          found.is_completed = true;
+          if (body?.auto_archive && !found.recurrence) found.is_archived = true;
+        }
+      }
       await fulfillJson(route, {});
       return;
     }

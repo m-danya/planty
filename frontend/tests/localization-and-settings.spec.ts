@@ -15,8 +15,14 @@ test.describe('Localization', () => {
     await expect(inbox).not.toContainText('4');
     await expect(page.locator('.page-heading .heading-actions button')).toHaveCount(1);
 
-    // The profile setting switches the whole shell immediately.
+    // User preferences default to auto-archive and are stored locally.
     await page.getByRole('button', { name: 'Настройки профиля' }).click();
+    const autoArchive = page.getByLabel('Автоматически переносить выполненные задачи в архив');
+    await expect(autoArchive).toBeChecked();
+    await autoArchive.uncheck();
+    expect(await page.evaluate(() => localStorage.getItem('planty.autoArchive'))).toBe('false');
+
+    // The profile setting switches the whole shell immediately.
     await page.getByLabel('Язык интерфейса').selectOption('en');
     await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Calendar' })).toBeVisible();
@@ -28,5 +34,7 @@ test.describe('Localization', () => {
     await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('planty.locale'))).toBe('en');
+    await page.getByRole('button', { name: 'Profile settings' }).click();
+    await expect(page.getByLabel('Automatically move completed tasks to the archive')).not.toBeChecked();
   });
 });

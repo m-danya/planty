@@ -3,6 +3,7 @@
   import SectionNode from './SectionNode.svelte';
   import type { Section, User } from '$lib/types';
   import { getLocale, setLocale, t, type Locale } from '$lib/i18n.svelte';
+  import { getAutoArchive, setAutoArchive } from '$lib/preferences.svelte';
 
   let {
     open,
@@ -91,6 +92,10 @@
         <select value={getLocale()} onchange={(event) => setLocale((event.currentTarget as HTMLSelectElement).value as Locale)}>
           <option value="ru">{t('russian')}</option><option value="en">{t('english')}</option>
         </select>
+      </label>
+      <label class="settings-toggle">
+        <input type="checkbox" checked={getAutoArchive()} onchange={(event) => setAutoArchive(event.currentTarget.checked)} />
+        <span>{t('autoArchive')}</span>
       </label>
       <section class="import-settings">
         <h3>{t('todoistImport')}</h3>
