@@ -21,7 +21,7 @@ describe('natural-language date parser', () => {
     ['review in 2 weeks', 'review', '2026-11-08'],
     ['renew через 2 месяца', 'renew', '2026-12-25'],
     ['renew in 1 year', 'renew', '2027-10-25'],
-    ['план на следующую неделю', 'план', '2026-11-01'],
+    ['план на следующую неделю', 'план', '2026-10-26'],
     ['budget next month', 'budget', '2026-11-25'],
     ['цели на следующий год', 'цели', '2027-10-25']
   ])('parses %s', (input, title, dueTo) => {
@@ -48,6 +48,58 @@ describe('natural-language date parser', () => {
       dueTo,
       recurrence: { period, type, flexible_mode: false }
     });
+  });
+
+  it.each([
+    ['поливать каждый! день', 'days'],
+    ['проверка каждые! 2 недели', 'weeks'],
+    ['оплачивать каждый месяц!', 'months'],
+    ['отчёт еженедельно!', 'weeks'],
+    ['созвон каждый! понедельник', 'weeks'],
+    ['почта каждый! будний день', 'weekdays']
+  ])('parses completion-based recurrence %s', (input, type) => {
+    expect(parseTaskText(input, now)).toMatchObject({
+      recurrence: { type, flexible_mode: true }
+    });
+  });
+
+  it.each([
+    ['обновить отчёт каждые две недели начиная с 7 ноября', '2026-11-07', 2, 'weeks', false],
+    ['проверить отчёт каждый квартал', '2026-10-25', 3, 'months', false],
+    ['проверить отчёт ежеквартально!', '2026-10-25', 3, 'months', true],
+    ['уборка каждый день с 3 ноября', '2026-11-03', 1, 'days', false],
+    ['созвон каждую пт', '2026-10-30', 1, 'weeks', false],
+    ['проверка каждый! 3 рабочих дня', '2026-10-26', 3, 'weekdays', true]
+  ])('parses richer Russian recurrence %s', (input, dueTo, period, type, flexibleMode) => {
+    expect(parseTaskText(input, now)).toMatchObject({
+      dueTo,
+      recurrence: { period, type, flexible_mode: flexibleMode }
+    });
+  });
+
+  it.each([
+    ['Ответить через неделю', '2026-11-01'],
+    ['Оплатить через месяц', '2026-11-25'],
+    ['Созвон след пн', '2026-10-26']
+  ])('parses Russian shorthand %s', (input, dueTo) => {
+    expect(parseTaskText(input, now)).toMatchObject({ dueTo });
+  });
+
+  it('localizes normalized date labels', () => {
+    expect(parseTaskText('call tomorrow', now, 'en').label).toBe('Tomorrow');
+    expect(parseTaskText('позвонить завтра', now, 'ru').label).toBe('Завтра');
+  });
+
+  it('moves a yearless past calendar date to its next occurrence', () => {
+    expect(parseTaskText('Поздравить 7 мая', now)).toMatchObject({ dueTo: '2027-05-07' });
+  });
+
+  it('rejects impossible calendar dates', () => {
+    expect(parseTaskText('Оплатить 31.02.2027', now).dueTo).toBeNull();
+  });
+
+  it('counts relative business days without weekends', () => {
+    expect(parseTaskText('Ответить через 5 будних дней', now)).toMatchObject({ dueTo: '2026-10-30' });
   });
 
   it('does not invent a date for ordinary text', () => {

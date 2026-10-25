@@ -3,7 +3,7 @@ import { expect, test } from './fixtures';
 test.describe('Startup and Navigation', () => {
   test('keyboard-and-mobile-navigation', async ({ page, mockApi }) => {
     await mockApi.open('/');
-    await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '📥 Входящие' })).toBeVisible();
 
     // 1. Exercise keyboard shortcuts and their editable-field guard.
     await page.keyboard.press('q');
@@ -42,7 +42,7 @@ test.describe('Startup and Navigation', () => {
     await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
 
     await page.getByRole('button', { name: 'Открыть меню' }).click();
-    await page.getByRole('button', { name: '📥 Inbox' }).click();
+    await page.getByRole('button', { name: '📥 Входящие' }).click();
     await expect(page.locator('.sidebar')).not.toHaveClass(/open/);
   });
 });

@@ -23,7 +23,7 @@ test.describe('Tasks', () => {
       contentType: 'text/plain'
     });
     await page.getByLabel('Название задачи').press('Enter');
-    await expect(page.getByRole('status')).toHaveText('Internal Server Error');
+    await expect(page.getByRole('status')).toHaveText('Что-то пошло не так');
     await page.keyboard.press('Escape');
 
     mockApi.failOnce('POST', '/api/task/toggle_completed', {

@@ -17,7 +17,14 @@
   50 characters or fewer, separate it from the body with a blank line, and
   wrap body lines at 72 characters. Use the body to explain why the change is
   needed and summarize important implementation details.
-- For browser verification, start the backend and frontend preview, then use `playwright-cli open http://127.0.0.1:4173` and exercise login, keyboard shortcuts, task parsing/editing, sections, search, and drag-and-drop.
+- For browser verification, use `playwright-cli` from the repository root so it
+  automatically reads the ignored local `.playwright/cli.config.json`. That
+  config points the global CLI at the Chromium already installed by the
+  frontend Playwright package; do not recreate an equivalent config in `/tmp`.
+  Start the backend and frontend, then open `http://127.0.0.1:5173` for a
+  real-backend smoke check. Exercise login, keyboard shortcuts, task
+  parsing/editing, sections, search, and drag-and-drop. Port 4173 is reserved
+  for the mocked production-preview e2e suite.
 
 ## Frontend tests
 

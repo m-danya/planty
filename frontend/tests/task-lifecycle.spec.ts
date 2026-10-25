@@ -26,7 +26,7 @@ test.describe('Tasks', () => {
     await page.getByRole('menuitem', { name: 'Вернуть из архива' }).click();
     await expect(gymRow).toHaveCount(0);
 
-    await page.getByRole('button', { name: '📥 Inbox' }).click();
+    await page.getByRole('button', { name: '📥 Входящие' }).click();
     await expect(page.getByText('Сходить в зал', { exact: true })).toBeVisible();
 
     // Dismiss deletion once, then accept it.

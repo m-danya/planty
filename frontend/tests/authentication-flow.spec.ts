@@ -12,10 +12,10 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole('heading', { name: 'С возвращением' })).toBeVisible();
 
-    await page.getByLabel('Email').fill('new@example.ru');
+    await page.getByLabel('Электронная почта').fill('new@example.ru');
     await page.getByLabel('Пароль').fill('password123');
     await page.getByRole('button', { name: 'Войти' }).click();
-    await expect(page.getByRole('alert')).toHaveText('Неверный email или пароль');
+    await expect(page.getByRole('alert')).toHaveText('Неверный адрес электронной почты или пароль');
     await expect(page).toHaveURL(/\/login$/);
 
     // 2. Register and log in through the same form.
@@ -23,7 +23,7 @@ test.describe('Authentication', () => {
     await expect(page.getByRole('heading', { name: 'Создать аккаунт' })).toBeVisible();
     await page.getByRole('button', { name: 'Зарегистрироваться' }).click();
 
-    await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '📥 Входящие' })).toBeVisible();
     expect(mockApi.requests('POST', '/api/auth/register').at(-1)?.body).toEqual({
       email: 'new@example.ru',
       password: 'password123'
@@ -41,6 +41,6 @@ test.describe('Authentication', () => {
     mockApi.state.authenticated = true;
     await page.goto('/login');
     await expect(page).toHaveURL(/\/?(?:\?section=.*)?$/);
-    await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '📥 Входящие' })).toBeVisible();
   });
 });

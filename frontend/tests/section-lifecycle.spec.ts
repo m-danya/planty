@@ -12,6 +12,16 @@ test.describe('Sections', () => {
   test('section-lifecycle', async ({ page, mockApi }: { page: Page; mockApi: MockApi }) => {
     await mockApi.open('/');
 
+    // Reorder top-level sections with the sidebar drag handle.
+    await page.getByRole('button', { name: 'Когда-нибудь' }).dragTo(page.getByRole('button', { name: '📥 Входящие' }));
+    expect(mockApi.requests('POST', '/api/section/move').at(-1)?.body).toMatchObject({
+      section_id: ids.someday,
+      to_parent_id: ids.root,
+      index: 0
+    });
+    const topLevelLabels = await page.locator('.sections-list > .section-node > .section-link').allTextContents();
+    expect(topLevelLabels[0]).toContain('Когда-нибудь');
+
     // 1. Create and rename an empty top-level section.
     await page.getByRole('button', { name: 'Добавить раздел' }).click();
     await page.getByLabel('Название').fill('Черновики');
@@ -50,6 +60,6 @@ test.describe('Sections', () => {
     await page.getByRole('button', { name: 'Удалить' }).click();
 
     await expect(page.getByRole('button', { name: 'Идеи' })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Когда-нибудь' })).toBeVisible();
   });
 });

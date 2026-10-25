@@ -59,10 +59,15 @@ backend, database, network access, or pre-existing user data.
 **File:** `tests/task-composer-and-editing.spec.ts`
 
 **Steps:**
-  1. Create a task containing a recurring natural-language date.
-    - expect: the phrase is highlighted and the normalized task is rendered
-  2. Alt-click the task, edit it, and move it to another section.
-    - expect: the due date is preserved and update and move payloads are correct
+  1. Create a task containing a flexible recurring natural-language date.
+    - expect: the phrase is highlighted and `каждые!` maps to flexible recurrence
+    - expect: clicking the date chip explains the due date, recurrence, source
+      phrase, and completion-based schedule
+  2. Alt-click the task and edit it in place.
+    - expect: the composer replaces the task row instead of appearing above the list
+    - expect: the stored recurrence and completion-based mode remain inspectable
+  3. Type a `#section` prefix and choose the suggested destination by keyboard.
+    - expect: the token is removed from the title and update/move payloads are correct
 
 #### 3.2. task-lifecycle
 
@@ -123,7 +128,9 @@ backend, database, network access, or pre-existing user data.
 **File:** `tests/section-lifecycle.spec.ts`
 
 **Steps:**
-  1. Create, rename, move, collapse, expand, and delete an empty section.
+  1. Reorder a top-level section by drag-and-drop.
+    - expect: the move request has the correct parent/index and the tree refreshes
+  2. Create, rename, move, collapse, expand, and delete an empty section.
     - expect: each operation updates the sidebar after a server refresh
     - expect: deleting the selected section chooses a valid fallback
 
@@ -162,3 +169,23 @@ backend, database, network access, or pre-existing user data.
     - expect: every supported parser branch returns a local ISO date
   2. Format every recurrence unit in singular and plural form.
     - expect: stable localized labels are returned
+  3. Parse completion-based `каждый!`, year rollover, invalid dates, and business days.
+    - expect: flexible mode and calendar calculations are normalized correctly
+  4. Parse word-based intervals, quarter recurrences, start dates, weekday
+     abbreviations, and localized labels.
+    - expect: common Todoist-style Russian forms map to backend recurrence fields
+
+### 7. Localization
+
+#### 7.1. localization-and-settings
+
+**File:** `tests/localization-and-settings.spec.ts`
+
+**Steps:**
+  1. Open the application without a stored preference.
+    - expect: navigation and system section names are fully Russian
+    - expect: section task counts appear only in the native tooltip
+  2. Change the profile language to English.
+    - expect: the visible shell updates immediately
+  3. Reload the page.
+    - expect: the language remains selected through `localStorage`

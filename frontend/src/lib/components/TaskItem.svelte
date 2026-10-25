@@ -2,6 +2,7 @@
   import { Archive, CalendarDays, ChevronRight, GripVertical, MoveRight, Plus, Repeat2, Trash2 } from '@lucide/svelte';
   import type { Task } from '$lib/types';
   import { recurrenceLabel } from '$lib/date-parser';
+  import { getLocale, t } from '$lib/i18n.svelte';
 
   let {
     task,
@@ -42,10 +43,11 @@
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     const diff = Math.round((due.getTime() - today.getTime()) / 86400000);
-    if (diff < 0) return { text: due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }), className: 'overdue' };
-    if (diff === 0) return { text: 'Сегодня', className: 'today' };
-    if (diff === 1) return { text: 'Завтра', className: 'tomorrow' };
-    return { text: due.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }), className: 'future' };
+    const locale = getLocale() === 'ru' ? 'ru-RU' : 'en-US';
+    if (diff < 0) return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'overdue' };
+    if (diff === 0) return { text: t('today'), className: 'today' };
+    if (diff === 1) return { text: t('tomorrow'), className: 'tomorrow' };
+    return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'future' };
   }
 
   function clickRow(event: MouseEvent) {
@@ -92,37 +94,37 @@
   onclick={clickRow}
   oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; menuPos = { x: event.clientX, y: event.clientY }; }}
 >
-  <button class="drag-handle" aria-label="Перетащить задачу"><GripVertical size={16} /></button>
+  <button class="drag-handle" aria-label={t('dragTask')}><GripVertical size={16} /></button>
   <div class="task-chevron-slot">
     {#if childCount > 0}
       {#if onCollapseToggle}
-        <button class="task-chevron" class:expanded={!collapsed} aria-label={collapsed ? 'Раскрыть подзадачи' : 'Свернуть подзадачи'} aria-expanded={!collapsed} onclick={(event) => { event.stopPropagation(); onCollapseToggle(task); }}><ChevronRight size={16} /></button>
+        <button class="task-chevron" class:expanded={!collapsed} aria-label={collapsed ? t('expandSubtasks') : t('collapseSubtasks')} aria-expanded={!collapsed} onclick={(event) => { event.stopPropagation(); onCollapseToggle(task); }}><ChevronRight size={16} /></button>
       {:else}
         <span class="task-chevron"><ChevronRight size={16} /></span>
       {/if}
     {/if}
   </div>
-  <button class="complete-button" aria-label={task.is_completed ? 'Вернуть задачу' : 'Выполнить задачу'} onclick={(event) => { event.stopPropagation(); onToggle(task); }}></button>
+  <button class="complete-button" aria-label={task.is_completed ? t('restoreTask') : t('completeTask')} onclick={(event) => { event.stopPropagation(); onToggle(task); }}></button>
   <div class="task-copy">
     <div class="task-title">{task.title}</div>
     {#if task.description}<div class="task-description">{task.description}</div>{/if}
     {#if task.due_to}
       {@const due = dateLabel(task.due_to)}
-      <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence)} />{/if}</div>
+      <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</div>
     {/if}
   </div>
   {#if menuOpen}
-    <button class="menu-shield" aria-label="Закрыть меню" onclick={(event) => { event.stopPropagation(); closeMenu(); }}></button>
+    <button class="menu-shield" aria-label={t('closeMenu')} onclick={(event) => { event.stopPropagation(); closeMenu(); }}></button>
     {#if menuPos}
     <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.min(menuPos.x, innerWidth - 260)}px;top:${Math.min(menuPos.y, innerHeight - 170)}px`}>
-      <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />В другой раздел</button>
+      <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />{t('otherSection')}</button>
       {#if childCount > 0 && onAddSubtask}
-        <button role="menuitem" onclick={() => { closeMenu(); onAddSubtask(task); }}><Plus size={18} />Добавить подзадачу</button>
+        <button role="menuitem" onclick={() => { closeMenu(); onAddSubtask(task); }}><Plus size={18} />{t('addSubtask')}</button>
       {/if}
       <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>
-        <Archive size={18} />{task.is_archived ? 'Вернуть из архива' : 'В архив'}
+        <Archive size={18} />{task.is_archived ? t('restoreArchive') : t('toArchive')}
       </button>
-      <button class="danger" role="menuitem" onclick={() => { closeMenu(); onDelete(task); }}><Trash2 size={18} />Удалить</button>
+      <button class="danger" role="menuitem" onclick={() => { closeMenu(); onDelete(task); }}><Trash2 size={18} />{t('delete')}</button>
     </div>
     {/if}
   {/if}

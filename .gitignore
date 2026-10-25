@@ -166,3 +166,4 @@ planty.db
 planty_test.db
 planty.db*.bak
 .playwright-cli/
+.playwright/
