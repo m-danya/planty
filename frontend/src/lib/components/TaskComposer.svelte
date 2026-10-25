@@ -6,12 +6,13 @@
   import type { Section, Task, TaskDraft } from '$lib/types';
 
   let {
-    task = null, section, sections = [], onSave, onCancel
+    task = null, section, sections = [], onSave, onSaveAndContinue, onCancel
   }: {
     task?: Task | null;
     section: string;
     sections?: Section[];
     onSave: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
+    onSaveAndContinue?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancel: () => void;
   } = $props();
 
@@ -58,7 +59,7 @@
     queueMicrotask(() => textarea?.focus());
   }
 
-  async function submit() {
+  async function submit(continueWithSibling = false) {
     if (!value.trim() || saving) return;
     saving = true;
     try {
@@ -67,7 +68,9 @@
         draft.due_to = task.due_to;
         draft.recurrence = task.recurrence;
       }
-      await onSave(draft, selectedSection);
+      await (continueWithSibling && onSaveAndContinue
+        ? onSaveAndContinue(draft, selectedSection)
+        : onSave(draft, selectedSection));
     } finally {
       saving = false;
     }
@@ -87,7 +90,10 @@
         return;
       }
     }
-    if (event.key === 'Enter' && !event.shiftKey) {
+    if (event.key === 'Enter' && event.shiftKey && task && onSaveAndContinue) {
+      event.preventDefault();
+      void submit(true);
+    } else if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
       void submit();
     }

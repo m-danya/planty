@@ -2,9 +2,36 @@ import { expect, ids, test } from './fixtures';
 
 test.describe('Tasks', () => {
   test('task-composer-and-editing', async ({ page, mockApi }) => {
+    mockApi.state.tasks.find((task) => task.id === ids.tomorrowTask)!.parent_task_id = ids.todayTask;
     await mockApi.open('/');
 
-    // 1. Create a recurring task from natural-language input.
+    // 1. Save an edited child with Shift+Enter and create its next sibling.
+    const child = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
+    await child.click({ modifiers: ['Alt'] });
+    await page.getByLabel('Название задачи').fill('Сходить в зал вечером');
+    await page.getByLabel('Название задачи').press('Shift+Enter');
+    const continuation = page.getByTestId('new-task');
+    await expect(continuation).toBeVisible();
+    await expect(continuation.locator('..')).toHaveCSS('padding-left', '28px');
+    await continuation.getByLabel('Название задачи').fill('Купить воду для тренировки');
+    await continuation.getByLabel('Название задачи').press('Enter');
+
+    expect(mockApi.requests('PATCH', '/api/task').at(-1)?.body).toMatchObject({
+      id: ids.tomorrowTask,
+      title: 'Сходить в зал вечером'
+    });
+    expect(mockApi.requests('POST', '/api/task').at(-1)?.body).toMatchObject({
+      parent_task_id: ids.todayTask,
+      title: 'Купить воду для тренировки'
+    });
+    await expect.poll(() => mockApi.requests('POST', '/api/task/move').at(-1)?.body).toMatchObject({
+      index: 2,
+      parent_task_id: ids.todayTask
+    });
+    await expect(page.getByTestId('task-row').filter({ hasText: 'Купить воду для тренировки' }))
+      .toHaveCSS('padding-left', '29px');
+
+    // 2. Create a recurring task from natural-language input.
     await page.keyboard.press('q');
     await page.getByLabel('Название задачи').fill('полить цветы каждые! 3 дня начиная завтра');
     await page.getByLabel('Описание задачи').fill('не забыть удобрение');
@@ -30,7 +57,7 @@ test.describe('Tasks', () => {
       recurrence: { period: 3, type: 'days', flexible_mode: true }
     });
 
-    // 2. Edit the title, preserve its parsed date, and move it to Planty.
+    // 3. Edit the title, preserve its parsed date, and move it to Planty.
     const createdRow = page.getByTestId('task-row').filter({ hasText: 'полить цветы' });
     await createdRow.click();
     await expect(page.getByTestId('edit-task')).toHaveCount(0);

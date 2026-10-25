@@ -118,7 +118,7 @@
     {#if menuPos}
     <div class="context-menu task-menu" role="menu" tabindex="-1" style={`left:${Math.min(menuPos.x, innerWidth - 260)}px;top:${Math.min(menuPos.y, innerHeight - 170)}px`}>
       <button role="menuitem" onclick={() => { closeMenu(); onMove(task); }}><MoveRight size={18} />{t('otherSection')}</button>
-      {#if childCount > 0 && onAddSubtask}
+      {#if onAddSubtask}
         <button role="menuitem" onclick={() => { closeMenu(); onAddSubtask(task); }}><Plus size={18} />{t('addSubtask')}</button>
       {/if}
       <button role="menuitem" onclick={() => { closeMenu(); onArchive(task); }}>

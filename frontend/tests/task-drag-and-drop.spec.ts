@@ -7,6 +7,11 @@ test.describe('Tasks', () => {
     const parent = page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' });
     const child = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
 
+    // The action is available before a task has any existing subtasks.
+    await parent.click({ button: 'right' });
+    await expect(page.getByRole('menuitem', { name: 'Создать подзадачу' })).toBeVisible();
+    await page.getByRole('button', { name: 'Закрыть меню' }).click();
+
     // 1. Nest a task and prevent moving its parent into the new child.
     await child.dragTo(parent);
     await expect.poll(() => mockApi.state.tasks.find((task) => task.id === ids.tomorrowTask)?.parent_task_id)
@@ -21,7 +26,7 @@ test.describe('Tasks', () => {
 
     // 2. Create another subtask through the parent's context menu.
     await parent.click({ button: 'right' });
-    await page.getByRole('menuitem', { name: 'Добавить подзадачу' }).click();
+    await page.getByRole('menuitem', { name: 'Создать подзадачу' }).click();
     const composer = page.getByTestId('new-task');
     await expect(composer).toBeVisible();
     await expect(composer.getByLabel('Раздел задачи')).toHaveCount(0);

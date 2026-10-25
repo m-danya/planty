@@ -59,14 +59,17 @@ backend, database, network access, or pre-existing user data.
 **File:** `tests/task-composer-and-editing.spec.ts`
 
 **Steps:**
-  1. Create a task containing a flexible recurring natural-language date.
+  1. Edit a nested task and press Shift+Enter.
+    - expect: the edit is saved and a new composer opens after the task subtree
+    - expect: the next task is created with the same parent and sibling position
+  2. Create a task containing a flexible recurring natural-language date.
     - expect: the phrase is highlighted and `каждые!` maps to flexible recurrence
     - expect: clicking the date chip explains the due date, recurrence, source
       phrase, and completion-based schedule
-  2. Alt-click the task and edit it in place.
+  3. Alt-click the task and edit it in place.
     - expect: the composer replaces the task row instead of appearing above the list
     - expect: the stored recurrence and completion-based mode remain inspectable
-  3. Type a `#section` prefix and choose the suggested destination by keyboard.
+  4. Type a `#section` prefix and choose the suggested destination by keyboard.
     - expect: the token is removed from the title and update/move payloads are correct
 
 #### 3.2. task-lifecycle
@@ -95,6 +98,7 @@ backend, database, network access, or pre-existing user data.
     - expect: the first task becomes an indented child
     - expect: the cyclic move is rejected before an API call
   2. Create another subtask through the parent's context menu.
+    - expect: the action is available even before the parent has any subtasks
     - expect: the composer opens without a section selector
     - expect: the create request carries the parent task id
   3. Drop at the top edge of a row.

@@ -34,6 +34,7 @@
   let sectionMenu = $state<{ section: Section; x: number; y: number } | null>(null);
   let collapsed = $state<Set<string>>(new Set());
   let subtaskParent = $state<Task | null>(null);
+  let continuationAfter = $state<Task | null>(null);
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   let sectionCounts = $state<Record<string, number>>({});
   let draggedSection = $state<Section | null>(null);
@@ -73,7 +74,7 @@
         void changeView('search');
         queueMicrotask(() => document.querySelector<HTMLInputElement>('.search-input')?.focus());
       }
-      if (event.key === 'Escape') { composerOpen = false; editingTask = null; subtaskParent = null; moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
+      if (event.key === 'Escape') { composerOpen = false; editingTask = null; subtaskParent = null; continuationAfter = null; moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
     };
     window.addEventListener('keydown', keyHandler);
     return () => window.removeEventListener('keydown', keyHandler);
@@ -165,15 +166,49 @@
         await api.updateTask(editingTask.id, draft);
         if (movedBetweenSections) await api.moveTask(editingTask.id, sectionId, 0, editingTask.parent_task_id);
       } else {
-        await api.createTask(sectionId || selected!.id, draft, subtaskParent?.id ?? null);
+        const parentId = continuationAfter?.parent_task_id ?? subtaskParent?.id ?? null;
+        const created = await api.createTask(sectionId || selected!.id, draft, parentId);
+        if (continuationAfter) {
+          const descendants = new Set<string>();
+          const collect = (parentTaskId: string) => tasks
+            .filter((task) => task.parent_task_id === parentTaskId)
+            .forEach((child) => { descendants.add(child.id); collect(child.id); });
+          collect(continuationAfter.id);
+          const lastIndex = tasks.reduce(
+            (result, task, index) => task.id === continuationAfter?.id || descendants.has(task.id) ? index : result,
+            -1
+          );
+          await api.moveTask(created.id, sectionId || selected!.id, lastIndex + 1, parentId);
+        }
       }
       composerOpen = false;
       editingTask = null;
       subtaskParent = null;
+      continuationAfter = null;
       if (selected) await refreshSection();
       if (movedBetweenSections) await loadSectionCounts();
       notify(t('taskSaved'));
     });
+  }
+
+  async function saveTaskAndContinue(draft: TaskDraft, sectionId: string) {
+    const current = editingTask;
+    if (!current) return;
+    let saved = false;
+    await safe(async () => {
+      await api.updateTask(current.id, draft);
+      if (current.section_id !== sectionId) {
+        await api.moveTask(current.id, sectionId, 0, current.parent_task_id);
+        await loadSectionCounts();
+      }
+      await refreshSection();
+      saved = true;
+      notify(t('taskSaved'));
+    });
+    if (!saved) return;
+    editingTask = null;
+    continuationAfter = { ...current, section_id: sectionId };
+    composerOpen = true;
   }
 
   async function toggleTask(task: Task) { await safe(async () => { await api.toggleTask(task.id); await refreshCurrent(); }); }
@@ -189,9 +224,9 @@
     else await changeView('calendar');
   }
 
-  function editTask(task: Task) { editingTask = task; subtaskParent = null; composerOpen = true; }
+  function editTask(task: Task) { editingTask = task; subtaskParent = null; continuationAfter = null; composerOpen = true; }
 
-  function openAddSubtask(task: Task) { subtaskParent = task; editingTask = null; composerOpen = true; }
+  function openAddSubtask(task: Task) { subtaskParent = task; editingTask = null; continuationAfter = null; composerOpen = true; }
 
   function toggleCollapse(task: Task) {
     const next = new Set(collapsed);
@@ -331,11 +366,11 @@
         </header>
 
         {#if view === 'section'}
-          {#if composerOpen && selected && !editingTask}
+          {#if composerOpen && selected && !editingTask && !continuationAfter}
             <TaskComposer section={subtaskParent ? subtaskParent.section_id : selected.id} sections={subtaskParent ? [] : leafSections} onSave={saveTask} onCancel={() => { composerOpen = false; editingTask = null; subtaskParent = null; }} />
           {/if}
           <div class="task-list" role="list">
-            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} collapsedIds={collapsed} onCollapseToggle={toggleCollapse} onAddSubtask={openAddSubtask} {editingTask} editSections={leafSections} onSaveEdit={saveTask} onCancelEdit={() => { composerOpen = false; editingTask = null; }} />
+            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} collapsedIds={collapsed} onCollapseToggle={toggleCollapse} onAddSubtask={openAddSubtask} {editingTask} editSections={leafSections} onSaveEdit={saveTask} onCancelEdit={() => { composerOpen = false; editingTask = null; }} onSaveAndContinue={saveTaskAndContinue} {continuationAfter} onSaveContinuation={saveTask} onCancelContinuation={() => { composerOpen = false; continuationAfter = null; }} />
           </div>
           {#if selected && !composerOpen}<button class="add-task-button" onclick={() => { editingTask = null; subtaskParent = null; composerOpen = true; }}><Plus />{t('addTask')} <kbd>Q</kbd></button>{/if}
           {#if !selected}<div class="empty-state"><div class="empty-icon">🌱</div>{t('createSectionFirst')}</div>{/if}
