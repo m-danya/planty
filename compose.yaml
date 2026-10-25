@@ -1,22 +1,4 @@
 services:
-  db:
-    image: postgres:16
-    restart: always
-    # ports:
-    #   - ${PLANTY_DB_PORT}:5432
-    environment:
-      - POSTGRES_DB=${PLANTY_DB_NAME}
-      - POSTGRES_PASSWORD=${PLANTY_DB_PASS}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - postgres-volume:/var/lib/postgresql/data
-      - ./planty/tests/create_test_db.sql:/docker-entrypoint-initdb.d/create_test_db.sql
-    profiles: [with-postgres]
-
   backend:
     build:
       context: .
@@ -56,6 +38,3 @@ services:
       - backend
     environment:
       - DOMAIN=${CADDY_DOMAIN}
-
-volumes:
-  postgres-volume:

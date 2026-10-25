@@ -37,9 +37,6 @@ class Settings(BaseSettings):
                     f"{self.test_db_port}/{self.test_db_name}"
                 )
             else:
-                # Uncomment to get database with sample data
-                # return f"sqlite+aiosqlite:///{self.test_db_name}.db"
-
                 # In-memory database. Make sure to use one connection (do not
                 # disable connection pooling), as `?cache=shared` doesn't seem to
                 # work here (set poolclass to NullPull and tests will fail)
