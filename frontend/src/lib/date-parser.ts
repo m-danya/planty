@@ -126,15 +126,15 @@ export function parseTaskText(input: string, now = new Date()): ParsedDate {
       : phrase.includes('year') || phrase.includes('год') ? 'years' : 'weeks';
     due = plusPeriod(now, 1, type);
     label = match![0];
+  } else if (choose(lower.match(/(?<!\p{L})(послезавтра|day after tomorrow)(?!\p{L})/u))) {
+    due = plusDays(now, 2);
+    label = 'Послезавтра';
   } else if (choose(lower.match(/(?<!\p{L})(сегодня|today)(?!\p{L})/u))) {
     due = new Date(now);
     label = 'Сегодня';
   } else if (choose(lower.match(/(?<!\p{L})(завтра|tomorrow)(?!\p{L})/u))) {
     due = plusDays(now, 1);
     label = 'Завтра';
-  } else if (choose(lower.match(/(?<!\p{L})(послезавтра|day after tomorrow)(?!\p{L})/u))) {
-    due = plusDays(now, 2);
-    label = 'Послезавтра';
   } else if (choose(lower.match(/(?:в |on )?(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?/u))) {
     const year = match![3] ? Number(match![3].length === 2 ? `20${match![3]}` : match![3]) : now.getFullYear();
     due = new Date(year, Number(match![2]) - 1, Number(match![1]), 12);
@@ -169,7 +169,13 @@ export function toDraft(input: string, description = '', now = new Date()): Task
 export function recurrenceLabel(recurrence: RecurrenceInfo | null): string {
   if (!recurrence) return '';
   const names: Record<RecurrenceType, [string, string]> = {
-    days: ['день', 'дн.'], weekdays: ['будний день', 'будн. дн.'], weeks: ['неделю', 'нед.'], months: ['месяц', 'мес.'], years: ['год', 'г.']
+    days: ['каждый день', 'дн.'],
+    weekdays: ['каждый будний день', 'будн. дн.'],
+    weeks: ['каждую неделю', 'нед.'],
+    months: ['каждый месяц', 'мес.'],
+    years: ['каждый год', 'г.']
   };
-  return recurrence.period === 1 ? `каждый ${names[recurrence.type][0]}` : `каждые ${recurrence.period} ${names[recurrence.type][1]}`;
+  return recurrence.period === 1
+    ? names[recurrence.type][0]
+    : `каждые ${recurrence.period} ${names[recurrence.type][1]}`;
 }

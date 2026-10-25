@@ -159,6 +159,11 @@
 
   function editTask(task: Task) { editingTask = task; composerOpen = true; }
 
+  function openMoveTask(task: Task) {
+    moveTaskTarget = task;
+    dialogParent = task.section_id;
+  }
+
   async function moveTask(sectionId: string) {
     if (!moveTaskTarget) return;
     await safe(async () => {
@@ -252,20 +257,20 @@
             <TaskComposer task={editingTask} section={editingTask?.section_id ?? selected.id} sections={leafSections} onSave={saveTask} onCancel={() => { composerOpen = false; editingTask = null; }} />
           {/if}
           <div class="task-list" role="list">
-            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={(task) => moveTaskTarget = task} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} />
+            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} />
           </div>
           {#if selected && !composerOpen}<button class="add-task-button" onclick={() => { editingTask = null; composerOpen = true; }}><Plus />Добавить задачу <kbd>Q</kbd></button>{/if}
           {#if !selected}<div class="empty-state"><div class="empty-icon">🌱</div>Создайте раздел, чтобы добавить первую задачу.</div>{/if}
         {:else if view === 'search'}
           <div class="search-wrap"><Search /><input class="search-input" bind:value={query} oninput={search} placeholder="Поиск по задачам" aria-label="Поиск по задачам" /></div>
           {#if query && searchResults.length === 0}<div class="empty-state">Ничего не найдено</div>{/if}
-          <div class="task-list" role="list"><TaskTree tasks={searchResults} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={(task) => moveTaskTarget = task} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></div>
+          <div class="task-list" role="list"><TaskTree tasks={searchResults} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></div>
         {:else if view === 'calendar'}
-          {#if overdueTasks.length}<section class="calendar-group overdue-group"><h2>Просрочено</h2><TaskTree tasks={overdueTasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={(task) => moveTaskTarget = task} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></section>{/if}
-          {#each calendarGroups as group}<section class="calendar-group"><h2>{new Date(`${group.date}T12:00:00`).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</h2><TaskTree tasks={group.tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={(task) => moveTaskTarget = task} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></section>{/each}
+          {#if overdueTasks.length}<section class="calendar-group overdue-group"><h2>Просрочено</h2><TaskTree tasks={overdueTasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></section>{/if}
+          {#each calendarGroups as group}<section class="calendar-group"><h2>{new Date(`${group.date}T12:00:00`).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })}</h2><TaskTree tasks={group.tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></section>{/each}
           {#if !overdueTasks.length && !calendarGroups.length}<div class="empty-state"><div class="empty-icon">☀️</div>На ближайший месяц задач нет.</div>{/if}
         {:else}
-          <div class="task-list" role="list"><TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={(task) => moveTaskTarget = task} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></div>
+          <div class="task-list" role="list"><TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} /></div>
           {#if !tasks.length}<div class="empty-state"><ArchiveRestore size={40} /><p>Архив пуст</p></div>{/if}
         {/if}
       </div>

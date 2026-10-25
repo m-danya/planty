@@ -95,7 +95,9 @@
     <button class="menu-shield" aria-label="Закрыть меню" onclick={(event) => { event.stopPropagation(); menuOpen = false; }}></button>
     <div class="context-menu" role="menu" tabindex="-1">
       <button role="menuitem" onclick={() => { menuOpen = false; onMove(task); }}><MoveRight size={18} />В другой раздел</button>
-      <button role="menuitem" onclick={() => { menuOpen = false; onArchive(task); }}><Archive size={18} />В архив</button>
+      <button role="menuitem" onclick={() => { menuOpen = false; onArchive(task); }}>
+        <Archive size={18} />{task.is_archived ? 'Вернуть из архива' : 'В архив'}
+      </button>
       <button class="danger" role="menuitem" onclick={() => { menuOpen = false; onDelete(task); }}><Trash2 size={18} />Удалить</button>
     </div>
   {/if}
