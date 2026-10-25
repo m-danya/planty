@@ -8,7 +8,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
-  if (options.body && !(options.body instanceof URLSearchParams)) {
+  if (options.body && !(options.body instanceof URLSearchParams) && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
   const response = await fetch(`/api${path}`, {
@@ -80,5 +80,13 @@ export const api = {
     request<{ by_dates: { date: string; tasks: Task[] }[]; overdue: Task[] }>(
       `/task/by_date?not_before=${from}&not_after=${to}&with_overdue=true`
     ),
-  archived: () => request<{ title: string; tasks: Task[] }>('/tasks/archived')
+  archived: () => request<{ title: string; tasks: Task[] }>('/tasks/archived'),
+  importTodoist: (file: File, eraseExisting: boolean) => {
+    const body = new FormData();
+    body.set('file', file);
+    body.set('erase_existing', String(eraseExisting));
+    return request<{ projects: number; sections: number; tasks: number }>('/import/todoist', {
+      method: 'POST', body
+    });
+  }
 };

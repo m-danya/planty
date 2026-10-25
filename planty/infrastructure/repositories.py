@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -250,6 +250,25 @@ class SQLAlchemySectionRepository:
     async def add(self, section: Section, index: NonNegativeInt) -> None:
         section_model = SectionModel.from_entity(section, index=index)
         self._db_session.add(section_model)
+
+    async def get_root(self, user_id: UUID) -> Section:
+        result = await self._db_session.execute(
+            select(SectionModel).where(
+                (SectionModel.user_id == user_id) & (SectionModel.parent_id.is_(None))
+            )
+        )
+        section_model = result.scalar_one_or_none()
+        if section_model is None:
+            raise SectionNotFoundException(user_id=user_id, parent_id=None)
+        return section_model.to_entity(tasks=[], subsections=[])
+
+    async def remove_all_for_user(self, user_id: UUID) -> None:
+        await self._db_session.execute(
+            delete(TaskModel).where(TaskModel.user_id == user_id)
+        )
+        await self._db_session.execute(
+            delete(SectionModel).where(SectionModel.user_id == user_id)
+        )
 
     async def remove(self, section: Section) -> None:
         result = await self._db_session.execute(

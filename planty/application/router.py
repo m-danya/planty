@@ -1,7 +1,7 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -28,11 +28,16 @@ from planty.application.schemas import (
     TaskToggleCompletedRequest,
     TaskUpdateRequest,
     TaskUpdateResponse,
+    TodoistImportResponse,
 )
 from planty.application.services.admin import AdminService
 from planty.application.services.tasks import (
     SectionService,
     TaskService,
+)
+from planty.application.services.todoist_import import (
+    MAX_ARCHIVE_SIZE,
+    TodoistImportService,
 )
 from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.task import User
@@ -215,6 +220,26 @@ async def get_sections(
             user.id, leaves_only=leaves_only, as_tree=as_tree
         )
         return sections
+
+
+@router.post("/import/todoist")
+async def import_todoist_backup(
+    file: UploadFile = File(...),
+    erase_existing: bool = Form(True),
+    user: User = Depends(current_user),
+) -> TodoistImportResponse:
+    archive = await file.read(MAX_ARCHIVE_SIZE + 1)
+    async with SqlAlchemyUnitOfWork() as uow:
+        import_service = TodoistImportService(uow=uow)
+        result = await import_service.import_backup(
+            user.id, archive, erase_existing=erase_existing
+        )
+        await uow.commit()
+    return TodoistImportResponse(
+        projects=result.projects,
+        sections=result.sections,
+        tasks=result.tasks,
+    )
 
 
 @router.post("/section/shuffle")

@@ -186,3 +186,9 @@ class UserStats(Schema):
 
 
 StatsResponse = list[UserStats]
+
+
+class TodoistImportResponse(Schema):
+    projects: int
+    sections: int
+    tasks: int

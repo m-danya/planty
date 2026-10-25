@@ -284,6 +284,25 @@
 
   async function logout() { await api.logout(); await goto('/login'); }
 
+  async function importTodoist(file: File, eraseExisting: boolean) {
+    try {
+      const result = await api.importTodoist(file, eraseExisting);
+      await loadSections();
+      await loadSectionCounts();
+      const next = leafSections[0] ?? allSections[0] ?? null;
+      if (next) await selectSection(next);
+      else { selected = null; tasks = []; }
+      notify(t('todoistImported')
+        .replace('{projects}', String(result.projects))
+        .replace('{tasks}', String(result.tasks)));
+    } catch (reason) {
+      notify(reason instanceof ApiError
+        ? localizedError(reason.message, t('todoistImportFailed'))
+        : t('todoistImportFailed'));
+      throw reason;
+    }
+  }
+
   function closeMoveDialogOnBackdrop(event: MouseEvent) {
     if (event.target === event.currentTarget) moveTaskTarget = null;
   }
@@ -300,7 +319,7 @@
 {:else}
   <div class="app-shell">
     <div class="mobile-header"><button onclick={() => sidebarOpen = true} aria-label={t('openMenu')}><Menu /></button><img src="/logo.png" alt="Planty" /><span></span></div>
-    <Sidebar open={sidebarOpen} sections={visibleSections} selectedId={selected?.id ?? null} {user} {view} onClose={() => sidebarOpen = false} onSelectSection={(section) => void selectSection(section)} onView={(next) => void changeView(next)} onNewSection={openNewSection} onSectionMenu={openSectionMenu} onLogout={() => void logout()} {sectionCounts} onSectionDragStart={(section) => draggedSection = section} onSectionDrop={(target) => void dropSection(target)} />
+    <Sidebar open={sidebarOpen} sections={visibleSections} selectedId={selected?.id ?? null} {user} {view} onClose={() => sidebarOpen = false} onSelectSection={(section) => void selectSection(section)} onView={(next) => void changeView(next)} onNewSection={openNewSection} onSectionMenu={openSectionMenu} onLogout={() => void logout()} {sectionCounts} onSectionDragStart={(section) => draggedSection = section} onSectionDrop={(target) => void dropSection(target)} onImportTodoist={importTodoist} />
     <main class="main-content">
       <div class="content-inner">
         <header class="page-heading">

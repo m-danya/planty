@@ -169,6 +169,11 @@ async function requestBody(route: Route): Promise<JsonObject | null> {
   if (request.headers()['content-type']?.includes('application/x-www-form-urlencoded')) {
     return Object.fromEntries(new URLSearchParams(data));
   }
+  if (request.headers()['content-type']?.includes('multipart/form-data')) {
+    const eraseExisting = /name="erase_existing"\r?\n\r?\ntrue/i.test(data);
+    const filename = data.match(/filename="([^"]+)"/)?.[1] ?? '';
+    return { erase_existing: eraseExisting, filename };
+  }
   return request.postDataJSON() as JsonObject;
 }
 
@@ -248,6 +253,18 @@ export class MockApi {
     }
     if (url.pathname === '/api/sections' && method === 'GET') {
       await fulfillJson(route, [publicSection(this.state.root)]);
+      return;
+    }
+    if (url.pathname === '/api/import/todoist' && method === 'POST') {
+      const importedId = `50000000-0000-4000-8000-${String(this.state.nextSection++).padStart(12, '0')}`;
+      const importedTaskId = `60000000-0000-4000-8000-${String(this.state.nextTask++).padStart(12, '0')}`;
+      if (body?.erase_existing) {
+        this.state.root.subsections = [];
+        this.state.tasks = [];
+      }
+      this.state.root.subsections.push(section(importedId, 'Todoist Inbox', this.state.root.id));
+      this.state.tasks.push(task({ id: importedTaskId, section_id: importedId, title: 'Импортированная задача' }));
+      await fulfillJson(route, { projects: 1, sections: 1, tasks: 1 });
       return;
     }
 

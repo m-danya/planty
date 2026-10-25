@@ -44,6 +44,11 @@ class IncorrectDateInterval(PlantyException):
     detail = "Incorrect date interval"
 
 
+class InvalidTodoistBackupException(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    detail = "Invalid Todoist backup"
+
+
 class ForbiddenException(PlantyException):
     status_code = status.HTTP_403_FORBIDDEN
     detail = "You're not authorized for this"

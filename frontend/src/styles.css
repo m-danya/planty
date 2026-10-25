@@ -143,6 +143,16 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .dialog h2 { font-size: 20px; margin: 0 0 18px; }.dialog label { display: grid; gap: 7px; color: #565c57; font-size: 14px; margin-bottom: 14px; }
 .dialog input, .dialog select { width: 100%; border: 1px solid #cdd2cd; border-radius: 8px; padding: 10px 11px; }
 .settings-dialog { width: min(430px, 100%); }
+.import-settings { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
+.import-settings h3 { margin: 0 0 5px; font-size: 16px; }
+.import-settings p { margin: 0 0 13px; color: var(--muted); font-size: 13px; }
+.import-settings .file-picker { position: relative; display: flex; grid-template-columns: none; flex-direction: row; align-items: center; gap: 9px; min-height: 43px; padding: 9px 11px; border: 1px dashed #aeb9af; border-radius: 8px; cursor: pointer; color: #49504a; overflow: hidden; }
+.file-picker span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-picker input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.import-settings .checkbox-label { display: flex; grid-template-columns: none; flex-direction: row; align-items: center; gap: 8px; margin: 12px 0; cursor: pointer; }
+.checkbox-label input { width: 18px; height: 18px; accent-color: var(--green); }
+.import-button { width: 100%; min-height: 42px; border: 0; border-radius: 8px; background: var(--navy); color: white; cursor: pointer; }
+.import-button:disabled { opacity: .45; cursor: default; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }.dialog-actions button { border: 0; border-radius: 8px; padding: 9px 15px; cursor: pointer; }.dialog-actions .primary { background: var(--green); color: white; }.dialog-actions .danger { background: #d62d3e; color: white; }
 .section-menu { position: fixed; z-index: 65; width: 220px; }
 .task-menu { position: fixed; }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Archive, CalendarDays, LogOut, Plus, Search, Settings, X } from '@lucide/svelte';
+  import { Archive, CalendarDays, FileUp, LogOut, Plus, Search, Settings, X } from '@lucide/svelte';
   import SectionNode from './SectionNode.svelte';
   import type { Section, User } from '$lib/types';
   import { getLocale, setLocale, t, type Locale } from '$lib/i18n.svelte';
@@ -18,7 +18,8 @@
     onLogout,
     sectionCounts = {},
     onSectionDragStart,
-    onSectionDrop
+    onSectionDrop,
+    onImportTodoist
   }: {
     open: boolean;
     sections: Section[];
@@ -34,8 +35,30 @@
     sectionCounts?: Record<string, number>;
     onSectionDragStart: (section: Section) => void;
     onSectionDrop: (target: Section) => void;
+    onImportTodoist: (file: File, eraseExisting: boolean) => Promise<void>;
   } = $props();
   let settingsOpen = $state(false);
+  let importFile = $state<File | null>(null);
+  let eraseExisting = $state(true);
+  let importing = $state(false);
+
+  function openSettings() {
+    importFile = null;
+    eraseExisting = true;
+    settingsOpen = true;
+  }
+
+  async function importTodoist() {
+    if (!importFile || importing) return;
+    importing = true;
+    try {
+      await onImportTodoist(importFile, eraseExisting);
+      settingsOpen = false;
+      importFile = null;
+    } finally {
+      importing = false;
+    }
+  }
 </script>
 
 <aside class:open class="sidebar">
@@ -52,7 +75,7 @@
     {/each}
   </div>
   <div class="sidebar-user">
-    <button class="profile-button" onclick={() => settingsOpen = true} aria-label={t('settings')}>
+    <button class="profile-button" onclick={openSettings} aria-label={t('settings')}>
       <span class="avatar">{user.email.slice(0, 1).toUpperCase()}</span><span class="user-email">{user.email}</span><Settings size={17} />
     </button>
     <button onclick={onLogout} aria-label={t('logout')}><LogOut size={18} /></button>
@@ -69,6 +92,26 @@
           <option value="ru">{t('russian')}</option><option value="en">{t('english')}</option>
         </select>
       </label>
+      <section class="import-settings">
+        <h3>{t('todoistImport')}</h3>
+        <p>{t('todoistImportHint')}</p>
+        <label class="file-picker">
+          <FileUp size={19} />
+          <span>{importFile?.name ?? t('chooseTodoistBackup')}</span>
+          <input
+            type="file"
+            accept=".zip,application/zip"
+            onchange={(event) => importFile = (event.currentTarget as HTMLInputElement).files?.[0] ?? null}
+          />
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox" bind:checked={eraseExisting} />
+          <span>{t('eraseCurrentData')}</span>
+        </label>
+        <button class="import-button" disabled={!importFile || importing} onclick={() => void importTodoist()}>
+          {importing ? t('importing') : t('importTodoist')}
+        </button>
+      </section>
       <div class="dialog-actions"><button class="primary" onclick={() => settingsOpen = false}>{t('done')}</button></div>
     </div>
   </div>

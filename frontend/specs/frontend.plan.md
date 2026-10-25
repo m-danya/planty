@@ -189,3 +189,15 @@ backend, database, network access, or pre-existing user data.
     - expect: the visible shell updates immediately
   3. Reload the page.
     - expect: the language remains selected through `localStorage`
+
+#### 7.2. todoist-import
+
+**File:** `tests/todoist-import.spec.ts`
+
+**Steps:**
+  1. Open profile settings, select a Todoist ZIP, disable data erasure, and import.
+    - expect: imported sections appear next to the existing sections
+    - expect: the multipart request sends the disabled erase flag
+  2. Import again with data erasure enabled.
+    - expect: existing sections are replaced by imported sections
+    - expect: the result toast reports imported project and task counts
