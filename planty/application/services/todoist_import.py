@@ -301,7 +301,7 @@ def _parse_todoist_date(
         return today, recurrence
 
     every_weeks = re.fullmatch(
-        r"кажд(?:ую|ые)(!)?\s*(?:(\d+)\s*)?недел(?:ю|и|ь)", value
+        r"кажд(?:ый|ую|ые)(!)?\s*(?:(\d+)\s*)?недел(?:ю|и|ь)", value
     )
     if every_weeks:
         recurrence = RecurrenceInfo(

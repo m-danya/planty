@@ -35,16 +35,47 @@ def test_parse_todoist_date_supports_common_month_abbreviations(
     assert recurrence is None
 
 
-def test_parse_todoist_date_supports_recurring_weeks() -> None:
+@pytest.mark.parametrize("raw_value", ["каждые 2 недели", "каждый 2 недели"])
+def test_parse_todoist_date_supports_recurring_weeks(raw_value: str) -> None:
     today = date(2026, 10, 25)
 
-    due_to, recurrence = _parse_todoist_date("каждые 2 недели", today)
+    due_to, recurrence = _parse_todoist_date(raw_value, today)
 
     assert due_to == today
     assert recurrence is not None
     assert recurrence.model_dump() == {
         "period": 2,
         "type": "weeks",
+        "flexible_mode": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("raw_value", "expected"),
+    [
+        ("каждый 2 янв", date(2027, 1, 2)),
+        ("каждый 23 фев", date(2027, 2, 23)),
+        ("каждый 1 марта", date(2027, 3, 1)),
+        ("каждый 12 апр", date(2027, 4, 12)),
+        ("каждое 11 апреля", date(2027, 4, 11)),
+        ("каждое 15 мая", date(2027, 5, 15)),
+        ("каждый 28 июня", date(2027, 6, 28)),
+        ("каждый 16 июля", date(2027, 7, 16)),
+        ("каждый 7 окт", date(2027, 10, 7)),
+        ("каждый 10 ноя", date(2026, 11, 10)),
+        ("каждый 10 дек", date(2026, 12, 10)),
+    ],
+)
+def test_parse_todoist_date_supports_annual_calendar_dates(
+    raw_value: str, expected: date
+) -> None:
+    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+
+    assert due_to == expected
+    assert recurrence is not None
+    assert recurrence.model_dump() == {
+        "period": 1,
+        "type": "years",
         "flexible_mode": False,
     }
 
