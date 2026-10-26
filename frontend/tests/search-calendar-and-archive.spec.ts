@@ -5,7 +5,7 @@ test.describe('Special Views', () => {
     await mockApi.open('/');
 
     // 1. Search titles and descriptions through the debounced endpoint.
-    await page.keyboard.press('/');
+    await page.keyboard.press('f');
     const search = page.getByLabel('Поиск по задачам');
     await search.fill('GTD');
     await expect(page.getByText('Разобрать GTD', { exact: true })).toBeVisible();

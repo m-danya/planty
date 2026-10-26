@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 from pathlib import Path
 from typing import Any
 
@@ -29,9 +29,10 @@ from planty.infrastructure.models import SectionModel
 def test_parse_todoist_date_supports_common_month_abbreviations(
     raw_value: str, expected: date
 ) -> None:
-    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+    due_to, due_time, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
 
     assert due_to == expected
+    assert due_time is None
     assert recurrence is None
 
 
@@ -52,9 +53,10 @@ def test_parse_todoist_date_supports_interval_recurrences(
 ) -> None:
     today = date(2026, 10, 25)
 
-    due_to, recurrence = _parse_todoist_date(raw_value, today)
+    due_to, due_time, recurrence = _parse_todoist_date(raw_value, today)
 
     assert due_to == today
+    assert due_time == (time(15) if raw_value.endswith("15:00") else None)
     assert recurrence is not None
     assert recurrence.model_dump() == {
         "period": period,
@@ -83,9 +85,10 @@ def test_parse_todoist_date_supports_interval_recurrences(
 def test_parse_todoist_date_supports_annual_calendar_dates(
     raw_value: str, expected: date
 ) -> None:
-    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+    due_to, due_time, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
 
     assert due_to == expected
+    assert due_time is None
     assert recurrence is not None
     assert recurrence.model_dump() == {
         "period": 1,
@@ -108,15 +111,36 @@ def test_parse_todoist_date_supports_annual_calendar_dates(
 def test_parse_todoist_date_supports_evenly_spaced_annual_dates(
     raw_value: str, expected: date, period: int
 ) -> None:
-    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+    due_to, due_time, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
 
     assert due_to == expected
+    assert due_time is None
     assert recurrence is not None
     assert recurrence.model_dump() == {
         "period": period,
         "type": "months",
         "flexible_mode": False,
     }
+
+
+@pytest.mark.parametrize(
+    ("raw_value", "expected_date", "expected_time"),
+    [
+        ("26 окт 17:45", date(2026, 10, 26), time(17, 45)),
+        ("31 окт. в 13:00", date(2026, 10, 31), time(13)),
+        ("2026-11-15T09:30:00.123456Z", date(2026, 11, 15), time(9, 30, 0, 123456)),
+        ("2026-11-15", date(2026, 11, 15), None),
+        ("6pm", date(2026, 10, 25), time(18)),
+    ],
+)
+def test_parse_todoist_date_preserves_due_time(
+    raw_value: str, expected_date: date, expected_time: time | None
+) -> None:
+    due_to, due_time, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+
+    assert due_to == expected_date
+    assert due_time == expected_time
+    assert recurrence is None
 
 
 def _find_section(tree: list[dict[str, Any]], title: str) -> dict[str, Any]:
@@ -191,6 +215,15 @@ async def test_import_todoist_backup_replaces_current_user_data(
         )["due_to"]
         == "2026-11-15"
     )
+    timed = next(task for task in inbox_tasks if task["title"].startswith("Проверить "))
+    assert timed["due_to"] == "2026-10-26"
+    assert timed["due_time"] == "17:45:00"
+    timestamped = next(
+        task
+        for task in inbox_tasks
+        if task["title"] == "Тестовая задача с полным временем"
+    )
+    assert timestamped["due_time"] == "09:30:00.123456"
 
     calendar = _find_section(tree, "Календарь")
     calendar_response = await ac.get(f"/api/section/{calendar['id']}")

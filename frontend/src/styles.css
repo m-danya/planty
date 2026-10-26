@@ -83,6 +83,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .task-description { color: #6d726e; margin-top: 2px; font-size: 14px; white-space: pre-wrap; }
 .task-date { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 7px; width: fit-content; }
 .task-date.today { color: #07932e; }.task-date.overdue { color: #db2b3c; }.task-date.tomorrow { color: #b66200; }.task-date.weekday { color: #8a36b1; }.task-date.future { color: #3973bd; }
+.task-time, .due-time { color: #5f6560; font-variant-numeric: tabular-nums; }
 .drop-before::before { content: ''; position: absolute; left: var(--indent); right: 0; top: -2px; height: 3px; background: var(--navy); border-radius: 2px; }
 .drop-before::after { content: ''; position: absolute; left: calc(var(--indent) - 4px); top: -6px; width: 8px; height: 8px; border: 3px solid var(--navy); background: #fff; border-radius: 50%; }
 .drop-child { margin-left: 28px; background: #f7f8f7; box-shadow: 0 4px 14px rgb(30 40 30 / 15%); border-radius: 8px; }
@@ -128,6 +129,8 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .chip-button { border: 1px solid #e0e3e0; background: #fff; }
 .date-chip { display: flex; align-items: center; gap: 5px; min-height: 38px; padding: 0 11px; border: 1px solid #dfe2df; background: #fff; color: #07882a; border-radius: 9px; font-size: 15px; cursor: pointer; }
 .date-chip.tomorrow { color: #b66200; }
+.time-field { display: inline-flex; align-items: center; gap: 6px; color: #5f6560; }
+.time-field input { width: 105px; border: 1px solid #dfe2df; border-radius: 7px; padding: 5px 7px; color: #303530; background: #fff; font: inherit; }
 .composer select { max-width: 280px; border: 1px solid #dfe2df; border-radius: 9px; background: white; padding: 8px 10px; color: #5f6560; }
 .composer-spacer { flex: 1; }.cancel-button, .submit-button { border: 0; background: transparent; display: grid; place-items: center; width: 44px; height: 42px; border-radius: 10px; }
 .cancel-button { color: #7d827e; }.cancel-button:hover { background: #f3f4f3; }

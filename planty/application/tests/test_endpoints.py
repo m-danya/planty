@@ -43,6 +43,42 @@ async def test_create_task(
         assert data["detail"] == error_detail
 
 
+async def test_create_and_update_task_due_time(ac: AsyncClient) -> None:
+    section_id = "febd1d82-b872-4b67-a15b-961b9aa24ed6"
+    response = await ac.post(
+        "/api/task",
+        json={
+            "section_id": section_id,
+            "title": "Позвонить",
+            "due_to": "2026-10-26",
+            "due_time": "09:30",
+        },
+    )
+    assert response.status_code == 201
+    task_id = response.json()["id"]
+
+    section = (await ac.get(f"/api/section/{section_id}")).json()
+    task = next(item for item in section["tasks"] if item["id"] == task_id)
+    assert task["due_time"] == "09:30:00"
+
+    response = await ac.patch("/api/task", json={"id": task_id, "due_time": "17:45:30"})
+    assert response.status_code == 200
+    assert response.json()["task"]["due_time"] == "17:45:30"
+
+
+async def test_rejects_due_time_without_due_date(ac: AsyncClient) -> None:
+    response = await ac.post(
+        "/api/task",
+        json={
+            "section_id": "febd1d82-b872-4b67-a15b-961b9aa24ed6",
+            "title": "Позвонить",
+            "due_time": "09:30",
+        },
+    )
+
+    assert response.status_code == 422
+
+
 @pytest.mark.parametrize(
     "task_id, status_code, error_detail",
     [

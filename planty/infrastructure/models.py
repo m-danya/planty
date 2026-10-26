@@ -1,11 +1,11 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Optional
 from uuid import UUID
 
 
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTableUUID
 from pydantic import NonNegativeInt
-from sqlalchemy import Date, DateTime, ForeignKey
+from sqlalchemy import Date, DateTime, ForeignKey, Time
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from fastapi_users_db_sqlalchemy.access_token import (
     SQLAlchemyBaseAccessTokenTableUUID,
@@ -33,6 +33,7 @@ class TaskModel(Base):
     index: Mapped[int]  # ignored if `is_archived`
 
     due_to: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
+    due_time: Mapped[Optional[time]] = mapped_column(Time, nullable=True)
     recurrence_period: Mapped[Optional[int]]
     recurrence_type: Mapped[Optional[str]]
     flexible_recurrence_mode: Mapped[Optional[bool]]
@@ -53,6 +54,7 @@ class TaskModel(Base):
             is_completed=task.is_completed,
             is_archived=task.is_archived,
             due_to=task.due_to,
+            due_time=task.due_time,
             recurrence_period=task.recurrence.period if task.recurrence else None,
             recurrence_type=task.recurrence.type if task.recurrence else None,
             flexible_recurrence_mode=(
@@ -82,6 +84,7 @@ class TaskModel(Base):
             is_archived=self.is_archived,
             added_at=self.added_at,
             due_to=self.due_to,
+            due_time=self.due_time,
             recurrence=recurrence,
         )
 

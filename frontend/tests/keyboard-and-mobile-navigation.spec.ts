@@ -23,6 +23,9 @@ test.describe('Startup and Navigation', () => {
     await page.keyboard.press('Escape');
 
     await page.keyboard.press('/');
+    await expect(page.getByRole('heading', { name: '📥 Входящие' })).toBeVisible();
+
+    await page.keyboard.press('f');
     const search = page.getByLabel('Поиск по задачам');
     await expect(search).toBeFocused();
     await search.fill('q');

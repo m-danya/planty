@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from typing import Optional
 from uuid import UUID
 import uuid
@@ -20,6 +20,7 @@ class TaskCreateRequest(Schema):
     title: str
     description: Optional[str] = None
     due_to: Optional[date] = None
+    due_time: Optional[time] = None
     recurrence: Optional[RecurrenceInfo] = None
 
 
@@ -80,6 +81,7 @@ class TaskUpdateRequest(Schema):
     title: str = None  # type: ignore
     description: Optional[str] = None
     due_to: Optional[date] = None
+    due_time: Optional[time] = None
     recurrence: Optional[RecurrenceInfo] = None
 
 
@@ -116,6 +118,7 @@ class TaskResponse(Schema):
     is_archived: bool
     added_at: datetime
     due_to: Optional[date]
+    due_time: Optional[time]
     recurrence: Optional[RecurrenceInfo]
 
 

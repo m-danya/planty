@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { CalendarDays, Check, Flag, Info, Plus, Repeat2, X } from '@lucide/svelte';
+  import { CalendarDays, Check, Clock3, Flag, Info, Plus, Repeat2, X } from '@lucide/svelte';
   import { parseTaskText, recurrenceLabel, toDraft } from '$lib/date-parser';
   import { getLocale, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import type { Section, Task, TaskDraft } from '$lib/types';
@@ -22,6 +22,8 @@
   let saving = $state(false);
   let dateOpen = $state(false);
   let suggestionIndex = $state(0);
+  let manualDueTime = $state<string | null>(null);
+  let dueTimeChanged = $state(false);
   let textarea: HTMLTextAreaElement;
   const parsed = $derived(parseTaskText(value, new Date(), getLocale()));
   const parts = $derived(highlightParts());
@@ -33,6 +35,7 @@
       .startsWith(sectionQuery.toLocaleLowerCase('ru-RU'))
   ).slice(0, 7));
   const effectiveDate = $derived(parsed.dueTo ?? task?.due_to ?? null);
+  const effectiveTime = $derived(dueTimeChanged ? manualDueTime : parsed.dueTime ?? task?.due_time ?? null);
   const effectiveRecurrence = $derived(parsed.phrase ? parsed.recurrence : task?.recurrence ?? null);
 
   onMount(() => {
@@ -66,8 +69,10 @@
       const draft = toDraft(value, description);
       if (task && parsed.phrase === null) {
         draft.due_to = task.due_to;
+        draft.due_time = task.due_time;
         draft.recurrence = task.recurrence;
       }
+      if (dueTimeChanged) draft.due_time = manualDueTime;
       await (continueWithSibling && onSaveAndContinue
         ? onSaveAndContinue(draft, selectedSection)
         : onSave(draft, selectedSection));
@@ -111,6 +116,12 @@
       weekday: 'short', day: 'numeric', month: 'long', year: 'numeric'
     });
   }
+
+  function changeDueTime(event: Event) {
+    const value = (event.currentTarget as HTMLInputElement).value;
+    manualDueTime = value || null;
+    dueTimeChanged = true;
+  }
 </script>
 
 <div class="composer" data-testid={task ? 'edit-task' : 'new-task'}>
@@ -136,6 +147,7 @@
     {#if effectiveDate}
       <button type="button" class="date-chip" onclick={() => dateOpen = !dateOpen} aria-expanded={dateOpen} aria-label={t('dateDetails')}>
         <CalendarDays size={17} /> {parsed.label ?? formatDate(effectiveDate)}
+        {#if effectiveTime}<span class="due-time">{effectiveTime.slice(0, 5)}</span>{/if}
         {#if effectiveRecurrence}<Repeat2 size={14} aria-label={recurrenceLabel(effectiveRecurrence, getLocale())} />{/if}
       </button>
     {/if}
@@ -155,6 +167,7 @@
       <header><CalendarDays size={19} /><strong>{t('dateDetails')}</strong><button type="button" onclick={() => dateOpen = false} aria-label={t('closeMenu')}><X size={17} /></button></header>
       <dl>
         <div><dt>{t('dueDate')}</dt><dd>{formatDate(effectiveDate)}</dd></div>
+        <div><dt>{t('dueTime')}</dt><dd><label class="time-field"><Clock3 size={15} /><input type="time" value={effectiveTime?.slice(0, 5) ?? ''} onchange={changeDueTime} aria-label={t('dueTime')} /></label></dd></div>
         <div><dt>{t('repeat')}</dt><dd>{effectiveRecurrence ? recurrenceLabel(effectiveRecurrence, getLocale()) : t('noRepeat')}</dd></div>
         {#if effectiveRecurrence}<div><dt>{t('schedule')}</dt><dd>{effectiveRecurrence.flexible_mode ? t('flexibleSchedule') : t('fixedSchedule')}</dd></div>{/if}
         {#if parsed.phrase}<div><dt>{t('sourcePhrase')}</dt><dd>«{parsed.phrase}»</dd></div>{/if}

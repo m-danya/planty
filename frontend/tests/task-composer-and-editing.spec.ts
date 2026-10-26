@@ -8,7 +8,7 @@ test.describe('Tasks', () => {
     // 1. Save an edited child with Shift+Enter and create its next sibling.
     const child = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
     await child.click({ modifiers: ['Alt'] });
-    await page.getByLabel('Название задачи').fill('Сходить в зал вечером');
+    await page.getByLabel('Название задачи').fill('Сходить в зал после работы');
     await page.getByLabel('Название задачи').press('Shift+Enter');
     const continuation = page.getByTestId('new-task');
     await expect(continuation).toBeVisible();
@@ -18,7 +18,7 @@ test.describe('Tasks', () => {
 
     expect(mockApi.requests('PATCH', '/api/task').at(-1)?.body).toMatchObject({
       id: ids.tomorrowTask,
-      title: 'Сходить в зал вечером'
+      title: 'Сходить в зал после работы'
     });
     expect(mockApi.requests('POST', '/api/task').at(-1)?.body).toMatchObject({
       parent_task_id: ids.todayTask,
@@ -33,16 +33,17 @@ test.describe('Tasks', () => {
 
     // 2. Create a recurring task from natural-language input.
     await page.keyboard.press('q');
-    await page.getByLabel('Название задачи').fill('полить цветы каждые! 3 дня начиная завтра');
+    await page.getByLabel('Название задачи').fill('полить цветы каждые! 3 дня начиная завтра в 18:30');
     await page.getByLabel('Описание задачи').fill('не забыть удобрение');
-    await expect(page.locator('.composer-highlight mark')).toHaveText('каждые! 3 дня начиная завтра');
-    await expect(page.locator('.date-chip')).toContainText('каждые! 3 дня начиная завтра');
+    await expect(page.locator('.composer-highlight mark')).toHaveText('каждые! 3 дня начиная завтра в 18:30');
+    await expect(page.locator('.date-chip')).toContainText('каждые! 3 дня начиная завтра в 18:30');
     await page.getByRole('button', { name: 'Параметры срока' }).click();
     const datePopover = page.getByLabel('Параметры срока').filter({ has: page.getByText('Расчёт следующей даты') });
     await expect(datePopover).toContainText('26 октября 2026 г.');
     await expect(datePopover).toContainText('каждые 3 дн.');
+    await expect(datePopover.getByLabel('Время')).toHaveValue('18:30');
     await expect(datePopover).toContainText('Гибко — от дня выполнения');
-    await expect(datePopover).toContainText('каждые! 3 дня начиная завтра');
+    await expect(datePopover).toContainText('каждые! 3 дня начиная завтра в 18:30');
     await page.getByRole('button', { name: 'Закрыть меню' }).last().click();
     await page.getByLabel('Название задачи').press('Enter');
 
@@ -54,6 +55,7 @@ test.describe('Tasks', () => {
       title: 'полить цветы',
       description: 'не забыть удобрение',
       due_to: '2026-10-26',
+      due_time: '18:30',
       recurrence: { period: 3, type: 'days', flexible_mode: true }
     });
 
@@ -65,7 +67,10 @@ test.describe('Tasks', () => {
     await expect(page.getByTestId('edit-task')).toBeVisible();
     await expect(page.locator('.inline-edit > [data-testid="edit-task"]')).toBeVisible();
     await page.getByRole('button', { name: 'Параметры срока' }).click();
-    await expect(page.getByLabel('Параметры срока').filter({ has: page.getByText('Расчёт следующей даты') })).toContainText('Гибко — от дня выполнения');
+    const editDatePopover = page.getByLabel('Параметры срока').filter({ has: page.getByText('Расчёт следующей даты') });
+    await expect(editDatePopover).toContainText('Гибко — от дня выполнения');
+    await editDatePopover.getByLabel('Время').fill('19:45');
+    await editDatePopover.getByLabel('Время').press('Tab');
     await page.getByRole('button', { name: 'Закрыть меню' }).last().click();
     await page.getByLabel('Название задачи').fill('полить цветы на балконе #lant');
     await expect(page.getByRole('listbox', { name: 'Разделы' })).toHaveCount(0);
@@ -87,6 +92,7 @@ test.describe('Tasks', () => {
       title: 'полить цветы на балконе',
       description: 'вечером',
       due_to: '2026-10-26',
+      due_time: '19:45',
       recurrence: { period: 3, type: 'days', flexible_mode: true }
     });
     expect(mockApi.requests('POST', '/api/task/move').at(-1)?.body).toMatchObject({

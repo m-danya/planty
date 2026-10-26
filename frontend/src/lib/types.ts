@@ -17,6 +17,7 @@ export interface Task {
   is_archived: boolean;
   added_at: string;
   due_to: string | null;
+  due_time: string | null;
   recurrence: RecurrenceInfo | null;
 }
 
@@ -41,5 +42,6 @@ export interface TaskDraft {
   title: string;
   description: string;
   due_to: string | null;
+  due_time: string | null;
   recurrence: RecurrenceInfo | null;
 }

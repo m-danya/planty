@@ -161,6 +161,7 @@ class SectionService:
             description=task_request.description,
             is_completed=False,
             due_to=task_request.due_to,
+            due_time=task_request.due_time,
             recurrence=task_request.recurrence,
         )
         section = await self._section_repo.get(task.section_id)
@@ -194,6 +195,7 @@ class SectionService:
                 description=task_request.description,
                 is_completed=False,
                 due_to=task_request.due_to,
+                due_time=task_request.due_time,
                 recurrence=task_request.recurrence,
             )
             task_ids.append(task.id)

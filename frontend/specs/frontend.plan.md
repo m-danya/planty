@@ -45,7 +45,7 @@ backend, database, network access, or pre-existing user data.
 **File:** `tests/keyboard-and-mobile-navigation.spec.ts`
 
 **Steps:**
-  1. Exercise Q, Russian Й, slash, and Escape shortcuts.
+  1. Exercise Q, Russian Й, F, and Escape shortcuts.
     - expect: composers and search open only outside editable controls
   2. Resize to mobile and open and close the sidebar.
     - expect: the responsive sidebar follows its open state
@@ -62,13 +62,15 @@ backend, database, network access, or pre-existing user data.
   1. Edit a nested task and press Shift+Enter.
     - expect: the edit is saved and a new composer opens after the task subtree
     - expect: the next task is created with the same parent and sibling position
-  2. Create a task containing a flexible recurring natural-language date.
-    - expect: the phrase is highlighted and `каждые!` maps to flexible recurrence
-    - expect: clicking the date chip explains the due date, recurrence, source
-      phrase, and completion-based schedule
+  2. Create a task containing a flexible recurring natural-language date and time.
+    - expect: the phrase is highlighted, `каждые!` maps to flexible recurrence,
+      and the create payload contains the parsed due time
+    - expect: clicking the date chip explains the due date, editable time,
+      recurrence, source phrase, and completion-based schedule
   3. Alt-click the task and edit it in place.
     - expect: the composer replaces the task row instead of appearing above the list
-    - expect: the stored recurrence and completion-based mode remain inspectable
+    - expect: the stored recurrence and completion-based mode remain inspectable,
+      and editing the time updates the task payload
   4. Type a `#section` prefix and choose the suggested destination by keyboard.
     - expect: the token is removed from the title and update/move payloads are correct
 
@@ -114,6 +116,7 @@ backend, database, network access, or pre-existing user data.
      orphan tasks.
     - expect: labels, classes, hierarchy, and accessible actions are correct
     - expect: tomorrow is brown and nearby weekdays are named and purple
+    - expect: due time uses the same neutral color regardless of the date color
   2. Collapse the parent task with its chevron and expand it again.
     - expect: child rows hide and reappear and aria-expanded follows the state
 
@@ -192,6 +195,10 @@ backend, database, network access, or pre-existing user data.
   4. Parse word-based intervals, quarter recurrences, start dates, weekday
      abbreviations, and localized labels.
     - expect: common Todoist-style Russian forms map to backend recurrence fields
+  5. Parse 24-hour and 12-hour times with dates, weekdays, recurrences, and
+     without an explicit date.
+    - expect: Todoist-style time phrases produce a local date plus `HH:MM`, and
+      a time without a date uses today or tomorrow depending on whether it passed
 
 ### 7. Localization
 

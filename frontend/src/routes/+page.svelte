@@ -71,7 +71,7 @@
         event.preventDefault();
         if (selected || leafSections.length) { editingTask = null; subtaskParent = null; composerOpen = true; }
       }
-      if (!typing && event.key === '/') {
+      if (!typing && (event.code === 'KeyF' || event.key.toLocaleLowerCase('en-US') === 'f')) {
         event.preventDefault();
         void changeView('search');
         queueMicrotask(() => document.querySelector<HTMLInputElement>('.search-input')?.focus());

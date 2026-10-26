@@ -104,13 +104,36 @@ describe('natural-language date parser', () => {
 
   it('does not invent a date for ordinary text', () => {
     expect(parseTaskText('Купить хлеб', now)).toEqual({
-      cleanTitle: 'Купить хлеб', phrase: null, dueTo: null, recurrence: null, label: null
+      cleanTitle: 'Купить хлеб', phrase: null, dueTo: null, dueTime: null, recurrence: null, label: null
     });
+  });
+
+  it.each([
+    ['Позвонить завтра в 16:00', 'Позвонить', '2026-10-26', '16:00'],
+    ['Buy milk tomorrow 9am', 'Buy milk', '2026-10-26', '09:00'],
+    ['Созвон пт 19:30', 'Созвон', '2026-10-30', '19:30'],
+    ['Call Alex Fri at 7pm', 'Call Alex', '2026-10-30', '19:00'],
+    ['Ужин 6pm', 'Ужин', '2026-10-25', '18:00'],
+    ['Завтрак 9am', 'Завтрак', '2026-10-26', '09:00'],
+    ['Отчёт сегодня в 10', 'Отчёт', '2026-10-25', '10:00'],
+    ['Стендап каждый понедельник в 09:15', 'Стендап', '2026-10-26', '09:15'],
+    ['Перезвонить через 2 часа', 'Перезвонить', '2026-10-25', '14:00'],
+    ['Follow up in 90 minutes', 'Follow up', '2026-10-25', '13:30'],
+    ['Почитать вечером', 'Почитать', '2026-10-25', '19:00'],
+    ['Plan tomorrow in the morning', 'Plan', '2026-10-26', '09:00'],
+    ['Начать в полночь', 'Начать', '2026-10-26', '00:00']
+  ])('parses Todoist-style due time in %s', (input, title, dueTo, dueTime) => {
+    expect(parseTaskText(input, now)).toMatchObject({ cleanTitle: title, dueTo, dueTime });
+  });
+
+  it.each(['24:00', '12:60', 'at 13pm'])('rejects invalid time %s', (input) => {
+    expect(parseTaskText(`Задача ${input}`, now).dueTime).toBeNull();
   });
 
   it('converts parsed text to an API draft', () => {
     expect(toDraft('Снять завтра видеоролики', 'камера заряжена', now)).toEqual({
-      title: 'Снять видеоролики', description: 'камера заряжена', due_to: '2026-10-26', recurrence: null
+      title: 'Снять видеоролики', description: 'камера заряжена', due_to: '2026-10-26',
+      due_time: null, recurrence: null
     });
   });
 

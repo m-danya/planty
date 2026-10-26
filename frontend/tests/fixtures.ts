@@ -65,6 +65,7 @@ function task(overrides: Partial<Task> & Pick<Task, 'id' | 'section_id' | 'title
     is_archived: false,
     added_at: '2026-10-20T10:00:00',
     due_to: null,
+    due_time: null,
     recurrence: null,
     ...overrides
   };
@@ -330,6 +331,7 @@ export class MockApi {
         title: String(body?.title),
         description: String(body?.description ?? ''),
         due_to: body?.due_to ? String(body.due_to) : null,
+        due_time: body?.due_time ? String(body.due_time) : null,
         recurrence: (body?.recurrence as Task['recurrence']) ?? null
       }));
       await fulfillJson(route, { id }, 201);

@@ -5,7 +5,7 @@ import io
 import re
 import zipfile
 from dataclasses import dataclass
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from pathlib import PurePath
 from uuid import UUID
 
@@ -265,7 +265,9 @@ def _build_tasks(
         except ValueError:
             indent = 1
         parent_id = parents.get(indent - 1) if indent > 1 else None
-        due_to, recurrence = _parse_todoist_date(row.get("DATE", ""), get_today())
+        due_to, due_time, recurrence = _parse_todoist_date(
+            row.get("DATE", ""), get_today()
+        )
         task = Task(
             user_id=user_id,
             section_id=section_id,
@@ -273,6 +275,7 @@ def _build_tasks(
             title=row.get("CONTENT", "").strip() or "Без названия",
             description=row.get("DESCRIPTION", "").strip() or None,
             due_to=due_to,
+            due_time=due_time,
             recurrence=recurrence,
         )
         tasks.append((task, index))
@@ -285,17 +288,24 @@ def _build_tasks(
 
 def _parse_todoist_date(
     raw_value: str, today: date
-) -> tuple[date | None, RecurrenceInfo | None]:
+) -> tuple[date | None, time | None, RecurrenceInfo | None]:
     value = re.sub(r"\s+", " ", raw_value.strip().lower().replace("ё", "е"))
     if not value:
-        return None, None
+        return None, None, None
     try:
-        return datetime.fromisoformat(value.replace("z", "+00:00")).date(), None
+        parsed = datetime.fromisoformat(value.replace("z", "+00:00"))
+        has_time = bool(re.search(r"[t\s]\d{1,2}:\d{2}", value))
+        return (
+            parsed.date(),
+            parsed.time().replace(tzinfo=None) if has_time else None,
+            None,
+        )
     except ValueError:
         pass
 
-    # Todoist includes the time in DATE even though Planty stores due dates only.
-    value = re.sub(r"\s+\d{1,2}:\d{2}$", "", value)
+    value, due_time = _extract_todoist_time(value)
+    if not value and due_time is not None:
+        return today, due_time, None
 
     day_match = re.fullmatch(
         r"(\d{1,2})\s+([а-я]+)\.?(?:\s+(\d{4}))?",
@@ -305,11 +315,12 @@ def _parse_todoist_date(
         due = _calendar_date(
             int(day_match.group(1)), day_match.group(2), day_match.group(3), today
         )
-        return due, None
+        return due, due_time, None
 
     annual = _parse_annual_calendar_recurrence(value, today)
     if annual is not None:
-        return annual
+        due, recurrence = annual
+        return due, due_time, recurrence
 
     interval = re.fullmatch(
         r"кажд(?:ый|ую|ые|ое)?(!)?\s*(?:(\d+)\s*)?"
@@ -317,17 +328,23 @@ def _parse_todoist_date(
         value,
     )
     if interval:
-        return today, RecurrenceInfo(
-            period=int(interval.group(2) or 1),
-            type=RECURRENCE_UNITS[interval.group(3)],
-            flexible_mode=bool(interval.group(1) or interval.group(4)),
+        return (
+            today,
+            due_time,
+            RecurrenceInfo(
+                period=int(interval.group(2) or 1),
+                type=RECURRENCE_UNITS[interval.group(3)],
+                flexible_mode=bool(interval.group(1) or interval.group(4)),
+            ),
         )
 
     weekday = re.fullmatch(r"кажд(?:ый|ую)\s+([а-я]{2})", value)
     if weekday and weekday.group(1) in WEEKDAYS:
         offset = (WEEKDAYS[weekday.group(1)] - today.weekday()) % 7
-        return today + timedelta(days=offset), RecurrenceInfo(
-            period=1, type="weeks", flexible_mode=False
+        return (
+            today + timedelta(days=offset),
+            due_time,
+            RecurrenceInfo(period=1, type="weeks", flexible_mode=False),
         )
 
     monthly = re.fullmatch(r"кажд(?:ое|ый)\s+(\d{1,2})(?:-?[ео]?)", value)
@@ -336,12 +353,35 @@ def _parse_todoist_date(
         try:
             due = today.replace(day=day)
         except ValueError:
-            return None, None
+            return None, None, None
         if due < today:
             due = (today + relativedelta(months=1)).replace(day=day)
-        return due, RecurrenceInfo(period=1, type="months", flexible_mode=False)
+        return (
+            due,
+            due_time,
+            RecurrenceInfo(period=1, type="months", flexible_mode=False),
+        )
 
-    return None, None
+    return None, None, None
+
+
+def _extract_todoist_time(value: str) -> tuple[str, time | None]:
+    match = re.search(
+        r"(?:\s+(?:в|at)\s+|\s+|^)(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$",
+        value,
+    )
+    if match is None:
+        return value, None
+    hour = int(match.group(1))
+    minute = int(match.group(2) or 0)
+    meridiem = match.group(3)
+    if meridiem:
+        if not 1 <= hour <= 12:
+            return value, None
+        hour = hour % 12 + (12 if meridiem == "pm" else 0)
+    if hour > 23 or minute > 59:
+        return value, None
+    return value[: match.start()].strip(), time(hour, minute)
 
 
 def _parse_annual_calendar_recurrence(

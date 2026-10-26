@@ -18,6 +18,14 @@ class RecurrenceWithoutDueDate(PlantyException):
         return "Recurrence settings can't be set unless a due date is specified."
 
 
+class DueTimeWithoutDueDate(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+
+    @property
+    def _detail(self) -> str:
+        return "A due time can't be set unless a due date is specified."
+
+
 class MisplaceSectionIndexError(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
 

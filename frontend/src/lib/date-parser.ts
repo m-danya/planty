@@ -4,6 +4,7 @@ export interface ParsedDate {
   cleanTitle: string;
   phrase: string | null;
   dueTo: string | null;
+  dueTime: string | null;
   recurrence: RecurrenceInfo | null;
   label: string | null;
 }
@@ -27,7 +28,8 @@ const weekdays: Record<string, number> = {
   tuesday: 2, вторник: 2, вторникам: 2, wednesday: 3, среда: 3, среду: 3, средам: 3,
   thursday: 4, четверг: 4, четвергам: 4, friday: 5, пятница: 5, пятницу: 5, пятницам: 5,
   saturday: 6, суббота: 6, субботу: 6, субботам: 6,
-  вс: 0, пн: 1, вт: 2, ср: 3, чт: 4, пт: 5, сб: 6
+  вс: 0, пн: 1, вт: 2, ср: 3, чт: 4, пт: 5, сб: 6,
+  sun: 0, mon: 1, tue: 2, tues: 2, wed: 3, thu: 4, thur: 4, thurs: 4, fri: 5, sat: 6
 };
 const unitMap: Record<string, RecurrenceType> = {
   day: 'days', days: 'days', день: 'days', дня: 'days', дней: 'days',
@@ -49,6 +51,79 @@ function amount(value: string | undefined): number {
 
 function localIso(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+interface TimeMatch {
+  index: number;
+  length: number;
+  phrase: string;
+  value: string;
+  hour: number;
+  minute: number;
+  dateOverride: Date | null;
+}
+
+function findTime(text: string, now: Date): TimeMatch | null {
+  const relativePattern = /(?<!\p{L})(?:через|in)\s+(\d+)\s*(час(?:а|ов)?|ч(?:ас)?|hour(?:s)?|hr(?:s)?|минут(?:у|ы)?|мин|minute(?:s)?|min(?:s)?)(?!\p{L})/gu;
+  const relative = relativePattern.exec(text);
+  if (relative?.index !== undefined) {
+    const value = new Date(now);
+    const amount = Number(relative[1]);
+    if (/^(?:час|ч|hour|hr)/u.test(relative[2])) value.setHours(value.getHours() + amount);
+    else value.setMinutes(value.getMinutes() + amount);
+    value.setSeconds(0, 0);
+    return {
+      index: relative.index,
+      length: relative[0].length,
+      phrase: relative[0].trim(),
+      value: `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`,
+      hour: value.getHours(),
+      minute: value.getMinutes(),
+      dateOverride: value
+    };
+  }
+
+  const namedPattern = /(?<!\p{L})(утром|дн(?:е|ё)м|вечером|в\s+полдень|в\s+полночь|in\s+the\s+morning|in\s+the\s+afternoon|in\s+the\s+evening|at\s+noon|at\s+midnight)(?!\p{L})/gu;
+  const named = namedPattern.exec(text);
+  if (named?.index !== undefined) {
+    const normalized = named[1];
+    const hour = normalized.includes('morning') || normalized === 'утром' ? 9
+      : normalized.includes('afternoon') || /^дн/u.test(normalized) || normalized.includes('полдень') || normalized.includes('noon') ? 12
+      : normalized.includes('midnight') || normalized.includes('полночь') ? 0 : 19;
+    return {
+      index: named.index,
+      length: named[0].length,
+      phrase: named[0].trim(),
+      value: `${String(hour).padStart(2, '0')}:00`,
+      hour,
+      minute: 0,
+      dateOverride: null
+    };
+  }
+
+  const pattern = /(?<![\p{L}\d])(?:(в|at)\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?(?![\p{L}\d:])/gu;
+  for (const candidate of text.matchAll(pattern)) {
+    const hasExplicitSyntax = candidate[1] || candidate[3] !== undefined || candidate[4];
+    if (!hasExplicitSyntax || candidate.index === undefined) continue;
+    let hour = Number(candidate[2]);
+    const minute = Number(candidate[3] ?? 0);
+    const meridiem = candidate[4];
+    if (meridiem) {
+      if (hour < 1 || hour > 12) continue;
+      hour = hour % 12 + (meridiem === 'pm' ? 12 : 0);
+    }
+    if (hour > 23 || minute > 59) continue;
+    return {
+      index: candidate.index,
+      length: candidate[0].length,
+      phrase: candidate[0].trim(),
+      value: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
+      hour,
+      minute,
+      dateOverride: null
+    };
+  }
+  return null;
 }
 
 function atNoon(date: Date): Date {
@@ -128,6 +203,7 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
   let match = [] as unknown as RegExpMatchArray;
   let due: Date | null = null;
   let recurrence: RecurrenceInfo | null = null;
+  const parsedTime = findTime(lower, now);
 
   const choose = (candidate: RegExpMatchArray | null): boolean => {
     if (!candidate || candidate.index === undefined) return false;
@@ -138,7 +214,7 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
   const amountPattern = '(\\d+|один|одна|одну|первый|первую|два|две|второй|вторую|вторые|три|третий|третью|четыре|четвёртый|четвертый|one|two|three|four|other)';
   const units = '(days|day|weeks|week|months|month|years|year|дней|день|дня|недель|неделю|недели|месяцев|месяц|месяца|лет|год|года)';
   const monthNames = '(?:января?|янв|февраля?|февр?|марта?|мар|апреля?|апр|мая?|июня?|июн|июля?|июл|августа?|авг|сентября?|сент|сен|октября?|окт|ноября?|нояб?|ноя|декабря?|дек|january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)';
-  const weekdayNames = '(?:понедельник|понедельникам|вторник|вторникам|среду|средам|четверг|четвергам|пятницу|пятницам|субботу|субботам|воскресенье|воскресеньям|пн\\.?|вт\\.?|ср\\.?|чт\\.?|пт\\.?|сб\\.?|вс\\.?|monday|tuesday|wednesday|thursday|friday|saturday|sunday)';
+  const weekdayNames = '(?:понедельник|понедельникам|вторник|вторникам|среду|средам|четверг|четвергам|пятницу|пятницам|субботу|субботам|воскресенье|воскресеньям|пн\\.?|вт\\.?|ср\\.?|чт\\.?|пт\\.?|сб\\.?|вс\\.?|monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon\\.?|tues?\\.?|wed\\.?|thurs?\\.?|fri\\.?|sat\\.?|sun\\.?)';
   const startDate = `(?:сегодня|завтра|послезавтра|today|tomorrow|day after tomorrow|\\d{1,2}[./-]\\d{1,2}(?:[./-]\\d{2,4})?|\\d{1,2}\\s+${monthNames}(?:\\s+\\d{4})?|(?:в\\s+)?(?:следующ(?:ий|ую)\\s+|next\\s+)?${weekdayNames})`;
   const start = `(?:\\s+((?:начиная\\s+(?:с\\s+)?|starting\\s+(?:on\\s+)?|с\\s+|from\\s+)${startDate}))?`;
   const recurring = lower.match(new RegExp(`${recurringPrefix}\\s+(?:${amountPattern}\\s+)?${units}(!?)${start}(?!\\p{L})`, 'u'));
@@ -197,19 +273,55 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
     due = nextWeekday(now, weekdays[match[2].replace('.', '')], Boolean(match[1]));
   }
 
-  if (!match.length || !due) return { cleanTitle: text, phrase: null, dueTo: null, recurrence: null, label: null };
-  const startIndex = match.index ?? 0;
-  const rawPhrase = text.slice(startIndex, startIndex + match[0].length);
-  const leadingSpace = rawPhrase.length - rawPhrase.trimStart().length;
-  const phrase = rawPhrase.trim();
-  const cleanStart = startIndex + leadingSpace;
-  const cleanTitle = `${text.slice(0, cleanStart)} ${text.slice(cleanStart + phrase.length)}`.replace(/\s+/g, ' ').trim();
-  return { cleanTitle, phrase, dueTo: localIso(due), recurrence, label: recurrence ? phrase : displayDate(due, now, locale) };
+  if (!due && parsedTime) {
+    if (parsedTime.dateOverride) {
+      due = atNoon(parsedTime.dateOverride);
+    } else {
+      due = atNoon(now);
+      const dueMoment = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parsedTime.hour, parsedTime.minute);
+      if (dueMoment <= now) due = plusDays(now, 1);
+    }
+  }
+  if ((!match.length && !parsedTime) || !due) {
+    return { cleanTitle: text, phrase: null, dueTo: null, dueTime: null, recurrence: null, label: null };
+  }
+
+  const ranges: { start: number; end: number; phrase: string }[] = [];
+  if (match.length) {
+    const start = match.index ?? 0;
+    const raw = text.slice(start, start + match[0].length);
+    const leadingSpace = raw.length - raw.trimStart().length;
+    const phrase = raw.trim();
+    ranges.push({ start: start + leadingSpace, end: start + leadingSpace + phrase.length, phrase });
+  }
+  if (parsedTime) {
+    const overlapsDate = ranges.some((range) => parsedTime.index < range.end && parsedTime.index + parsedTime.length > range.start);
+    if (!overlapsDate) ranges.push({ start: parsedTime.index, end: parsedTime.index + parsedTime.length, phrase: parsedTime.phrase });
+  }
+  ranges.sort((left, right) => left.start - right.start);
+  let cleanTitle = text;
+  for (const range of [...ranges].reverse()) {
+    cleanTitle = `${cleanTitle.slice(0, range.start)} ${cleanTitle.slice(range.end)}`;
+  }
+  cleanTitle = cleanTitle.replace(/\s+/g, ' ').trim();
+
+  const adjacent = ranges.length === 2 && /^\s*$/u.test(text.slice(ranges[0].end, ranges[1].start));
+  const phrase = adjacent
+    ? text.slice(ranges[0].start, ranges[1].end).trim()
+    : ranges[0]?.phrase ?? null;
+  return {
+    cleanTitle,
+    phrase,
+    dueTo: localIso(due),
+    dueTime: parsedTime?.value ?? null,
+    recurrence,
+    label: recurrence ? phrase : displayDate(due, now, locale)
+  };
 }
 
 export function toDraft(input: string, description = '', now = new Date()): TaskDraft {
   const parsed = parseTaskText(input, now);
-  return { title: parsed.cleanTitle || input.trim(), description, due_to: parsed.dueTo, recurrence: parsed.recurrence };
+  return { title: parsed.cleanTitle || input.trim(), description, due_to: parsed.dueTo, due_time: parsed.dueTime, recurrence: parsed.recurrence };
 }
 
 export function recurrenceLabel(recurrence: RecurrenceInfo | null, locale: 'ru' | 'en' = 'ru'): string {

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 from dateutil.relativedelta import relativedelta
 
 import random
@@ -17,6 +17,7 @@ from planty.domain.types import RecurrencePeriodType
 from planty.utils import generate_uuid, get_datetime_now
 from planty.domain.exceptions import (
     MisplaceSectionIndexError,
+    DueTimeWithoutDueDate,
     RecurrenceWithoutDueDate,
     RemovingSectionFromWrongSectionError,
     RemovingTaskFromWrongSectionError,
@@ -59,15 +60,18 @@ class Task(Entity):
     added_at: datetime = Field(default_factory=get_datetime_now)
 
     due_to: Optional[date] = None
+    due_time: Optional[time] = None
     recurrence: Optional[RecurrenceInfo] = None
 
     @model_validator(mode="before")
     @classmethod
-    def check_recurrence_due_date(cls, values: Any) -> Any:
+    def check_due_fields(cls, values: Any) -> Any:
         recurrence = values.get("recurrence")
         due_to = values.get("due_to")
         if recurrence is not None and due_to is None:
             raise RecurrenceWithoutDueDate()
+        if values.get("due_time") is not None and due_to is None:
+            raise DueTimeWithoutDueDate()
         return values
 
     def __eq__(self, other: object) -> bool:

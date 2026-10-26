@@ -169,6 +169,7 @@ class SQLAlchemyTaskRepository:
         task_model.is_archived = task.is_archived
         task_model.added_at = task.added_at
         task_model.due_to = task.due_to
+        task_model.due_time = task.due_time
 
         if task.recurrence is None:
             task_model.recurrence_period = None

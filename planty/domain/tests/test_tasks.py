@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, time, timedelta
 
 import pytest
 
@@ -24,9 +24,11 @@ def test_toggle_completed_nonperiodic(nonperiodic_task: Task) -> None:
 def test_completion_everyday(everyday_task: Task) -> None:
     assert not everyday_task.is_completed
     everyday_task.due_to = get_today()
+    everyday_task.due_time = time(9, 30)
     everyday_task.mark_completed()
     assert not everyday_task.is_completed
     assert everyday_task.due_to == get_today() + timedelta(days=1)
+    assert everyday_task.due_time == time(9, 30)
 
 
 @pytest.mark.parametrize(

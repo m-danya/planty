@@ -140,7 +140,7 @@
     {#if task.description}<div class="task-description">{task.description}</div>{/if}
     {#if task.due_to}
       {@const due = dateLabel(task.due_to)}
-      <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</div>
+      <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.due_time}<span class="task-time">· {task.due_time.slice(0, 5)}</span>{/if}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</div>
     {/if}
   </div>
   {#if menuOpen}

@@ -5,6 +5,7 @@ test.describe('Tasks', () => {
     const today = mockApi.state.tasks.find((task) => task.id === ids.todayTask)!;
     const tomorrow = mockApi.state.tasks.find((task) => task.id === ids.tomorrowTask)!;
     today.is_completed = true;
+    today.due_time = '09:30:00';
     tomorrow.parent_task_id = today.id;
     mockApi.state.tasks.push({
       ...tomorrow,
@@ -29,6 +30,8 @@ test.describe('Tasks', () => {
     const todayRow = page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' });
     await expect(todayRow).toHaveClass(/completed/);
     await expect(todayRow.locator('.task-date.today')).toHaveText(/Сегодня/);
+    await expect(todayRow.locator('.task-time')).toHaveText('· 09:30');
+    await expect(todayRow.locator('.task-time')).toHaveCSS('color', 'rgb(95, 101, 96)');
     await expect(todayRow.getByLabel('каждый день')).toBeVisible();
     await expect(todayRow.locator('.task-chevron')).toBeVisible();
     await expect(todayRow.getByText('Собрать всё в одном месте')).toBeVisible();

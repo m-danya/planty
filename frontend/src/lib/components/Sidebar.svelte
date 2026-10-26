@@ -65,7 +65,7 @@
 <aside class:open class="sidebar">
   <div class="sidebar-logo"><img src="/logo.png" alt="Planty" /><button class="mobile-only" onclick={onClose} aria-label={t('closeMenu')}><X /></button></div>
   <nav class="sidebar-main" aria-label={t('sections')}>
-    <button class:active={view === 'search'} onclick={() => onView('search')}><Search />{t('search')} <kbd>/</kbd></button>
+    <button class:active={view === 'search'} onclick={() => onView('search')}><Search />{t('search')} <kbd>F</kbd></button>
     <button class:active={view === 'calendar'} onclick={() => onView('calendar')}><CalendarDays />{t('calendar')}</button>
     <button class:active={view === 'archived'} onclick={() => onView('archived')}><Archive />{t('archive')}</button>
   </nav>
