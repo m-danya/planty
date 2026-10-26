@@ -1,0 +1,60 @@
+Planty completion sounds (CC0 1.0)
+==================================
+
+All audio files in this directory are licensed under Creative Commons Zero
+(CC0 1.0): https://creativecommons.org/publicdomain/zero/1.0/
+
+Kenney
+------
+
+- UI Audio: https://kenney.nl/assets/ui-audio
+- Interface Sounds: https://kenney.nl/assets/interface-sounds
+
+Files: switch34.ogg, switch35.ogg, switch36.ogg, glass_002.ogg.
+
+HaelDB
+------
+
+- UI Sounds: https://opengameart.org/content/ui-sounds-0
+
+The source pack uses numeric filenames and describes the collection as UI
+accept, notification, attention, and error sounds. A subset of the numeric
+variants is included for auditioning; the explicitly named "Wrong Error"
+file is omitted.
+Files: haeldb_ui_2.ogg, haeldb_ui_5.ogg, haeldb_ui_8.ogg.
+
+Freesound
+---------
+
+- eqylizer, High-Pitched Two-Note Notification:
+  https://freesound.org/people/eqylizer/sounds/624598/
+- ConarB13, Pop Sound:
+  https://freesound.org/people/ConarB13/sounds/401542/
+- Feraly_, Simple or Cute UI / UX / Interface Confirm sound:
+  https://freesound.org/people/Feraly_/sounds/836450/
+- PaulMorek, Beep 05 Positive 3:
+  https://freesound.org/people/PaulMorek/sounds/330056/
+- FunWithSound, Short Success Sound Glockenspiel Treasure Video Game.mp3:
+  https://freesound.org/people/FunWithSound/sounds/456965/
+- BIONN, Sync Blip.wav:
+  https://freesound.org/people/BIONN/sounds/562773/
+- CogFireStudios, Positive Blip Effect:
+  https://freesound.org/people/CogFireStudios/sounds/531512/
+- lartti, ding click.wav:
+  https://freesound.org/people/lartti/sounds/527561/
+
+Files derived from the public high-quality MP3 previews: eqylizer_two_note.ogg,
+conarb13_pop.ogg, feraly_confirm.ogg, paulmorek_beep_05_positive.ogg,
+funwithsound_success_glockenspiel.ogg, bionn_sync_blip.ogg,
+cogfirestudios_positive_blip.ogg, lartti_ding_click.ogg. Each source page
+identifies its sound as CC0.
+
+Brandon Morris
+--------------
+
+- Completion sound: https://opengameart.org/content/completion-sound
+
+File derived from the source MP3 and WAV originals: brandon_complete.ogg.
+
+Attribution is not required by CC0. Author names and source links are retained
+here for provenance.

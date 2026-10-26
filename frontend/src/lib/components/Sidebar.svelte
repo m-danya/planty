@@ -1,9 +1,17 @@
 <script lang="ts">
-  import { Archive, CalendarDays, FileUp, LogOut, Plus, Search, Settings, X } from '@lucide/svelte';
+  import { Archive, CalendarDays, FileUp, LogOut, Play, Plus, Search, Settings, X } from '@lucide/svelte';
   import SectionNode from './SectionNode.svelte';
   import type { Section, User } from '$lib/types';
   import { getLocale, setLocale, t, type Locale } from '$lib/i18n.svelte';
-  import { getAutoArchive, setAutoArchive } from '$lib/preferences.svelte';
+  import {
+    COMPLETION_SOUNDS,
+    getAutoArchive,
+    getCompletionSound,
+    playCompletionSound,
+    setAutoArchive,
+    setCompletionSound,
+    type CompletionSoundId
+  } from '$lib/preferences.svelte';
 
   let {
     open,
@@ -95,6 +103,25 @@
         <input type="checkbox" checked={getAutoArchive()} onchange={(event) => setAutoArchive(event.currentTarget.checked)} />
         <span>{t('autoArchive')}</span>
       </label>
+      <div class="sound-setting">
+        <label for="completion-sound">{t('completionSound')}</label>
+        <div class="sound-setting-row">
+          <select id="completion-sound" value={getCompletionSound()} onchange={(event) => setCompletionSound((event.currentTarget as HTMLSelectElement).value as CompletionSoundId)}>
+            <option value="none">{t('noSound')}</option>
+            {#each COMPLETION_SOUNDS as sound}
+              <option value={sound.id}>{sound.label}</option>
+            {/each}
+          </select>
+          <button
+            type="button"
+            class="sound-preview-button"
+            disabled={getCompletionSound() === 'none'}
+            onclick={playCompletionSound}
+            aria-label={t('previewCompletionSound')}
+            title={t('previewCompletionSound')}
+          ><Play size={18} /></button>
+        </div>
+      </div>
       <section class="import-settings">
         <h3>{t('todoistImport')}</h3>
         <p>{t('todoistImportHint')}</p>

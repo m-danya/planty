@@ -189,6 +189,13 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .settings-dialog { width: min(430px, 100%); }
 .settings-dialog .settings-toggle { display: flex; grid-template-columns: none; flex-direction: row; align-items: center; gap: 9px; cursor: pointer; }
 .settings-toggle input { width: 18px; height: 18px; accent-color: var(--green); }
+.sound-setting { margin-bottom: 14px; color: #565c57; font-size: 14px; }
+.sound-setting > label { margin-bottom: 7px; }
+.sound-setting-row { display: flex; align-items: stretch; gap: 8px; }
+.sound-setting-row select { min-width: 0; }
+.sound-preview-button { flex: 0 0 43px; display: grid; place-items: center; border: 1px solid #cdd2cd; border-radius: 8px; background: #fff; color: var(--green-dark); cursor: pointer; }
+.sound-preview-button:hover:not(:disabled) { background: #edf6ee; border-color: #9bc7a3; }
+.sound-preview-button:disabled { color: #aeb4af; background: #f5f6f5; cursor: default; }
 .import-settings { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--line); }
 .import-settings h3 { margin: 0 0 5px; font-size: 16px; }
 .import-settings p { margin: 0 0 13px; color: var(--muted); font-size: 13px; }

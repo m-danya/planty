@@ -150,6 +150,23 @@ backend, database, network access, or pre-existing user data.
     - expect: the styled calendar supports month navigation and selection
     - expect: the selected local date is sent and rendered on the task
 
+#### 3.8. task-completion-sound
+
+**File:** `tests/task-completion-sound.spec.ts`
+
+**Steps:**
+  1. Choose a task completion sound in profile settings.
+    - expect: all bundled CC0 sounds and a localized no-sound option are
+      available and the choice is saved in `localStorage`
+    - expect: the bundled choices include short two-part completion sounds
+      from each documented source
+    - expect: the selected sound can be previewed and the preview is disabled
+      when no sound is selected
+  2. Complete, restore, and unsuccessfully complete tasks.
+    - expect: no audio plays when sound is disabled
+    - expect: otherwise the selected sound plays only after a successful
+      transition to the completed state
+
 ### 4. Sections
 
 **Seed:** `tests/fixtures.ts`

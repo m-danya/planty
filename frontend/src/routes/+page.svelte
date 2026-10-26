@@ -9,7 +9,7 @@
   import TaskList from '$lib/components/TaskList.svelte';
   import type { Section, Task, TaskDraft, TaskDropMode, User } from '$lib/types';
   import { getLocale, initLocale, localizedError, localizedSectionTitle, t } from '$lib/i18n.svelte';
-  import { getAutoArchive, getSectionLayout, initPreferences, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
+  import { getAutoArchive, getSectionLayout, initPreferences, playCompletionSound, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
 
   type View = 'section' | 'search' | 'calendar' | 'archived';
   type SectionDialog = { mode: 'new' | 'rename' | 'move' | 'delete'; section: Section | null };
@@ -261,7 +261,13 @@
     composerOpen = true;
   }
 
-  async function toggleTask(task: Task) { await safe(async () => { await api.toggleTask(task.id, getAutoArchive()); await refreshCurrent(); }); }
+  async function toggleTask(task: Task) {
+    await safe(async () => {
+      await api.toggleTask(task.id, getAutoArchive());
+      if (!task.is_completed) playCompletionSound();
+      await refreshCurrent();
+    });
+  }
   async function archiveTask(task: Task) { await safe(async () => { await api.archiveTask(task.id); await refreshCurrent(); notify(t('taskArchived')); }); }
   async function scheduleTask(task: Task, dueTo: string) {
     await safe(async () => {

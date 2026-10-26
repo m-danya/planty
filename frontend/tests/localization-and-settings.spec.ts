@@ -26,6 +26,8 @@ test.describe('Localization', () => {
     await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Calendar' })).toBeVisible();
     await expect(page.getByRole('heading', { name: '📥 Inbox' })).toBeVisible();
+    await expect(page.getByLabel('Task completion sound').getByRole('option', { name: 'No sound' })).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Preview selected sound' })).toBeVisible();
     await page.getByRole('button', { name: 'Done' }).click();
 
     // The preference is local-only and survives navigation/reload.
