@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Archive, CalendarDays, ChevronRight, GripVertical, MoveRight, Plus, Repeat2, Trash2 } from '@lucide/svelte';
-  import type { Task } from '$lib/types';
+  import type { Task, TaskDropMode } from '$lib/types';
   import { recurrenceLabel } from '$lib/date-parser';
   import { getLocale, t } from '$lib/i18n.svelte';
   import DatePicker from './DatePicker.svelte';
@@ -17,6 +17,7 @@
     onMove,
     onDragStart,
     onDropTask,
+    dragStartOffsetX = null,
     collapsed = false,
     onCollapseToggle,
     onAddSubtask,
@@ -31,8 +32,9 @@
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
-    onDragStart: (task: Task) => void;
-    onDropTask: (target: Task, mode: 'before' | 'child') => void;
+    onDragStart: (task: Task, offsetX: number) => void;
+    onDropTask: (target: Task, mode: TaskDropMode) => void;
+    dragStartOffsetX?: number | null;
     collapsed?: boolean;
     onCollapseToggle?: (task: Task) => void;
     onAddSubtask?: (task: Task) => void;
@@ -41,7 +43,7 @@
 
   let menuOpen = $state(false);
   let menuPos = $state<{ x: number; y: number } | null>(null);
-  let dragMode = $state<'before' | 'child' | null>(null);
+  let dragMode = $state<TaskDropMode | null>(null);
   let customDateOpen = $state(false);
 
   function dateLabel(value: string): { text: string; className: string } {
@@ -91,11 +93,19 @@
     return { x, y: Math.max(8, Math.min(menuPos.y, innerHeight - height - 8)) };
   }
 
+  function modeFor(event: DragEvent): TaskDropMode {
+    if (dragStartOffsetX === null) return 'preserve';
+    const target = event.currentTarget as HTMLElement;
+    const targetList = target.closest<HTMLElement>('.task-list') ?? target;
+    const horizontalOffset = event.clientX - targetList.getBoundingClientRect().left - dragStartOffsetX;
+    if (horizontalOffset >= 40) return 'child';
+    if (horizontalOffset <= -40) return 'outdent';
+    return 'preserve';
+  }
+
   function dragOver(event: DragEvent) {
     event.preventDefault();
-    const target = event.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    dragMode = event.clientY < rect.top + rect.height * 0.28 ? 'before' : 'child';
+    dragMode = modeFor(event);
   }
 </script>
 
@@ -105,7 +115,7 @@
   class:completed={task.is_completed}
   class:task-card={variant === 'card'}
   class:bare={!task.due_to && !task.description}
-  class:drop-before={dragMode === 'before'}
+  class:drop-before={dragMode === 'preserve' || dragMode === 'outdent'}
   class:drop-child={dragMode === 'child'}
   class="task-row"
   style={`--depth: ${depth}`}
@@ -116,13 +126,15 @@
   ondragstart={(event) => {
     event.dataTransfer?.setData('text/plain', task.id);
     if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-    onDragStart(task);
+    const source = event.currentTarget as HTMLElement;
+    const sourceList = source.closest<HTMLElement>('.task-list') ?? source;
+    onDragStart(task, event.clientX - sourceList.getBoundingClientRect().left);
   }}
   ondragover={dragOver}
   ondragleave={() => (dragMode = null)}
   ondrop={(event) => {
     event.preventDefault();
-    onDropTask(task, dragMode ?? 'before');
+    onDropTask(task, dragMode ?? modeFor(event));
     dragMode = null;
   }}
   onclick={clickRow}

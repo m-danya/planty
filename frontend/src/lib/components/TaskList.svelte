@@ -1,6 +1,6 @@
 <script lang="ts">
   import TaskTree from './TaskTree.svelte';
-  import type { Section, Task, TaskDraft } from '$lib/types';
+  import type { Section, Task, TaskDraft, TaskDropMode } from '$lib/types';
 
   let {
     tasks,
@@ -12,6 +12,7 @@
     onMove,
     onDragStart,
     onDropTask,
+    dragStartOffsetX = null,
     collapsedIds,
     onCollapseToggle,
     onAddSubtask,
@@ -35,8 +36,9 @@
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
-    onDragStart: (task: Task) => void;
-    onDropTask: (target: Task, mode: 'before' | 'child') => void;
+    onDragStart: (task: Task, offsetX: number) => void;
+    onDropTask: (target: Task, mode: TaskDropMode) => void;
+    dragStartOffsetX?: number | null;
     collapsedIds?: Set<string>;
     onCollapseToggle?: (task: Task) => void;
     onAddSubtask?: (task: Task) => void;
@@ -66,6 +68,7 @@
     {onMove}
     {onDragStart}
     {onDropTask}
+    {dragStartOffsetX}
     {collapsedIds}
     {onCollapseToggle}
     {onAddSubtask}

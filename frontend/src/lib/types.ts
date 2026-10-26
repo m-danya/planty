@@ -21,6 +21,8 @@ export interface Task {
   recurrence: RecurrenceInfo | null;
 }
 
+export type TaskDropMode = 'preserve' | 'child' | 'outdent';
+
 export interface Section {
   id: string;
   title: string;

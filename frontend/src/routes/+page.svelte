@@ -7,7 +7,7 @@
   import TaskComposer from '$lib/components/TaskComposer.svelte';
   import TaskCountTooltip from '$lib/components/TaskCountTooltip.svelte';
   import TaskList from '$lib/components/TaskList.svelte';
-  import type { Section, Task, TaskDraft, User } from '$lib/types';
+  import type { Section, Task, TaskDraft, TaskDropMode, User } from '$lib/types';
   import { getLocale, initLocale, localizedError, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import { getAutoArchive, getSectionLayout, initPreferences, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
 
@@ -28,6 +28,7 @@
   let editingTask = $state<Task | null>(null);
   let moveTaskTarget = $state<Task | null>(null);
   let draggedTask = $state<Task | null>(null);
+  let taskDragStartOffsetX = $state<number | null>(null);
   let toast = $state('');
   let query = $state('');
   let searchResults = $state<Task[]>([]);
@@ -307,20 +308,33 @@
     });
   }
 
-  async function dropTask(target: Task, mode: 'before' | 'child') {
+  async function dropTask(target: Task, mode: TaskDropMode) {
     if (!draggedTask || draggedTask.id === target.id) return;
     const descendants = new Set<string>();
     const collect = (parentId: string) => tasks.filter((task) => task.parent_task_id === parentId).forEach((child) => { descendants.add(child.id); collect(child.id); });
     collect(draggedTask.id);
-    if (descendants.has(target.id)) { notify(t('cannotNestTask')); return; }
-    let index = tasks.findIndex((task) => task.id === target.id);
-    if (draggedTask.section_id === target.section_id) {
-      const sourceIndex = tasks.findIndex((task) => task.id === draggedTask!.id);
+    const currentParent = draggedTask.parent_task_id
+      ? tasks.find((task) => task.id === draggedTask?.parent_task_id) ?? null
+      : null;
+    const movingAcrossSections = draggedTask.section_id !== target.section_id;
+    let parentId = draggedTask.parent_task_id;
+    if (mode === 'child') parentId = target.id;
+    else if (movingAcrossSections) parentId = null;
+    else if (mode === 'outdent') parentId = currentParent?.parent_task_id ?? null;
+    if (parentId === draggedTask.id || (parentId !== null && descendants.has(parentId))) {
+      notify(t('cannotNestTask'));
+      return;
+    }
+    const destinationTasks = tasks.filter((task) => task.section_id === target.section_id);
+    let index = destinationTasks.findIndex((task) => task.id === target.id);
+    if (!movingAcrossSections) {
+      const sourceIndex = destinationTasks.findIndex((task) => task.id === draggedTask!.id);
       if (sourceIndex < index) index -= 1;
     }
     await safe(async () => {
-      await api.moveTask(draggedTask!.id, target.section_id, Math.max(0, mode === 'child' ? index + 1 : index), mode === 'child' ? target.id : target.parent_task_id);
+      await api.moveTask(draggedTask!.id, target.section_id, Math.max(0, mode === 'child' ? index + 1 : index), parentId);
       draggedTask = null;
+      taskDragStartOffsetX = null;
       await refreshSection();
     });
   }
@@ -414,8 +428,9 @@
     onArchive={(task) => void archiveTask(task)}
     onDelete={(task) => void deleteTask(task)}
     onMove={openMoveTask}
-    onDragStart={(task) => draggedTask = task}
+    onDragStart={(task, offsetX) => { draggedTask = task; taskDragStartOffsetX = offsetX; }}
     onDropTask={reorder ? (task, mode) => void dropTask(task, mode) : () => {}}
+    dragStartOffsetX={taskDragStartOffsetX}
     collapsedIds={collapsed}
     onCollapseToggle={toggleCollapse}
     onAddSubtask={openAddSubtask}

@@ -97,15 +97,25 @@ backend, database, network access, or pre-existing user data.
 **File:** `tests/task-drag-and-drop.spec.ts`
 
 **Steps:**
-  1. Drop one task onto another and try to create a cycle.
-    - expect: the first task becomes an indented child
+  1. Drag a root task vertically with less than 40 px of horizontal movement,
+     then drag it at least 40 px to the right.
+    - expect: the near-vertical drag only reorders the task and keeps it at the root
+    - expect: crossing the right threshold makes the task an indented child
+  2. Try to move the parent at least 40 px right into its new child.
     - expect: the cyclic move is rejected before an API call
-  2. Create another subtask through the parent's context menu.
+  3. Drag the child vertically with less than 40 px of horizontal movement,
+     then drag it at least 40 px to the left.
+    - expect: the near-vertical drag preserves its parent
+    - expect: crossing the left threshold extracts it to the parent's level
+  4. Create another subtask through the parent's context menu.
     - expect: the action is available even before the parent has any subtasks
     - expect: the composer opens without a section selector
     - expect: the create request carries the parent task id
-  3. Drop at the top edge of a row.
-    - expect: the task becomes a sibling with a null parent
+  5. Switch a parent section to board mode and drag tasks between columns.
+    - expect: keeping the same local pointer position moves a root task without nesting it
+    - expect: a child moved neutrally to another section becomes a root task there
+    - expect: moving at least 40 px right within the cards nests across columns
+    - expect: move indices are relative to the destination section, not the whole board
 
 #### 3.5. task-presentation
 
