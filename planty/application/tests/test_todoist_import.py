@@ -35,8 +35,21 @@ def test_parse_todoist_date_supports_common_month_abbreviations(
     assert recurrence is None
 
 
-@pytest.mark.parametrize("raw_value", ["каждые 2 недели", "каждый 2 недели"])
-def test_parse_todoist_date_supports_recurring_weeks(raw_value: str) -> None:
+@pytest.mark.parametrize(
+    ("raw_value", "period", "period_type", "flexible_mode"),
+    [
+        ("каждые 2 недели", 2, "weeks", False),
+        ("каждый 2 недели", 2, "weeks", False),
+        ("каждый 2 недели 15:00", 2, "weeks", False),
+        ("каждый 3 месяца!", 3, "months", True),
+        ("каждый год", 1, "years", False),
+        ("каждый месяц", 1, "months", False),
+        ("каждый! месяц", 1, "months", True),
+    ],
+)
+def test_parse_todoist_date_supports_interval_recurrences(
+    raw_value: str, period: int, period_type: str, flexible_mode: bool
+) -> None:
     today = date(2026, 10, 25)
 
     due_to, recurrence = _parse_todoist_date(raw_value, today)
@@ -44,9 +57,9 @@ def test_parse_todoist_date_supports_recurring_weeks(raw_value: str) -> None:
     assert due_to == today
     assert recurrence is not None
     assert recurrence.model_dump() == {
-        "period": 2,
-        "type": "weeks",
-        "flexible_mode": False,
+        "period": period,
+        "type": period_type,
+        "flexible_mode": flexible_mode,
     }
 
 
@@ -64,6 +77,7 @@ def test_parse_todoist_date_supports_recurring_weeks(raw_value: str) -> None:
         ("каждый 7 окт", date(2027, 10, 7)),
         ("каждый 10 ноя", date(2026, 11, 10)),
         ("каждый 10 дек", date(2026, 12, 10)),
+        ("кажд 6 янв", date(2027, 1, 6)),
     ],
 )
 def test_parse_todoist_date_supports_annual_calendar_dates(
@@ -76,6 +90,31 @@ def test_parse_todoist_date_supports_annual_calendar_dates(
     assert recurrence.model_dump() == {
         "period": 1,
         "type": "years",
+        "flexible_mode": False,
+    }
+
+
+@pytest.mark.parametrize(
+    ("raw_value", "expected", "period"),
+    [
+        (
+            "каждый 15 марта, 15 июня, 15 сентября, 15 декабря",
+            date(2026, 12, 15),
+            3,
+        ),
+        ("каждый 10 фев, 10 авг", date(2027, 2, 10), 6),
+    ],
+)
+def test_parse_todoist_date_supports_evenly_spaced_annual_dates(
+    raw_value: str, expected: date, period: int
+) -> None:
+    due_to, recurrence = _parse_todoist_date(raw_value, date(2026, 10, 25))
+
+    assert due_to == expected
+    assert recurrence is not None
+    assert recurrence.model_dump() == {
+        "period": period,
+        "type": "months",
         "flexible_mode": False,
     }
 

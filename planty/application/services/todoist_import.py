@@ -14,6 +14,7 @@ from dateutil.relativedelta import relativedelta
 from planty.application.exceptions import InvalidTodoistBackupException
 from planty.application.uow import IUnitOfWork
 from planty.domain.task import RecurrenceInfo, Section, Task
+from planty.domain.types import RecurrencePeriodType
 from planty.utils import get_today
 
 TODOIST_COLUMNS = {"TYPE", "CONTENT", "DESCRIPTION", "INDENT", "DATE"}
@@ -50,6 +51,20 @@ MONTHS = {
     "декабря": 12,
 }
 WEEKDAYS = {"пн": 0, "вт": 1, "ср": 2, "чт": 3, "пт": 4, "сб": 5, "вс": 6}
+RECURRENCE_UNITS: dict[str, RecurrencePeriodType] = {
+    "день": "days",
+    "дня": "days",
+    "дней": "days",
+    "неделю": "weeks",
+    "недели": "weeks",
+    "недель": "weeks",
+    "месяц": "months",
+    "месяца": "months",
+    "месяцев": "months",
+    "год": "years",
+    "года": "years",
+    "лет": "years",
+}
 
 
 @dataclass
@@ -271,7 +286,7 @@ def _build_tasks(
 def _parse_todoist_date(
     raw_value: str, today: date
 ) -> tuple[date | None, RecurrenceInfo | None]:
-    value = raw_value.strip().lower().replace("ё", "е")
+    value = re.sub(r"\s+", " ", raw_value.strip().lower().replace("ё", "е"))
     if not value:
         return None, None
     try:
@@ -279,8 +294,11 @@ def _parse_todoist_date(
     except ValueError:
         pass
 
+    # Todoist includes the time in DATE even though Planty stores due dates only.
+    value = re.sub(r"\s+\d{1,2}:\d{2}$", "", value)
+
     day_match = re.fullmatch(
-        r"(\d{1,2})\s+([а-я]+)\.?(?:\s+(\d{4}))?(?:\s+\d{1,2}:\d{2})?",
+        r"(\d{1,2})\s+([а-я]+)\.?(?:\s+(\d{4}))?",
         value,
     )
     if day_match:
@@ -289,27 +307,21 @@ def _parse_todoist_date(
         )
         return due, None
 
-    every_days = re.fullmatch(
-        r"кажд(?:ый|ые)(!)?\s*(?:(\d+)\s*)?д(?:ень|ня|ней)", value
-    )
-    if every_days:
-        recurrence = RecurrenceInfo(
-            period=int(every_days.group(2) or 1),
-            type="days",
-            flexible_mode=bool(every_days.group(1)),
-        )
-        return today, recurrence
+    annual = _parse_annual_calendar_recurrence(value, today)
+    if annual is not None:
+        return annual
 
-    every_weeks = re.fullmatch(
-        r"кажд(?:ый|ую|ые)(!)?\s*(?:(\d+)\s*)?недел(?:ю|и|ь)", value
+    interval = re.fullmatch(
+        r"кажд(?:ый|ую|ые|ое)?(!)?\s*(?:(\d+)\s*)?"
+        r"(день|дня|дней|неделю|недели|недель|месяц|месяца|месяцев|год|года|лет)(!)?",
+        value,
     )
-    if every_weeks:
-        recurrence = RecurrenceInfo(
-            period=int(every_weeks.group(2) or 1),
-            type="weeks",
-            flexible_mode=bool(every_weeks.group(1)),
+    if interval:
+        return today, RecurrenceInfo(
+            period=int(interval.group(2) or 1),
+            type=RECURRENCE_UNITS[interval.group(3)],
+            flexible_mode=bool(interval.group(1) or interval.group(4)),
         )
-        return today, recurrence
 
     weekday = re.fullmatch(r"кажд(?:ый|ую)\s+([а-я]{2})", value)
     if weekday and weekday.group(1) in WEEKDAYS:
@@ -329,15 +341,71 @@ def _parse_todoist_date(
             due = (today + relativedelta(months=1)).replace(day=day)
         return due, RecurrenceInfo(period=1, type="months", flexible_mode=False)
 
-    annual = re.fullmatch(r"кажд(?:ый|ое)\s+(\d{1,2})\s+([а-я]+)", value)
-    if annual:
-        due = _calendar_date(int(annual.group(1)), annual.group(2), None, today)
-        return due, RecurrenceInfo(period=1, type="years", flexible_mode=False)
     return None, None
 
 
-def _calendar_date(day: int, month_name: str, year: str | None, today: date) -> date:
-    month = MONTHS.get(month_name.rstrip("."))
+def _parse_annual_calendar_recurrence(
+    value: str, today: date
+) -> tuple[date, RecurrenceInfo] | None:
+    match = re.fullmatch(r"кажд(?:ый|ое)?(!)?\s+(.+)", value)
+    if match is None:
+        return None
+
+    raw_dates = match.group(2)
+    trailing_bang = raw_dates.endswith("!")
+    if trailing_bang:
+        raw_dates = raw_dates[:-1].rstrip()
+
+    parsed_dates: list[tuple[int, int]] = []
+    for raw_date in re.split(r"\s*,\s*", raw_dates):
+        date_match = re.fullmatch(r"(\d{1,2})\s+([а-я]+)\.?", raw_date)
+        if date_match is None:
+            return None
+        month = MONTHS.get(date_match.group(2))
+        if month is None:
+            return None
+        day = int(date_match.group(1))
+        try:
+            date(today.year, month, day)
+        except ValueError:
+            raise InvalidTodoistBackupException() from None
+        parsed_dates.append((month, day))
+
+    days = {day for _, day in parsed_dates}
+    months = sorted({month for month, _ in parsed_dates})
+    if len(days) != 1 or len(months) != len(parsed_dates):
+        return None
+
+    if len(months) == 1:
+        period = 1
+        period_type: RecurrencePeriodType = "years"
+    else:
+        gaps = [
+            (next_month - month) % 12
+            for month, next_month in zip(months, [*months[1:], months[0]])
+        ]
+        if len(set(gaps)) != 1:
+            return None
+        period = gaps[0]
+        period_type = "months"
+
+    day = days.pop()
+    candidates = [_calendar_date(day, month, None, today) for month in months]
+    return min(candidates), RecurrenceInfo(
+        period=period,
+        type=period_type,
+        flexible_mode=bool(match.group(1) or trailing_bang),
+    )
+
+
+def _calendar_date(
+    day: int, month_name: str | int, year: str | None, today: date
+) -> date:
+    month = (
+        month_name
+        if isinstance(month_name, int)
+        else MONTHS.get(month_name.rstrip("."))
+    )
     if month is None:
         raise InvalidTodoistBackupException()
     candidate_year = int(year) if year else today.year
