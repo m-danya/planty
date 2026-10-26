@@ -1,4 +1,17 @@
 import { expect, ids, test } from './fixtures';
+import type { Locator } from '@playwright/test';
+
+async function expectTooltipToTheRight(title: Locator, tooltip: Locator) {
+  const titleBox = await title.boundingBox();
+  const tooltipBox = await tooltip.boundingBox();
+  expect(titleBox).not.toBeNull();
+  expect(tooltipBox).not.toBeNull();
+  expect(tooltipBox!.x - (titleBox!.x + titleBox!.width)).toBeGreaterThanOrEqual(6);
+  expect(tooltipBox!.x - (titleBox!.x + titleBox!.width)).toBeLessThanOrEqual(11);
+  const centerDelta = tooltipBox!.y + tooltipBox!.height / 2 - (titleBox!.y + titleBox!.height / 2);
+  expect(centerDelta).toBeGreaterThanOrEqual(1);
+  expect(centerDelta).toBeLessThanOrEqual(4);
+}
 
 test.describe('Sections', () => {
   test('section-aggregate-views', async ({ page, mockApi }) => {
@@ -20,6 +33,7 @@ test.describe('Sections', () => {
     await page.locator('.page-title').hover();
     await expect(sectionTooltip).toBeVisible();
     await expect(sectionTooltip).toHaveText('2 задачи');
+    await expectTooltipToTheRight(page.locator('.page-title h1'), sectionTooltip);
 
     // Editing stays in the task's own descendant section instead of jumping above the page.
     const homeGroup = subsectionView.getByTestId('section-group').filter({ has: page.getByRole('heading', { name: 'Дом' }) });
@@ -34,11 +48,12 @@ test.describe('Sections', () => {
     await expect(board.getByTestId('section-group')).toHaveCount(2);
     await expect(board.locator('.task-card')).toHaveCount(2);
     const plantyColumn = board.getByTestId('section-group').filter({ has: page.getByRole('heading', { name: '☘️ Planty' }) });
-    const plantyTooltip = plantyColumn.locator('.subsection-task-tooltip');
+    const plantyTooltip = plantyColumn.locator('.task-count-tooltip');
     await expect(plantyTooltip).toBeHidden();
     await plantyColumn.locator('.subsection-title').hover();
     await expect(plantyTooltip).toBeVisible();
     await expect(plantyTooltip).toHaveText('1 задача');
+    await expectTooltipToTheRight(plantyColumn.locator('.subsection-title h2'), plantyTooltip);
     await expect.poll(() => page.evaluate((sectionId) => {
       const layouts = JSON.parse(localStorage.getItem('planty.sectionLayouts') ?? '{}');
       return layouts[sectionId];

@@ -162,7 +162,7 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Open a parent section containing both direct and deeply nested leaf sections.
     - expect: every descendant leaf is grouped under its own heading and all tasks are visible
-    - expect: task counts appear only while hovering the current section or a subsection title
+    - expect: task counts appear in the same tooltip to the right of the hovered current section or subsection title, visually aligned with the text
     - expect: Alt-click editing replaces the task in its own group
   2. Switch the parent section to board mode and create a task in one column.
     - expect: columns reuse the task card component and creation targets that leaf section

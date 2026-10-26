@@ -5,9 +5,10 @@
   import { api, ApiError } from '$lib/api';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import TaskComposer from '$lib/components/TaskComposer.svelte';
+  import TaskCountTooltip from '$lib/components/TaskCountTooltip.svelte';
   import TaskList from '$lib/components/TaskList.svelte';
   import type { Section, Task, TaskDraft, User } from '$lib/types';
-  import { getLocale, initLocale, localizedError, localizedSectionTitle, t, taskCountLabel } from '$lib/i18n.svelte';
+  import { getLocale, initLocale, localizedError, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import { getAutoArchive, getSectionLayout, initPreferences, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
 
   type View = 'section' | 'search' | 'calendar' | 'archived';
@@ -443,9 +444,9 @@
       <div class:wide={view === 'section' && selectedHasSubsections && sectionLayout === 'board'} class="content-inner">
         <header class="page-heading">
           {#if view !== 'section'}<span class="heading-icon">{view === 'search' ? '🔎' : view === 'calendar' ? '🗓️' : '📦'}</span>{/if}
-          <div class="page-title">
+          <div class="page-title task-count-anchor">
             <h1>{heading}</h1>
-            {#if view === 'section' && selected}<span class="subsection-task-tooltip" data-testid="section-task-tooltip" aria-hidden="true">{taskCountLabel(tasks.length)}</span>{/if}
+            {#if view === 'section' && selected}<TaskCountTooltip count={tasks.length} testId="section-task-tooltip" />{/if}
           </div>
           <div class="heading-actions">
             {#if view === 'section' && selectedHasSubsections}
@@ -464,9 +465,9 @@
               {#each sectionGroups as group (group.section.id)}
                 <section class:board-column={sectionLayout === 'board'} class:subsection-group={sectionLayout === 'subsections'} data-testid="section-group" data-section-id={group.section.id}>
                   <header class="subsection-heading">
-                    <div class="subsection-title">
+                    <div class="subsection-title task-count-anchor">
                       <h2>{localizedSectionTitle(group.section.title)}</h2>
-                      <span class="subsection-task-tooltip" aria-hidden="true">{taskCountLabel(group.tasks.length)}</span>
+                      <TaskCountTooltip count={group.tasks.length} />
                     </div>
                   </header>
                   {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent && composerSectionId === group.section.id}
