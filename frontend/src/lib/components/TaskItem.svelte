@@ -104,6 +104,7 @@
 <div
   class:completed={task.is_completed}
   class:task-card={variant === 'card'}
+  class:bare={!task.due_to && !task.description}
   class:drop-before={dragMode === 'before'}
   class:drop-child={dragMode === 'child'}
   class="task-row"

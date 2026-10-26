@@ -88,6 +88,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .inline-edit .composer { margin: 8px 0; }
 .task-row { --indent: calc(var(--depth) * 28px); position: relative; display: flex; min-height: 78px; align-items: flex-start; padding: 15px 6px 13px calc(1px + var(--indent)); border-bottom: 1px solid var(--line); transition: background .16s, transform .16s; }
 .task-row:hover { background: #fcfdfc; }
+.task-row.bare { min-height: 0; }
 .drag-handle { width: 16px; height: 26px; border: 0; background: none; padding: 5px 0; color: #adb1ad; opacity: 0; cursor: grab; }
 .task-row:hover .drag-handle { opacity: 1; }
 .task-chevron-slot { flex: 0 0 22px; width: 22px; height: 22px; margin: 2px 5px 0 0; display: flex; align-items: center; justify-content: center; }
