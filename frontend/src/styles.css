@@ -37,7 +37,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .section-link { position: relative; display: flex; align-items: center; gap: 7px; width: 100%; border: 0; background: none; border-radius: 7px; padding: 8px 7px 8px calc(3px + var(--section-depth) * 17px); font-size: 15px; text-align: left; cursor: pointer; white-space: nowrap; }
 .section-link:hover, .section-link.active { background: #eaf4eb; color: #087a29; }
 .section-link.section-drop { box-shadow: inset 0 3px 0 var(--green); background: #f0f8f1; }
-.section-link > span:not(.section-toggle) { overflow: hidden; text-overflow: ellipsis; }
+.section-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .section-toggle { width: 16px; display: inline-flex; flex: 0 0 16px; }
 .section-link > svg { flex: 0 0 auto; }
 .section-grip { opacity: 0; margin-left: -3px; color: #929792; cursor: grab; }
@@ -55,7 +55,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .main-content { margin-left: 296px; min-height: 100vh; padding: 65px clamp(32px, 8vw, 140px); }
 .content-inner { max-width: 900px; margin: 0 auto; }
+.content-inner.wide { max-width: 1500px; }
 .page-heading { min-height: 52px; display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.page-title { position: relative; min-width: 0; }
 .page-heading .heading-icon { font-size: 28px; }
 .page-heading h1 { margin: 0; font-size: 29px; letter-spacing: -.03em; }
 .page-heading .task-count { color: #919691; font-size: 14px; }
@@ -63,6 +65,25 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .heading-actions button, .icon-button { border: 0; border-radius: 8px; background: transparent; padding: 8px; cursor: pointer; color: #666d67; display: grid; place-items: center; }
 .heading-actions button:hover, .icon-button:hover { background: #f0f2f0; color: #20231f; }
 .task-list { border-top: 1px solid var(--line); }
+.subsection-list { display: grid; gap: 44px; }
+.subsection-group { min-width: 0; }
+.subsection-heading { display: flex; align-items: baseline; gap: 9px; min-height: 43px; padding: 5px 6px 10px; border-bottom: 1px solid var(--line); }
+.subsection-title { position: relative; min-width: 0; }
+.subsection-heading h2 { margin: 0; font-size: 19px; letter-spacing: -.015em; }
+.subsection-task-tooltip { position: absolute; z-index: 20; left: 0; top: calc(100% + 6px); padding: 5px 8px; border-radius: 6px; color: white; background: #2f3530; box-shadow: 0 4px 12px rgb(20 30 20 / 18%); font-size: 12px; font-weight: 500; line-height: 1; white-space: nowrap; opacity: 0; visibility: hidden; transform: translateY(-2px); transition: opacity .12s, transform .12s, visibility .12s; pointer-events: none; }
+.subsection-title:hover .subsection-task-tooltip, .subsection-title:focus-within .subsection-task-tooltip, .page-title:hover .subsection-task-tooltip, .page-title:focus-within .subsection-task-tooltip { opacity: 1; visibility: visible; transform: translateY(0); }
+.subsection-group > .task-list { border-top: 0; }
+.section-board { display: flex; align-items: flex-start; gap: 26px; overflow-x: auto; margin: 0 -40px; padding: 3px 40px 28px; scroll-snap-type: x proximity; }
+.board-column { flex: 0 0 330px; min-width: 0; scroll-snap-align: start; }
+.board-column .subsection-heading { align-items: flex-start; height: 66px; border-bottom: 0; padding: 4px 1px 12px; }
+.board-column .subsection-title { flex: 1; }
+.board-column .subsection-heading h2 { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.task-list.board-cards { display: grid; gap: 13px; width: 100%; min-width: 0; border-top: 0; }
+.task-row.task-card { width: 100%; min-width: 0; min-height: 0; padding: 15px 13px 14px calc(8px + var(--indent)); border: 1px solid #dde1dd; border-radius: 14px; background: #fff; box-shadow: 0 2px 7px rgb(28 42 30 / 6%); }
+.task-row.task-card:hover { border-color: #cbd2cc; box-shadow: 0 5px 16px rgb(28 42 30 / 9%); }
+.inline-edit.task-card { padding: 0; border: 0; }
+.inline-edit.task-card .composer { margin: 0; }
+.board-column > .add-task-button { width: 100%; }
 .inline-edit { padding-left: calc(var(--depth) * 28px); border-bottom: 1px solid var(--line); }
 .inline-edit .composer { margin: 8px 0; }
 .task-row { --indent: calc(var(--depth) * 28px); position: relative; display: flex; min-height: 78px; align-items: flex-start; padding: 15px 6px 13px calc(1px + var(--indent)); border-bottom: 1px solid var(--line); transition: background .16s, transform .16s; }
@@ -80,7 +101,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .completed .task-title { text-decoration: line-through; color: #8b908c; }
 .task-copy { min-width: 0; flex: 1; }
 .task-title { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
-.task-description { color: #6d726e; margin-top: 2px; font-size: 14px; white-space: pre-wrap; }
+.task-description { color: #6d726e; margin-top: 2px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .task-date { display: flex; align-items: center; gap: 4px; font-size: 13px; margin-top: 7px; width: fit-content; }
 .task-date.today { color: #07932e; }.task-date.overdue { color: #db2b3c; }.task-date.tomorrow { color: #b66200; }.task-date.weekday { color: #8a36b1; }.task-date.future { color: #3973bd; }
 .task-time, .due-time { color: #5f6560; font-variant-numeric: tabular-nums; }
@@ -195,6 +216,8 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
   .main-content { margin-left: 0; padding: 27px 18px 70px; }.page-heading h1 { font-size: 25px; }
   .login-page { grid-template-columns: 1fr; }.login-brand { display: none; }.login-panel { padding: 25px; }
   .composer { padding: 12px; }.composer select { max-width: 170px; }.task-row { --indent: calc(var(--depth) * 18px); }.drag-handle { display: none; }
+  .section-board { margin: 0 -18px; padding: 3px 18px 25px; gap: 16px; }
+  .board-column { flex-basis: min(82vw, 330px); }
   .calendar-picker { left: 12px !important; right: 12px; top: auto !important; bottom: 12px; width: auto; max-width: 360px; margin: 0 auto; }
 }
 

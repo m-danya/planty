@@ -2,7 +2,8 @@
   import { ChevronDown, ChevronRight, Ellipsis, GripVertical } from '@lucide/svelte';
   import SectionNode from './SectionNode.svelte';
   import type { Section } from '$lib/types';
-  import { localizedSectionTitle, taskCountLabel, t } from '$lib/i18n.svelte';
+  import { localizedSectionTitle, t } from '$lib/i18n.svelte';
+  import { getSectionExpanded, setSectionExpanded } from '$lib/preferences.svelte';
 
   let {
     section,
@@ -10,7 +11,6 @@
     depth = 0,
     onSelect,
     onMenu,
-    counts = {},
     onDragStart,
     onDropSection
   }: {
@@ -19,12 +19,20 @@
     depth?: number;
     onSelect: (section: Section) => void;
     onMenu: (event: MouseEvent, section: Section) => void;
-    counts?: Record<string, number>;
     onDragStart: (section: Section) => void;
     onDropSection: (target: Section) => void;
   } = $props();
   let open = $state(true);
   let dragOver = $state(false);
+
+  $effect.pre(() => {
+    open = getSectionExpanded(section.id);
+  });
+
+  function toggleOpen() {
+    open = !open;
+    setSectionExpanded(section.id, open);
+  }
 
   function handleClick(event: MouseEvent) {
     const target = event.target;
@@ -38,13 +46,12 @@
   }
 </script>
 
-<div class="section-node" style={`--section-depth: ${depth}`}>
+<div class="section-node" data-section-id={section.id} style={`--section-depth: ${depth}`}>
   <button
     class="section-link"
     class:active={selectedId === section.id}
     class:section-drop={dragOver}
     draggable="true"
-    title={taskCountLabel(counts[section.id] ?? section.tasks.length)}
     onclick={handleClick}
     oncontextmenu={(event) => { event.preventDefault(); onMenu(event, section); }}
     ondragstart={(event) => { event.dataTransfer?.setData('text/plain', section.id); onDragStart(section); }}
@@ -54,16 +61,16 @@
   >
     <GripVertical class="section-grip" size={13} aria-label={t('dragSection')} />
     {#if section.subsections.length}
-      <span class="section-toggle" role="button" tabindex="0" onclick={(event) => { event.stopPropagation(); open = !open; }} onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); open = !open; } }}>
+      <span class="section-toggle" role="button" tabindex="0" aria-expanded={open} aria-label={open ? t('collapseSection') : t('expandSection')} onclick={(event) => { event.stopPropagation(); toggleOpen(); }} onkeydown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); toggleOpen(); } }}>
         {#if open}<ChevronDown size={16} />{:else}<ChevronRight size={16} />{/if}
       </span>
     {:else}<span class="section-toggle"></span>{/if}
-    <span>{localizedSectionTitle(section.title)}</span>
+    <span class="section-title">{localizedSectionTitle(section.title)}</span>
     <Ellipsis class="section-more" size={17} />
   </button>
   {#if open}
     {#each section.subsections as child (child.id)}
-      <SectionNode section={child} {selectedId} depth={depth + 1} {onSelect} {onMenu} {counts} {onDragStart} {onDropSection} />
+      <SectionNode section={child} {selectedId} depth={depth + 1} {onSelect} {onMenu} {onDragStart} {onDropSection} />
     {/each}
   {/if}
 </div>

@@ -155,6 +155,32 @@ backend, database, network access, or pre-existing user data.
     - expect: each operation updates the sidebar after a server refresh
     - expect: deleting the selected section chooses a valid fallback
 
+#### 4.2. section-aggregate-views
+
+**File:** `tests/section-aggregate-views.spec.ts`
+
+**Steps:**
+  1. Open a parent section containing both direct and deeply nested leaf sections.
+    - expect: every descendant leaf is grouped under its own heading and all tasks are visible
+    - expect: task counts appear only while hovering the current section or a subsection title
+    - expect: Alt-click editing replaces the task in its own group
+  2. Switch the parent section to board mode and create a task in one column.
+    - expect: columns reuse the task card component and creation targets that leaf section
+    - expect: the layout is saved for this section in `localStorage` and survives reload
+  3. Save opposite layouts for two parent sections and move between them.
+    - expect: each section restores its own layout before and after reload
+
+#### 4.3. section-sidebar-expansion
+
+**File:** `tests/section-sidebar-expansion.spec.ts`
+
+**Steps:**
+  1. Collapse a nested section and its parent, then reload the page.
+    - expect: both sections remain collapsed through `localStorage`
+  2. Expand only the parent and then expand the nested section.
+    - expect: each section restores its own expansion state independently
+    - expect: the expanded states also survive reload
+
 ### 5. Special Views
 
 **Seed:** `tests/fixtures.ts`
@@ -166,8 +192,10 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Search titles and descriptions, including an empty result.
     - expect: debounced results match the query and encoded request
+    - expect: Alt-click opens the shared inline editor in the search result
   2. Open calendar and archive views.
     - expect: overdue and dated groups and archived tasks are rendered
+    - expect: Alt-click edits a calendar task in place and also opens inline editing in the archive
 
 #### 5.2. empty-states
 
@@ -209,7 +237,7 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Open the application without a stored preference.
     - expect: navigation and system section names are fully Russian
-    - expect: section task counts appear only in the native tooltip
+    - expect: the sidebar does not show section task counts
     - expect: auto-archive is enabled by default and can be disabled in `localStorage`
   2. Change the profile language to English.
     - expect: the visible shell updates immediately

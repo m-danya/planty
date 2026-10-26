@@ -17,7 +17,6 @@
     onNewSection,
     onSectionMenu,
     onLogout,
-    sectionCounts = {},
     onSectionDragStart,
     onSectionDrop,
     onImportTodoist
@@ -33,7 +32,6 @@
     onNewSection: () => void;
     onSectionMenu: (event: MouseEvent, section: Section) => void;
     onLogout: () => void;
-    sectionCounts?: Record<string, number>;
     onSectionDragStart: (section: Section) => void;
     onSectionDrop: (target: Section) => void;
     onImportTodoist: (file: File, eraseExisting: boolean) => Promise<void>;
@@ -72,7 +70,7 @@
   <div class="sections-heading"><span>{t('sections')}</span><button onclick={onNewSection} aria-label={t('addSection')}><Plus /></button></div>
   <div class="sections-list">
     {#each sections as section (section.id)}
-      <SectionNode {section} {selectedId} onSelect={onSelectSection} onMenu={onSectionMenu} counts={sectionCounts} onDragStart={onSectionDragStart} onDropSection={onSectionDrop} />
+      <SectionNode {section} {selectedId} onSelect={onSelectSection} onMenu={onSectionMenu} onDragStart={onSectionDragStart} onDropSection={onSectionDrop} />
     {/each}
   </div>
   <div class="sidebar-user">

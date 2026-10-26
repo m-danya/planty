@@ -1,14 +1,14 @@
 <script lang="ts">
   import { goto, replaceState } from '$app/navigation';
   import { onMount } from 'svelte';
-  import { ArchiveRestore, Menu, Pencil, Plus, Search, Trash2 } from '@lucide/svelte';
+  import { ArchiveRestore, Columns3, ListTree, Menu, Pencil, Plus, Search, Trash2 } from '@lucide/svelte';
   import { api, ApiError } from '$lib/api';
   import Sidebar from '$lib/components/Sidebar.svelte';
   import TaskComposer from '$lib/components/TaskComposer.svelte';
-  import TaskTree from '$lib/components/TaskTree.svelte';
+  import TaskList from '$lib/components/TaskList.svelte';
   import type { Section, Task, TaskDraft, User } from '$lib/types';
-  import { getLocale, initLocale, localizedError, localizedSectionTitle, t } from '$lib/i18n.svelte';
-  import { getAutoArchive, initPreferences } from '$lib/preferences.svelte';
+  import { getLocale, initLocale, localizedError, localizedSectionTitle, t, taskCountLabel } from '$lib/i18n.svelte';
+  import { getAutoArchive, getSectionLayout, initPreferences, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
 
   type View = 'section' | 'search' | 'calendar' | 'archived';
   type SectionDialog = { mode: 'new' | 'rename' | 'move' | 'delete'; section: Section | null };
@@ -17,10 +17,13 @@
   let sectionsTree = $state<Section[]>([]);
   let selected = $state<Section | null>(null);
   let tasks = $state<Task[]>([]);
+  let sectionGroups = $state<{ section: Section; tasks: Task[] }[]>([]);
+  let sectionLayout = $state<SectionLayout>('subsections');
   let view = $state<View>('section');
   let loading = $state(true);
   let sidebarOpen = $state(false);
   let composerOpen = $state(false);
+  let composerSectionId = $state<string | null>(null);
   let editingTask = $state<Task | null>(null);
   let moveTaskTarget = $state<Task | null>(null);
   let draggedTask = $state<Task | null>(null);
@@ -39,15 +42,40 @@
   let searchTimer: ReturnType<typeof setTimeout> | undefined;
   let sectionCounts = $state<Record<string, number>>({});
   let draggedSection = $state<Section | null>(null);
+  let sectionLoadVersion = 0;
 
   const root = $derived(sectionsTree.find((section) => section.parent_id === null) ?? null);
   const visibleSections = $derived(root ? root.subsections : sectionsTree);
   const allSections = $derived(flatten(visibleSections));
   const leafSections = $derived(allSections.filter((section) => section.subsections.length === 0));
+  const selectedLeafSections = $derived(selected ? descendantLeaves(selected) : []);
+  const selectedHasSubsections = $derived((selected?.subsections.length ?? 0) > 0);
   const heading = $derived(view === 'section' ? localizedSectionTitle(selected?.title ?? t('tasks')) : view === 'search' ? t('search') : view === 'calendar' ? t('calendar') : t('archive'));
 
   function flatten(items: Section[]): Section[] {
     return items.flatMap((section) => [section, ...flatten(section.subsections)]);
+  }
+
+  function descendantLeaves(section: Section): Section[] {
+    return section.subsections.length === 0
+      ? [section]
+      : section.subsections.flatMap(descendantLeaves);
+  }
+
+  function resetComposer() {
+    composerOpen = false;
+    composerSectionId = null;
+    editingTask = null;
+    subtaskParent = null;
+    continuationAfter = null;
+  }
+
+  function openComposer(sectionId: string, parent: Task | null = null) {
+    editingTask = null;
+    continuationAfter = null;
+    subtaskParent = parent;
+    composerSectionId = sectionId;
+    composerOpen = true;
   }
 
   function notify(message: string) {
@@ -69,14 +97,15 @@
       const typing = target?.matches('input, textarea, select, [contenteditable="true"]');
       if (!typing && (event.code === 'KeyQ' || event.key.toLocaleLowerCase('ru-RU') === 'q' || event.key.toLocaleLowerCase('ru-RU') === 'й')) {
         event.preventDefault();
-        if (selected || leafSections.length) { editingTask = null; subtaskParent = null; composerOpen = true; }
+        const sectionId = selectedLeafSections[0]?.id ?? leafSections[0]?.id;
+        if (sectionId) openComposer(sectionId);
       }
       if (!typing && (event.code === 'KeyF' || event.key.toLocaleLowerCase('en-US') === 'f')) {
         event.preventDefault();
         void changeView('search');
         queueMicrotask(() => document.querySelector<HTMLInputElement>('.search-input')?.focus());
       }
-      if (event.key === 'Escape') { composerOpen = false; editingTask = null; subtaskParent = null; continuationAfter = null; moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
+      if (event.key === 'Escape') { resetComposer(); moveTaskTarget = null; sectionDialog = null; sectionMenu = null; }
     };
     window.addEventListener('keydown', keyHandler);
     return () => window.removeEventListener('keydown', keyHandler);
@@ -88,7 +117,7 @@
       await loadSections();
       await loadSectionCounts();
       const wanted = new URL(location.href).searchParams.get('section');
-      const initial = leafSections.find((section) => section.id === wanted) ?? leafSections[0] ?? allSections[0];
+      const initial = allSections.find((section) => section.id === wanted) ?? leafSections[0] ?? allSections[0];
       if (initial) await selectSection(initial);
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) await goto('/login');
@@ -120,29 +149,42 @@
 
   async function selectSection(section: Section) {
     selected = section;
+    sectionLayout = getSectionLayout(section.id);
     view = 'section';
     sidebarOpen = false;
-    composerOpen = false;
-    const loaded = await api.section(section.id);
-    tasks = loaded.tasks;
-    setSectionCount(section.id, loaded.tasks.length);
+    resetComposer();
     const url = new URL(location.href);
     url.searchParams.set('section', section.id);
     replaceState(url, {});
+    await loadSelectedSection(section);
   }
 
   async function refreshSection() {
     if (!selected) return;
-    const loaded = await api.section(selected.id);
-    tasks = loaded.tasks;
-    setSectionCount(selected.id, loaded.tasks.length);
+    await loadSelectedSection(selected);
+  }
+
+  async function loadSelectedSection(section: Section): Promise<boolean> {
+    const version = ++sectionLoadVersion;
+    const leaves = descendantLeaves(section);
+    const loaded = await Promise.all(leaves.map((leaf) => api.section(leaf.id)));
+    if (version !== sectionLoadVersion || selected?.id !== section.id || view !== 'section') return false;
+    sectionGroups = leaves.map((leaf, index) => ({ section: leaf, tasks: loaded[index].tasks }));
+    tasks = sectionGroups.flatMap((group) => group.tasks);
+    for (const group of sectionGroups) setSectionCount(group.section.id, group.tasks.length);
+    return true;
+  }
+
+  function toggleSectionLayout() {
+    if (!selected || !selectedHasSubsections) return;
+    sectionLayout = sectionLayout === 'subsections' ? 'board' : 'subsections';
+    setSectionLayout(selected.id, sectionLayout);
   }
 
   async function changeView(next: 'search' | 'calendar' | 'archived') {
     view = next;
     sidebarOpen = false;
-    composerOpen = false;
-    editingTask = null;
+    resetComposer();
     if (next === 'calendar') {
       const today = new Date();
       const to = new Date(today); to.setDate(to.getDate() + 30);
@@ -164,6 +206,7 @@
   async function saveTask(draft: TaskDraft, sectionId: string) {
     await safe(async () => {
       const movedBetweenSections = editingTask !== null && editingTask.section_id !== sectionId;
+      const wasEditing = editingTask !== null;
       if (editingTask) {
         await api.updateTask(editingTask.id, draft);
         if (movedBetweenSections) await api.moveTask(editingTask.id, sectionId, 0, editingTask.parent_task_id);
@@ -184,10 +227,12 @@
         }
       }
       composerOpen = false;
+      composerSectionId = null;
       editingTask = null;
       subtaskParent = null;
       continuationAfter = null;
-      if (selected) await refreshSection();
+      if (wasEditing || view !== 'section') await refreshCurrent();
+      else if (selected) await refreshSection();
       if (movedBetweenSections) await loadSectionCounts();
       notify(t('taskSaved'));
     });
@@ -203,13 +248,14 @@
         await api.moveTask(current.id, sectionId, 0, current.parent_task_id);
         await loadSectionCounts();
       }
-      await refreshSection();
+      await refreshCurrent();
       saved = true;
       notify(t('taskSaved'));
     });
     if (!saved) return;
     editingTask = null;
     continuationAfter = { ...current, section_id: sectionId };
+    composerSectionId = sectionId;
     composerOpen = true;
   }
 
@@ -233,9 +279,9 @@
     else await changeView('calendar');
   }
 
-  function editTask(task: Task) { editingTask = task; subtaskParent = null; continuationAfter = null; composerOpen = true; }
+  function editTask(task: Task) { editingTask = task; composerSectionId = task.section_id; subtaskParent = null; continuationAfter = null; composerOpen = true; }
 
-  function openAddSubtask(task: Task) { subtaskParent = task; editingTask = null; continuationAfter = null; composerOpen = true; }
+  function openAddSubtask(task: Task) { openComposer(task.section_id, task); }
 
   function toggleCollapse(task: Task) {
     const next = new Set(collapsed);
@@ -358,41 +404,99 @@
 
 <svelte:head><title>{heading} · Planty</title></svelte:head>
 
+{#snippet renderTasks(items: Task[], variant: 'list' | 'card' = 'list', reorder = false)}
+  <TaskList
+    tasks={items}
+    {variant}
+    onToggle={(task) => void toggleTask(task)}
+    onEdit={editTask}
+    onArchive={(task) => void archiveTask(task)}
+    onDelete={(task) => void deleteTask(task)}
+    onMove={openMoveTask}
+    onDragStart={(task) => draggedTask = task}
+    onDropTask={reorder ? (task, mode) => void dropTask(task, mode) : () => {}}
+    collapsedIds={collapsed}
+    onCollapseToggle={toggleCollapse}
+    onAddSubtask={openAddSubtask}
+    newSubtaskParent={subtaskParent}
+    onSaveNewTask={saveTask}
+    onCancelNewTask={resetComposer}
+    {editingTask}
+    editSections={leafSections}
+    onSaveEdit={saveTask}
+    onCancelEdit={resetComposer}
+    onSaveAndContinue={saveTaskAndContinue}
+    {continuationAfter}
+    onSaveContinuation={saveTask}
+    onCancelContinuation={resetComposer}
+    onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)}
+  />
+{/snippet}
+
 {#if loading || !user}
   <div class="loading" aria-label={t('loading')}></div>
 {:else}
   <div class="app-shell">
     <div class="mobile-header"><button onclick={() => sidebarOpen = true} aria-label={t('openMenu')}><Menu /></button><img src="/logo.png" alt="Planty" /><span></span></div>
-    <Sidebar open={sidebarOpen} sections={visibleSections} selectedId={selected?.id ?? null} {user} {view} onClose={() => sidebarOpen = false} onSelectSection={(section) => void selectSection(section)} onView={(next) => void changeView(next)} onNewSection={openNewSection} onSectionMenu={openSectionMenu} onLogout={() => void logout()} {sectionCounts} onSectionDragStart={(section) => draggedSection = section} onSectionDrop={(target) => void dropSection(target)} onImportTodoist={importTodoist} />
+    <Sidebar open={sidebarOpen} sections={visibleSections} selectedId={selected?.id ?? null} {user} {view} onClose={() => sidebarOpen = false} onSelectSection={(section) => void selectSection(section)} onView={(next) => void changeView(next)} onNewSection={openNewSection} onSectionMenu={openSectionMenu} onLogout={() => void logout()} onSectionDragStart={(section) => draggedSection = section} onSectionDrop={(target) => void dropSection(target)} onImportTodoist={importTodoist} />
     <main class="main-content">
-      <div class="content-inner">
+      <div class:wide={view === 'section' && selectedHasSubsections && sectionLayout === 'board'} class="content-inner">
         <header class="page-heading">
           {#if view !== 'section'}<span class="heading-icon">{view === 'search' ? '🔎' : view === 'calendar' ? '🗓️' : '📦'}</span>{/if}
-          <h1>{heading}</h1>
+          <div class="page-title">
+            <h1>{heading}</h1>
+            {#if view === 'section' && selected}<span class="subsection-task-tooltip" data-testid="section-task-tooltip" aria-hidden="true">{taskCountLabel(tasks.length)}</span>{/if}
+          </div>
           <div class="heading-actions">
-            {#if view === 'section'}<button onclick={() => { editingTask = null; subtaskParent = null; composerOpen = true; }} aria-label={t('addTask')}><Plus /></button>{/if}
+            {#if view === 'section' && selectedHasSubsections}
+              <button onclick={toggleSectionLayout} aria-label={sectionLayout === 'subsections' ? t('switchToBoard') : t('switchToSubsections')} title={sectionLayout === 'subsections' ? t('boardView') : t('subsectionsView')}>
+                {#if sectionLayout === 'subsections'}<Columns3 />{:else}<ListTree />{/if}
+              </button>
+            {:else if view === 'section' && selected}
+              <button onclick={() => { if (selected) openComposer(selected.id); }} aria-label={t('addTask')}><Plus /></button>
+            {/if}
           </div>
         </header>
 
         {#if view === 'section'}
-          {#if composerOpen && selected && !editingTask && !continuationAfter}
-            <TaskComposer section={subtaskParent ? subtaskParent.section_id : selected.id} sections={subtaskParent ? [] : leafSections} onSave={saveTask} onCancel={() => { composerOpen = false; editingTask = null; subtaskParent = null; }} />
+          {#if selected && selectedHasSubsections}
+            <div class:section-board={sectionLayout === 'board'} class:subsection-list={sectionLayout === 'subsections'} data-testid={`section-${sectionLayout}`}>
+              {#each sectionGroups as group (group.section.id)}
+                <section class:board-column={sectionLayout === 'board'} class:subsection-group={sectionLayout === 'subsections'} data-testid="section-group" data-section-id={group.section.id}>
+                  <header class="subsection-heading">
+                    <div class="subsection-title">
+                      <h2>{localizedSectionTitle(group.section.title)}</h2>
+                      <span class="subsection-task-tooltip" aria-hidden="true">{taskCountLabel(group.tasks.length)}</span>
+                    </div>
+                  </header>
+                  {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent && composerSectionId === group.section.id}
+                    <TaskComposer section={group.section.id} sections={leafSections} onSave={saveTask} onCancel={resetComposer} />
+                  {/if}
+                  {@render renderTasks(group.tasks, sectionLayout === 'board' ? 'card' : 'list', true)}
+                  {#if !composerOpen || composerSectionId !== group.section.id}
+                    <button class="add-task-button" onclick={() => openComposer(group.section.id)}><Plus />{t('addTask')}</button>
+                  {/if}
+                </section>
+              {/each}
+            </div>
+          {:else if selected}
+            {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent}
+              <TaskComposer section={composerSectionId ?? selected.id} sections={leafSections} onSave={saveTask} onCancel={resetComposer} />
+            {/if}
+            {@render renderTasks(tasks, 'list', true)}
+            {#if !composerOpen}<button class="add-task-button" onclick={() => { if (selected) openComposer(selected.id); }}><Plus />{t('addTask')} <kbd>Q</kbd></button>{/if}
           {/if}
-          <div class="task-list" role="list">
-            <TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={(task, mode) => void dropTask(task, mode)} collapsedIds={collapsed} onCollapseToggle={toggleCollapse} onAddSubtask={openAddSubtask} {editingTask} editSections={leafSections} onSaveEdit={saveTask} onCancelEdit={() => { composerOpen = false; editingTask = null; }} onSaveAndContinue={saveTaskAndContinue} {continuationAfter} onSaveContinuation={saveTask} onCancelContinuation={() => { composerOpen = false; continuationAfter = null; }} onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)} />
-          </div>
-          {#if selected && !composerOpen}<button class="add-task-button" onclick={() => { editingTask = null; subtaskParent = null; composerOpen = true; }}><Plus />{t('addTask')} <kbd>Q</kbd></button>{/if}
           {#if !selected}<div class="empty-state"><div class="empty-icon">🌱</div>{t('createSectionFirst')}</div>{/if}
         {:else if view === 'search'}
           <div class="search-wrap"><Search /><input class="search-input" bind:value={query} oninput={search} placeholder={t('searchTasks')} aria-label={t('searchTasks')} /></div>
           {#if query && searchResults.length === 0}<div class="empty-state">{t('nothingFound')}</div>{/if}
-          <div class="task-list" role="list"><TaskTree tasks={searchResults} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)} /></div>
+          {@render renderTasks(searchResults)}
         {:else if view === 'calendar'}
-          {#if overdueTasks.length}<section class="calendar-group overdue-group"><h2>{t('overdue')}</h2><TaskTree tasks={overdueTasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)} /></section>{/if}
-          {#each calendarGroups as group}<section class="calendar-group"><h2>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2><TaskTree tasks={group.tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)} /></section>{/each}
+          {#if overdueTasks.length}<section class="calendar-group overdue-group"><h2>{t('overdue')}</h2>{@render renderTasks(overdueTasks)}</section>{/if}
+          {#each calendarGroups as group}<section class="calendar-group"><h2>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>{@render renderTasks(group.tasks)}</section>{/each}
           {#if !overdueTasks.length && !calendarGroups.length}<div class="empty-state"><div class="empty-icon">☀️</div>{t('noMonthTasks')}</div>{/if}
         {:else}
-          <div class="task-list" role="list"><TaskTree {tasks} onToggle={(task) => void toggleTask(task)} onEdit={editTask} onArchive={(task) => void archiveTask(task)} onDelete={(task) => void deleteTask(task)} onMove={openMoveTask} onDragStart={(task) => draggedTask = task} onDropTask={() => {}} onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)} /></div>
+          {@render renderTasks(tasks)}
           {#if !tasks.length}<div class="empty-state"><ArchiveRestore size={40} /><p>{t('archiveEmpty')}</p></div>{/if}
         {/if}
       </div>

@@ -8,6 +8,7 @@
   let {
     task,
     depth = 0,
+    variant = 'list',
     childCount = 0,
     onToggle,
     onEdit,
@@ -23,6 +24,7 @@
   }: {
     task: Task;
     depth?: number;
+    variant?: 'list' | 'card';
     childCount?: number;
     onToggle: (task: Task) => void;
     onEdit: (task: Task) => void;
@@ -101,6 +103,7 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
   class:completed={task.is_completed}
+  class:task-card={variant === 'card'}
   class:drop-before={dragMode === 'before'}
   class:drop-child={dragMode === 'child'}
   class="task-row"

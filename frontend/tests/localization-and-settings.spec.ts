@@ -11,8 +11,7 @@ test.describe('Localization', () => {
     await expect(page.getByRole('heading', { name: '📥 Входящие' })).toBeVisible();
     await expect(page.getByText('Inbox', { exact: true })).toHaveCount(0);
     const inbox = page.getByRole('button', { name: '📥 Входящие' });
-    await expect(inbox).toHaveAttribute('title', '4 задачи');
-    await expect(inbox).not.toContainText('4');
+    await expect(inbox.locator('.section-task-count')).toHaveCount(0);
     await expect(page.locator('.page-heading .heading-actions button')).toHaveCount(1);
 
     // User preferences default to auto-archive and are stored locally.

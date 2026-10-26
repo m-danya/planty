@@ -11,12 +11,15 @@ export const ids = {
   projects: '00000000-0000-4000-8000-000000000003',
   planty: '00000000-0000-4000-8000-000000000004',
   someday: '00000000-0000-4000-8000-000000000005',
+  areas: '00000000-0000-4000-8000-000000000006',
+  home: '00000000-0000-4000-8000-000000000007',
   todayTask: '10000000-0000-4000-8000-000000000001',
   tomorrowTask: '10000000-0000-4000-8000-000000000002',
   overdueTask: '10000000-0000-4000-8000-000000000003',
   futureTask: '10000000-0000-4000-8000-000000000004',
   archivedTask: '10000000-0000-4000-8000-000000000005',
-  projectTask: '10000000-0000-4000-8000-000000000006'
+  projectTask: '10000000-0000-4000-8000-000000000006',
+  homeTask: '10000000-0000-4000-8000-000000000007'
 } as const;
 
 type JsonObject = Record<string, unknown>;
@@ -73,7 +76,9 @@ function task(overrides: Partial<Task> & Pick<Task, 'id' | 'section_id' | 'title
 
 function initialState(): MockState {
   const planty = section(ids.planty, '☘️ Planty', ids.projects);
-  const projects = section(ids.projects, 'Проекты', ids.root, [planty]);
+  const home = section(ids.home, 'Дом', ids.areas);
+  const areas = section(ids.areas, 'Сферы', ids.projects, [home]);
+  const projects = section(ids.projects, 'Проекты', ids.root, [planty, areas]);
   const inbox = section(ids.inbox, '📥 Inbox', ids.root);
   const someday = section(ids.someday, 'Когда-нибудь', ids.root);
 
@@ -126,6 +131,11 @@ function initialState(): MockState {
         id: ids.projectTask,
         section_id: ids.planty,
         title: 'Допилить интерфейс'
+      }),
+      task({
+        id: ids.homeTask,
+        section_id: ids.home,
+        title: 'Купить растения'
       })
     ],
     requests: [],
