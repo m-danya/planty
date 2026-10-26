@@ -10,7 +10,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from fastapi_users_db_sqlalchemy.access_token import (
     SQLAlchemyBaseAccessTokenTableUUID,
 )
-from planty.domain.task import Attachment, RecurrenceInfo, Section, Task, User
+from planty.domain.task import RecurrenceInfo, Section, Task, User
 from planty.infrastructure.database import Base
 from planty.infrastructure.utils import GUID  # type: ignore
 from planty.utils import get_datetime_now
@@ -23,6 +23,9 @@ class TaskModel(Base):
     added_at: Mapped[datetime] = mapped_column(DateTime)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("user.id"))
     section_id: Mapped[UUID] = mapped_column(ForeignKey("section.id"))
+    parent_task_id: Mapped[Optional[UUID]] = mapped_column(
+        ForeignKey("task.id"), nullable=True
+    )
     title: Mapped[str]
     description: Mapped[Optional[str]]
     is_completed: Mapped[bool]
@@ -36,11 +39,6 @@ class TaskModel(Base):
 
     section = relationship("SectionModel", back_populates="tasks")
     user = relationship("UserModel", back_populates="tasks")
-    attachments = relationship(
-        "AttachmentModel",
-        back_populates="task",
-        order_by="AttachmentModel.index",
-    )
 
     @classmethod
     def from_entity(cls, task: Task, index: NonNegativeInt) -> "TaskModel":
@@ -48,6 +46,7 @@ class TaskModel(Base):
             id=task.id,
             user_id=task.user_id,
             section_id=task.section_id,
+            parent_task_id=task.parent_task_id,
             added_at=task.added_at,
             title=task.title,
             description=task.description,
@@ -62,7 +61,7 @@ class TaskModel(Base):
             index=index,
         )
 
-    def to_entity(self, attachments: list[Attachment]) -> Task:
+    def to_entity(self) -> Task:
         recurrence = (
             RecurrenceInfo(
                 period=self.recurrence_period,
@@ -76,6 +75,7 @@ class TaskModel(Base):
             id=self.id,
             user_id=self.user_id,
             section_id=self.section_id,
+            parent_task_id=self.parent_task_id,
             title=self.title,
             description=self.description,
             is_completed=self.is_completed,
@@ -83,7 +83,6 @@ class TaskModel(Base):
             added_at=self.added_at,
             due_to=self.due_to,
             recurrence=recurrence,
-            attachments=attachments,
         )
 
 
@@ -151,42 +150,4 @@ class SectionModel(Base):
             subsections=subsections,
             has_tasks=self.has_tasks,
             has_subsections=self.has_subsections,
-        )
-
-
-class AttachmentModel(Base):
-    __tablename__ = "attachment"
-    id: Mapped[UUID] = mapped_column(GUID, primary_key=True)
-    added_at: Mapped[datetime] = mapped_column(DateTime)
-    index: Mapped[int]
-    task_id: Mapped[UUID] = mapped_column(ForeignKey("task.id"))
-
-    aes_key_b64: Mapped[str]
-    aes_iv_b64: Mapped[str]
-    s3_file_key: Mapped[str]
-
-    task = relationship("TaskModel", back_populates="attachments")
-
-    @classmethod
-    def from_entity(
-        cls, attachment: Attachment, index: NonNegativeInt
-    ) -> "AttachmentModel":
-        return cls(
-            id=attachment.id,
-            added_at=attachment.added_at,
-            index=index,
-            task_id=attachment.task_id,
-            aes_key_b64=attachment.aes_key_b64,
-            aes_iv_b64=attachment.aes_iv_b64,
-            s3_file_key=attachment.s3_file_key,
-        )
-
-    def to_entity(self) -> Attachment:
-        return Attachment(
-            id=self.id,
-            added_at=self.added_at,
-            task_id=self.task_id,
-            aes_key_b64=self.aes_key_b64,
-            aes_iv_b64=self.aes_iv_b64,
-            s3_file_key=self.s3_file_key,
         )

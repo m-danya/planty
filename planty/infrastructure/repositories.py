@@ -3,7 +3,7 @@ from typing import Optional, Sequence
 from uuid import UUID
 
 from pydantic import NonNegativeInt
-from sqlalchemy import asc, desc, func, select
+from sqlalchemy import asc, delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -13,9 +13,8 @@ from planty.application.exceptions import (
     UserNotFoundException,
 )
 from planty.application.schemas import UserStats
-from planty.domain.task import Attachment, Section, Task
+from planty.domain.task import Section, Task
 from planty.infrastructure.models import (
-    AttachmentModel,
     SectionModel,
     TaskModel,
     UserModel,
@@ -33,13 +32,11 @@ class SQLAlchemyUserRepository:
                 UserModel,
                 func.count(TaskModel.id).label("tasks_count"),
                 func.count(SectionModel.id).label("sections_count"),
-                func.count(AttachmentModel.id).label("attachments_count"),
                 UserModel.is_superuser.label("is_superuser"),  # type: ignore
                 UserModel.is_verified.label("is_verified"),  # type: ignore
             )
             .outerjoin(TaskModel, UserModel.id == TaskModel.user_id)  # type: ignore
             .outerjoin(SectionModel, UserModel.id == SectionModel.user_id)  # type: ignore
-            .outerjoin(AttachmentModel, TaskModel.attachments)
             .group_by(UserModel)  # type: ignore
             .order_by(desc(UserModel.added_at))
         )
@@ -49,14 +46,12 @@ class SQLAlchemyUserRepository:
             user_model,
             tasks_count,
             sections_count,
-            attachments_count,
             is_superuser,
             is_verified,
         ) in result:
             user = user_model.to_entity().model_dump()
             user["tasks_count"] = tasks_count
             user["sections_count"] = sections_count
-            user["attachments_count"] = attachments_count
             user["is_superuser"] = is_superuser
             user["is_verified"] = is_verified
             users.append(UserStats.model_validate(user))
@@ -79,38 +74,37 @@ class SQLAlchemyTaskRepository:
         self._db_session = db_session
 
     async def add(self, task: Task, index: NonNegativeInt) -> None:
-        # assuming that task can't have attachments when created
-        # (according to `TaskCreateRequest`)
         task_model = TaskModel.from_entity(task, index=index)
         self._db_session.add(task_model)
 
     async def get(self, task_id: UUID) -> Task:
         result = await self._db_session.execute(
-            select(TaskModel)
-            .where(TaskModel.id == task_id)
-            .options(selectinload(TaskModel.attachments))
+            select(TaskModel).where(TaskModel.id == task_id)
         )
         task_model: Optional[TaskModel] = result.scalar_one_or_none()
         if task_model is None:
             raise TaskNotFoundException(task_id=task_id)
         return await self.get_entity(task_model)
 
-    async def get_entity(self, task_model: TaskModel) -> Task:
-        return task_model.to_entity(
-            attachments=[
-                attachment.to_entity() for attachment in task_model.attachments
-            ]
+    async def get_children(self, task_id: UUID) -> list[Task]:
+        result = await self._db_session.execute(
+            select(TaskModel)
+            .where(TaskModel.parent_task_id == task_id)
+            .order_by(asc(TaskModel.index))
         )
+        return await self.get_entities(result.scalars().all())
+
+    async def has_tasks_in_section(self, section_id: UUID) -> bool:
+        result = await self._db_session.execute(
+            select(TaskModel.id).where(TaskModel.section_id == section_id).limit(1)
+        )
+        return result.scalar_one_or_none() is not None
+
+    async def get_entity(self, task_model: TaskModel) -> Task:
+        return task_model.to_entity()
 
     async def get_entities(self, task_models: Sequence[TaskModel]) -> list[Task]:
-        return [
-            task_model.to_entity(
-                attachments=[
-                    attachment.to_entity() for attachment in task_model.attachments
-                ]
-            )
-            for task_model in task_models
-        ]
+        return [task_model.to_entity() for task_model in task_models]
 
     async def update_or_create(
         self,
@@ -134,9 +128,6 @@ class SQLAlchemyTaskRepository:
         # update index if it's meant to be updated
         if index is not None:
             task_model.index = index
-
-        for i, attachment in enumerate(task.attachments):
-            await self._persist_attachment(attachment, index=i)
 
         self._db_session.add(task_model)
 
@@ -166,14 +157,12 @@ class SQLAlchemyTaskRepository:
             self._fill_in_model_except_index(task, task_model)
             task_model.index = i
 
-            for i, attachment in enumerate(task.attachments):
-                await self._persist_attachment(attachment, index=i)
-
             self._db_session.add(task_model)
 
     def _fill_in_model_except_index(self, task: Task, task_model: TaskModel) -> None:
         task_model.user_id = task.user_id
         task_model.section_id = task.section_id
+        task_model.parent_task_id = task.parent_task_id
         task_model.title = task.title
         task_model.description = task.description
         task_model.is_completed = task.is_completed
@@ -198,51 +187,25 @@ class SQLAlchemyTaskRepository:
 
         query = f"%{query}%"
 
-        query = (
-            select(TaskModel)
-            .where(
-                (TaskModel.user_id == user_id)
-                & (TaskModel.is_archived.is_(False))
-                & (TaskModel.title.ilike(query) | TaskModel.description.ilike(query))
-            )
-            .options(selectinload(TaskModel.attachments))
+        query = select(TaskModel).where(
+            (TaskModel.user_id == user_id)
+            & (TaskModel.is_archived.is_(False))
+            & (TaskModel.title.ilike(query) | TaskModel.description.ilike(query))
         )
         result = await self._db_session.execute(query)
         task_models = result.scalars().all()
         return await self.get_entities(task_models)
 
-    async def _persist_attachment(
-        self, attachment: Attachment, index: NonNegativeInt
-    ) -> None:
-        result = await self._db_session.execute(
-            select(AttachmentModel).where(AttachmentModel.id == attachment.id)
-        )
-        attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
-        if attachment_model is not None:
-            # attachment exists -> ok (attachments can't be updated)
-            return
-        attachment_model = AttachmentModel.from_entity(attachment, index=index)
-        self._db_session.add(attachment_model)
-
-    async def delete_attachment(self, attachment: Attachment) -> None:
-        result = await self._db_session.execute(
-            select(AttachmentModel).where(AttachmentModel.id == attachment.id)
-        )
-        attachment_model: Optional[AttachmentModel] = result.scalar_one_or_none()
-        await self._db_session.delete(attachment_model)
-
     async def get_tasks_by_due_to(
         self, not_before: date, not_after: date, user_id: UUID
     ) -> list[Task]:
         result = await self._db_session.execute(
-            select(TaskModel)
-            .where(
+            select(TaskModel).where(
                 (TaskModel.user_id == user_id)
                 & (TaskModel.due_to >= not_before)
                 & (TaskModel.due_to <= not_after)
                 & (TaskModel.is_archived.is_(False))
             )
-            .options(selectinload(TaskModel.attachments))
         )
         task_models = result.scalars().all()
         return await self.get_entities(task_models)
@@ -255,7 +218,6 @@ class SQLAlchemyTaskRepository:
                 & (TaskModel.due_to < get_today())
                 & (TaskModel.is_archived.is_(False))
             )
-            .options(selectinload(TaskModel.attachments))
             .order_by(asc(TaskModel.due_to), asc(TaskModel.added_at))
         )
         task_models = result.scalars().all()
@@ -266,7 +228,6 @@ class SQLAlchemyTaskRepository:
             select(TaskModel)
             .where((TaskModel.user_id == user_id) & (TaskModel.is_archived.is_(True)))
             .order_by(desc(TaskModel.added_at))
-            .options(selectinload(TaskModel.attachments))
         )
         task_models = result.scalars().all()
         return await self.get_entities(task_models)
@@ -290,6 +251,34 @@ class SQLAlchemySectionRepository:
         section_model = SectionModel.from_entity(section, index=index)
         self._db_session.add(section_model)
 
+    async def get_root(self, user_id: UUID) -> Section:
+        result = await self._db_session.execute(
+            select(SectionModel).where(
+                (SectionModel.user_id == user_id) & (SectionModel.parent_id.is_(None))
+            )
+        )
+        section_model = result.scalar_one_or_none()
+        if section_model is None:
+            raise SectionNotFoundException(user_id=user_id, parent_id=None)
+        return section_model.to_entity(tasks=[], subsections=[])
+
+    async def remove_all_for_user(self, user_id: UUID) -> None:
+        await self._db_session.execute(
+            delete(TaskModel).where(TaskModel.user_id == user_id)
+        )
+        await self._db_session.execute(
+            delete(SectionModel).where(SectionModel.user_id == user_id)
+        )
+
+    async def remove(self, section: Section) -> None:
+        result = await self._db_session.execute(
+            select(SectionModel).where(SectionModel.id == section.id)
+        )
+        section_model = result.scalar_one_or_none()
+        if section_model is None:
+            raise SectionNotFoundException(section_id=section.id)
+        await self._db_session.delete(section_model)
+
     async def get(
         self,
         section_id: UUID,
@@ -298,9 +287,7 @@ class SQLAlchemySectionRepository:
         result = await self._db_session.execute(
             select(SectionModel)
             .where(SectionModel.id == section_id)
-            .options(
-                selectinload(SectionModel.tasks).selectinload(TaskModel.attachments)
-            )
+            .options(selectinload(SectionModel.tasks))
         )
         section_model: Optional[SectionModel] = result.scalar_one_or_none()
         if section_model is None:
@@ -313,7 +300,9 @@ class SQLAlchemySectionRepository:
             subsection_models = (
                 (
                     await self._db_session.execute(
-                        select(SectionModel).where(SectionModel.parent_id == section_id)
+                        select(SectionModel)
+                        .where(SectionModel.parent_id == section_id)
+                        .order_by(asc(SectionModel.index))
                     )
                 )
                 .scalars()

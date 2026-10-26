@@ -1,7 +1,5 @@
 node_modules
-npm-debug.log
-.dockerignore
-README.md
-LICENSE
-.next
-*.swp
+build
+.svelte-kit
+test-results
+playwright-report

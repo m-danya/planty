@@ -66,10 +66,14 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Run ESLint
+      - name: Run svelte-check
         working-directory: frontend
-        run: npm run lint
+        run: npm run check
 
-      - name: Check TypeScript compilation
+      - name: Run frontend unit tests
+        working-directory: frontend
+        run: npm run test
+
+      - name: Build frontend
         working-directory: frontend
         run: npm run build

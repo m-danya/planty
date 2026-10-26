@@ -1,19 +1,13 @@
 from datetime import date
 from uuid import UUID
 
-import aiobotocore
-import aiobotocore.session
-
 from planty.application.exceptions import (
-    AttachmentNotFoundException,
     ForbiddenException,
     IncorrectDateInterval,
     TaskNotFoundException,
 )
 from planty.application.schemas import (
     ArchivedTasks,
-    AttachmentUploadInfo,
-    RequestAttachmentUpload,
     ArchivedTasksResponse,
     SectionCreateRequest,
     SectionMoveRequest,
@@ -28,10 +22,6 @@ from planty.application.schemas import (
     TaskSearchResponse,
     SectionsListResponse,
 )
-from planty.application.services.attachments import (
-    delete_attachment,
-    generate_presigned_post_url,
-)
 from planty.application.services.responses_converter import (
     convert_to_response,
 )
@@ -40,15 +30,17 @@ from planty.domain.calendar import divide_tasks_by_dates
 from planty.domain.exceptions import (
     ChangingRootSectionError,
     MisplaceSectionHierarchyError,
+    SectionNotEmptyError,
+    TaskCantBeOwnParentError,
+    TaskHasSubtasksError,
 )
-from planty.domain.task import Attachment, Section, Task
+from planty.domain.task import Section, Task
 
 
 class TaskService:
     def __init__(self, uow: IUnitOfWork):
         self._task_repo = uow.task_repo
         self._user_repo = uow.user_repo
-        self._s3_session = aiobotocore.session.get_session()
 
     async def update_task(
         self, user_id: UUID, task_update_request: TaskUpdateRequest
@@ -98,44 +90,6 @@ class TaskService:
     ) -> TaskSearchResponse:
         tasks = await self._task_repo.search(user_id, query)
         return convert_to_response(tasks)
-
-    async def add_attachment(
-        self, user_id: UUID, request: RequestAttachmentUpload
-    ) -> AttachmentUploadInfo:
-        task = await self._task_repo.get(request.task_id)
-        if task.user_id != user_id:
-            raise ForbiddenException()
-        post_url, post_fields, file_key = await generate_presigned_post_url(
-            self._s3_session
-        )
-        task.add_attachment(
-            Attachment(
-                task_id=task.id,
-                aes_key_b64=request.aes_key_b64,
-                aes_iv_b64=request.aes_iv_b64,
-                s3_file_key=file_key,
-            )
-        )
-        await self._task_repo.update_or_create(task)
-        return AttachmentUploadInfo(post_url=post_url, post_fields=post_fields)
-
-    async def remove_attachment(
-        self, user_id: UUID, task_id: UUID, attachment_id: UUID
-    ) -> None:
-        task = await self._task_repo.get(task_id)
-        if task.user_id != user_id:
-            raise ForbiddenException()
-        try:
-            attachment: Attachment = next(
-                a for a in task.attachments if a.id == attachment_id
-            )
-        except StopIteration:
-            raise AttachmentNotFoundException(id=attachment_id)
-        # remove from minio
-        await delete_attachment(self._s3_session, attachment.s3_file_key)
-        task.remove_attachment(attachment)
-        await self._task_repo.update_or_create(task)
-        await self._task_repo.delete_attachment(attachment)
 
 
 class SectionService:
@@ -198,15 +152,24 @@ class SectionService:
         return convert_to_response(sections)
 
     async def create_task(self, user_id: UUID, task: TaskCreateRequest) -> UUID:
+        task_request = task
         task = Task(
             user_id=user_id,
-            section_id=task.section_id,
-            title=task.title,
+            section_id=task_request.section_id,
+            parent_task_id=task_request.parent_task_id,
+            title=task_request.title,
+            description=task_request.description,
             is_completed=False,
-            due_to=task.due_to,
-            recurrence=task.recurrence,
+            due_to=task_request.due_to,
+            recurrence=task_request.recurrence,
         )
         section = await self._section_repo.get(task.section_id)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        if task.parent_task_id is not None:
+            parent = await self._task_repo.get(task.parent_task_id)
+            if parent.user_id != user_id or parent.section_id != section.id:
+                raise ForbiddenException()
         section.insert_task(task)
         await self._section_repo.update(section)
         return task.id
@@ -226,7 +189,9 @@ class SectionService:
             task = Task(
                 user_id=user_id,
                 section_id=task_request.section_id,
+                parent_task_id=task_request.parent_task_id,
                 title=task_request.title,
+                description=task_request.description,
                 is_completed=False,
                 due_to=task_request.due_to,
                 recurrence=task_request.recurrence,
@@ -244,6 +209,8 @@ class SectionService:
         if task.user_id != user_id:
             raise ForbiddenException()
         section = await self._section_repo.get(task.section_id)
+        if await self._task_repo.get_children(task.id):
+            raise TaskHasSubtasksError()
         task = section.remove_task(task)
         await self._task_repo.remove(task)
         await self._section_repo.update(section)
@@ -259,13 +226,69 @@ class SectionService:
         else:
             section_to = await self._section_repo.get(request.section_to_id)
 
+        async def collect_descendants(parent_id: UUID) -> list[Task]:
+            descendants: list[Task] = []
+            for candidate in await self._task_repo.get_children(parent_id):
+                descendants.append(candidate)
+                descendants.extend(await collect_descendants(candidate.id))
+            return descendants
+
+        descendants = await collect_descendants(task.id)
+
+        if section_to.user_id != user_id:
+            raise ForbiddenException()
+        if request.parent_task_id is not None:
+            if request.parent_task_id == task.id:
+                raise TaskCantBeOwnParentError()
+            parent = await self._task_repo.get(request.parent_task_id)
+            if parent.user_id != user_id or parent.section_id != section_to.id:
+                raise ForbiddenException()
+            ancestor = parent
+            while ancestor.parent_task_id is not None:
+                if ancestor.parent_task_id == task.id:
+                    raise TaskCantBeOwnParentError()
+                ancestor = await self._task_repo.get(ancestor.parent_task_id)
+
         Section.move_task(task, section_from, section_to, request.index)
+        task.move_to(section_to.id, request.parent_task_id)
+
+        if not same_section:
+            descendant_index = request.index + 1
+            for descendant in descendants:
+                if descendant.is_archived:
+                    descendant.move_to(section_to.id, descendant.parent_task_id)
+                    await self._task_repo.update_or_create(descendant, must_exist=True)
+                else:
+                    section_from.remove_task(descendant)
+                    section_to.insert_task(descendant, descendant_index)
+                    descendant.move_to(section_to.id, descendant.parent_task_id)
+                    descendant_index += 1
 
         if same_section:
             await self._section_repo.update(section_from)
         else:
             await self._section_repo.update(section_from)
             await self._section_repo.update(section_to)
+
+    async def remove_section(self, user_id: UUID, section_id: UUID) -> None:
+        section = await self._section_repo.get(section_id, with_direct_subsections=True)
+        if section.user_id != user_id:
+            raise ForbiddenException()
+        if section.is_root():
+            raise ChangingRootSectionError()
+        if (
+            section.has_tasks
+            or section.has_subsections
+            or await self._task_repo.has_tasks_in_section(section.id)
+        ):
+            raise SectionNotEmptyError()
+        assert section.parent_id
+        parent = await self._section_repo.get(
+            section.parent_id, with_direct_subsections=True
+        )
+        parent.remove_subsection(section)
+        await self._section_repo.remove(section)
+        await self._section_repo.update(parent)
 
     async def move_section(self, user_id: UUID, request: SectionMoveRequest) -> None:
         # move `section` from `section_from` to `section to` with given `index``

@@ -104,3 +104,24 @@ def test_recurrent_task_completion(
 
     assert not task.is_completed
     assert task.due_to == expected_next_date
+
+
+@pytest.mark.parametrize(
+    "start_day,expected_next_date",
+    [
+        (date(2026, 10, 23), date(2026, 10, 26)),  # Friday -> Monday
+        (date(2026, 10, 24), date(2026, 10, 26)),  # Saturday -> Monday
+        (date(2026, 10, 26), date(2026, 10, 27)),
+    ],
+)
+def test_weekday_recurrence(
+    task_from_2001: Task, start_day: date, expected_next_date: date
+) -> None:
+    task_from_2001.due_to = start_day
+    assert task_from_2001.recurrence
+    task_from_2001.recurrence.period = 1
+    task_from_2001.recurrence.type = "weekdays"
+
+    task_from_2001.mark_completed()
+
+    assert task_from_2001.due_to == expected_next_date

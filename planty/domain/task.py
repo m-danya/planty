@@ -22,6 +22,7 @@ from planty.domain.exceptions import (
     RemovingTaskFromWrongSectionError,
     MovingTaskIndexError,
     SectionCantBothHaveTasksAndSubsection,
+    TaskCantBeOwnParentError,
 )
 
 
@@ -47,6 +48,7 @@ class Task(Entity):
     id: UUID = Field(default_factory=generate_uuid)
     user_id: UUID
     section_id: UUID
+    parent_task_id: Optional[UUID] = None
     title: str
     description: Optional[str] = None
     content: Optional[str] = None  # Markdown content
@@ -58,8 +60,6 @@ class Task(Entity):
 
     due_to: Optional[date] = None
     recurrence: Optional[RecurrenceInfo] = None
-
-    attachments: list["Attachment"] = Field(default_factory=list)
 
     @model_validator(mode="before")
     @classmethod
@@ -76,14 +76,33 @@ class Task(Entity):
     def __hash__(self) -> int:
         return hash(self.id)
 
+    def move_to(self, section_id: UUID, parent_task_id: Optional[UUID]) -> None:
+        if parent_task_id == self.id:
+            raise TaskCantBeOwnParentError()
+        self.section_id = section_id
+        self.parent_task_id = parent_task_id
+
     def mark_completed(self, auto_archive: bool = True) -> None:
         if self.recurrence is not None:
             assert self.due_to  # only for type checking, it's already validated
-            delta = relativedelta(**{self.recurrence.type: self.recurrence.period})  # type: ignore
-            if self.recurrence.flexible_mode:
-                self.due_to = get_datetime_now().date() + delta
+            if self.recurrence.type == "weekdays":
+                next_due = (
+                    get_datetime_now().date()
+                    if self.recurrence.flexible_mode
+                    else self.due_to
+                )
+                weekdays_left = self.recurrence.period
+                while weekdays_left:
+                    next_due += relativedelta(days=1)
+                    if next_due.weekday() < 5:
+                        weekdays_left -= 1
+                self.due_to = next_due
             else:
-                self.due_to += delta
+                delta = relativedelta(**{self.recurrence.type: self.recurrence.period})  # type: ignore
+                if self.recurrence.flexible_mode:
+                    self.due_to = get_datetime_now().date() + delta
+                else:
+                    self.due_to += delta
         else:
             self.is_completed = True
             if auto_archive:
@@ -100,12 +119,6 @@ class Task(Entity):
 
     def toggle_archived(self) -> None:
         self.is_archived = not self.is_archived
-
-    def add_attachment(self, attachment: "Attachment") -> None:
-        self.attachments.append(attachment)
-
-    def remove_attachment(self, attachment: "Attachment") -> None:
-        self.attachments.remove(attachment)
 
     def archive(self) -> None:
         self.is_archived = True
@@ -245,19 +258,3 @@ class Section(Entity):
 
     def shuffle_tasks(self) -> None:
         random.shuffle(self.tasks)
-
-
-class Attachment(Entity):
-    id: UUID = Field(default_factory=generate_uuid)
-    aes_key_b64: str
-    aes_iv_b64: str
-    s3_file_key: str
-    task_id: UUID
-
-    added_at: datetime = Field(default_factory=get_datetime_now)
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, Attachment) and self.id == other.id
-
-    def __hash__(self) -> int:
-        return hash(self.id)

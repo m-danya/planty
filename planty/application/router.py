@@ -1,18 +1,17 @@
 from datetime import date
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status, Request
+from fastapi import APIRouter, Depends, File, Form, Request, UploadFile, status
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from planty.application.auth import admin_user, current_user
 from planty.application.schemas import (
     ArchivedTasksResponse,
-    AttachmentUploadInfo,
-    RequestAttachmentUpload,
     SectionCreateRequest,
     SectionCreateResponse,
     SectionMoveRequest,
+    SectionRemoveRequest,
     SectionResponse,
     SectionsListResponse,
     SectionUpdateRequest,
@@ -29,11 +28,16 @@ from planty.application.schemas import (
     TaskToggleCompletedRequest,
     TaskUpdateRequest,
     TaskUpdateResponse,
+    TodoistImportResponse,
 )
 from planty.application.services.admin import AdminService
 from planty.application.services.tasks import (
     SectionService,
     TaskService,
+)
+from planty.application.services.todoist_import import (
+    MAX_ARCHIVE_SIZE,
+    TodoistImportService,
 )
 from planty.application.uow import SqlAlchemyUnitOfWork
 from planty.domain.task import User
@@ -143,41 +147,6 @@ async def toggle_task_archived(
     return section
 
 
-@router.post(
-    "/task/attachment",
-    description=(
-        "This endpoint allows the frontend to obtain a pre-signed POST URL along "
-        "with the required fields for uploading an attachment to an S3-compatible "
-        "storage. The frontend is responsible for encrypting the file client-side "
-        "using AES-128 CBC with the provided key and IV. After encryption, the frontend "
-        "directly uploads the file to the S3 storage using the pre-signed URL and fields. "
-        "\n\nThe frontend can include the 'Content-Disposition' header in the "
-        "upload request to specify the file name, ensuring that the file is downloaded "
-        "later with the correct name."
-        "\n\nThe approach with client-side encryption allows using even non-trusted "
-        "S3 Storage providers for user files."
-    ),
-)
-async def get_attachment_uploading_info(
-    request: RequestAttachmentUpload, user: User = Depends(current_user)
-) -> AttachmentUploadInfo:
-    async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        upload_info = await task_service.add_attachment(user.id, request)
-        await uow.commit()
-    return upload_info
-
-
-@router.delete("/task/{task_id}/attachment/{attachment_id}")
-async def remove_attachment(
-    task_id: UUID, attachment_id: UUID, user: User = Depends(current_user)
-) -> None:
-    async with SqlAlchemyUnitOfWork() as uow:
-        task_service = TaskService(uow=uow)
-        await task_service.remove_attachment(user.id, task_id, attachment_id)
-        await uow.commit()
-
-
 @router.get("/tasks/archived")
 async def get_archived_tasks(
     user: User = Depends(current_user),
@@ -219,6 +188,16 @@ async def patch_section(
         return SectionUpdateResponse(section=section)
 
 
+@router.delete("/section", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_section(
+    request: SectionRemoveRequest, user: User = Depends(current_user)
+) -> None:
+    async with SqlAlchemyUnitOfWork() as uow:
+        section_service = SectionService(uow=uow)
+        await section_service.remove_section(user.id, request.section_id)
+        await uow.commit()
+
+
 @router.post("/section/move")
 async def move_section(
     request: SectionMoveRequest, user: User = Depends(current_user)
@@ -241,6 +220,26 @@ async def get_sections(
             user.id, leaves_only=leaves_only, as_tree=as_tree
         )
         return sections
+
+
+@router.post("/import/todoist")
+async def import_todoist_backup(
+    file: UploadFile = File(...),
+    erase_existing: bool = Form(True),
+    user: User = Depends(current_user),
+) -> TodoistImportResponse:
+    archive = await file.read(MAX_ARCHIVE_SIZE + 1)
+    async with SqlAlchemyUnitOfWork() as uow:
+        import_service = TodoistImportService(uow=uow)
+        result = await import_service.import_backup(
+            user.id, archive, erase_existing=erase_existing
+        )
+        await uow.commit()
+    return TodoistImportResponse(
+        projects=result.projects,
+        sections=result.sections,
+        tasks=result.tasks,
+    )
 
 
 @router.post("/section/shuffle")

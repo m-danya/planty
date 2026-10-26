@@ -39,13 +39,14 @@ class SectionNotFoundException(EntityNotFoundException):
     entity_name = "section"
 
 
-class AttachmentNotFoundException(EntityNotFoundException):
-    entity_name = "attachment"
-
-
 class IncorrectDateInterval(PlantyException):
     status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
     detail = "Incorrect date interval"
+
+
+class InvalidTodoistBackupException(PlantyException):
+    status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+    detail = "Invalid Todoist backup"
 
 
 class ForbiddenException(PlantyException):

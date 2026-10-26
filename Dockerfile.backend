@@ -7,9 +7,9 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY pyproject.toml .
+COPY pyproject.toml uv.lock ./
 
-RUN uv sync
+RUN uv sync --frozen --no-dev
 
 COPY planty/ planty/
 COPY alembic/ alembic/
@@ -17,4 +17,4 @@ COPY alembic.ini .
 
 EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "planty.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "--no-sync", "uvicorn", "planty.main:app", "--host", "0.0.0.0", "--port", "8000"]
