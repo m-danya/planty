@@ -12,6 +12,7 @@ test.describe('Tasks', () => {
     await page.getByLabel('Название задачи').press('Shift+Enter');
     const continuation = page.getByTestId('new-task');
     await expect(continuation).toBeVisible();
+    await expect(continuation.getByRole('button', { name: 'Флаг' })).toHaveCount(0);
     await expect(continuation.locator('..')).toHaveCSS('padding-left', '28px');
     await continuation.getByLabel('Название задачи').fill('Купить воду для тренировки');
     await continuation.getByLabel('Название задачи').press('Enter');

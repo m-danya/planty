@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { CalendarDays, Check, CircleHelp, Clock3, Flag, Plus, Repeat2, X } from '@lucide/svelte';
+  import { CalendarDays, Check, CircleHelp, Clock3, Plus, Repeat2, X } from '@lucide/svelte';
   import { parseTaskText, recurrenceLabel, toDraft } from '$lib/date-parser';
   import { getLocale, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import { taskDatePresentation } from '$lib/task-date-presentation';
@@ -167,7 +167,6 @@
         {#if effectiveRecurrence}<Repeat2 size={14} aria-label={recurrenceLabel(effectiveRecurrence, getLocale())} />{/if}
       </button>
     {/if}
-    <button type="button" class="chip-button" title={t('flag')} aria-label={t('flag')}><Flag size={18} /></button>
     {#if sections.length > 0}
       <select bind:value={selectedSection} aria-label={t('taskSection')}>
         {#each sections as option}<option value={option.id}>{localizedSectionTitle(option.title)}</option>{/each}

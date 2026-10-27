@@ -62,6 +62,7 @@ backend, database, network access, or pre-existing user data.
   1. Edit a nested task and press Shift+Enter.
     - expect: the edit is saved and a new composer opens after the task subtree
     - expect: the next task is created with the same parent, due date, and sibling position
+    - expect: the composer does not render the unused flag action
   2. Create a task containing a flexible recurring natural-language date and time.
     - expect: the phrase is highlighted, `каждые!` maps to flexible recurrence,
       and the create payload contains the parsed due time
