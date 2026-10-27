@@ -180,22 +180,28 @@
     <button type="button" class="popover-shield" aria-label={t('closeMenu')} onclick={() => dateOpen = false}></button>
     <section class="date-popover" aria-label={t('dateDetails')}>
       <header><CalendarDays size={19} /><strong>{t('dateDetails')}</strong><button type="button" onclick={() => dateOpen = false} aria-label={t('closeMenu')}><X size={17} /></button></header>
-      <dl>
-        <div><dt>{t('dueDate')}</dt><dd>{formatDate(effectiveDate)}</dd></div>
-        <div><dt>{t('dueTime')}</dt><dd><label class="time-field"><Clock3 size={15} /><input type="text" inputmode="numeric" pattern="(?:[01]\d|2[0-3]):[0-5]\d" maxlength="5" placeholder="00:00" value={effectiveTime?.slice(0, 5) ?? ''} onchange={changeDueTime} aria-label={t('dueTime')} /></label></dd></div>
-        <div>
-          <dt class="repeat-label">
+      <div class="date-summary">
+        <span>{formatDate(effectiveDate)}</span>
+        {#if effectiveTime}
+          <span class="date-summary-separator" aria-hidden="true">,</span>
+          <label class="time-field"><Clock3 size={15} /><input type="text" inputmode="numeric" pattern="(?:[01]\d|2[0-3]):[0-5]\d" maxlength="5" value={effectiveTime.slice(0, 5)} onchange={changeDueTime} aria-label={t('dueTime')} /></label>
+        {/if}
+      </div>
+      {#if effectiveRecurrence}
+        <div class="recurrence-summary">
+          <div class="repeat-label">
             {t('repeat')}
             <button type="button" class="repeat-help" aria-label={t('flexibleHelp')}>
               <CircleHelp size={15} />
               <span role="tooltip">{t('flexibleHelp')}</span>
             </button>
-          </dt>
-          <dd>{effectiveRecurrence ? recurrenceLabel(effectiveRecurrence, getLocale()) : t('noRepeat')}</dd>
+          </div>
+          <div class="recurrence-value">
+            {recurrenceLabel(effectiveRecurrence, getLocale())}{#if effectiveRecurrence.flexible_mode}{' — '}{t('fromCompletion')}{/if}
+          </div>
         </div>
-        {#if effectiveRecurrence}<div><dt>{t('schedule')}</dt><dd>{effectiveRecurrence.flexible_mode ? t('flexibleSchedule') : t('fixedSchedule')}</dd></div>{/if}
-        {#if parsed.phrase}<div><dt>{t('sourcePhrase')}</dt><dd>«{parsed.phrase}»</dd></div>{/if}
-      </dl>
+      {/if}
+      {#if parsed.phrase}<p class="date-source"><span>{t('sourcePhrase')}:</span> «{parsed.phrase}»</p>{/if}
       <DatePicker inline value={effectiveDate} onSelect={changeDueDate} onClose={() => {}} />
     </section>
   {/if}

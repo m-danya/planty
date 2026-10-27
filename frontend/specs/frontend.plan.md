@@ -66,8 +66,10 @@ backend, database, network access, or pre-existing user data.
   2. Create a task containing a flexible recurring natural-language date and time.
     - expect: the phrase is highlighted, `каждые!` maps to flexible recurrence,
       and the create payload contains the parsed due time
-    - expect: clicking the date chip explains the due date, editable time,
-      recurrence, source phrase, and completion-based schedule
+    - expect: clicking the date chip shows a compact date/time summary, editable
+      time, recurrence with its completion-based mode, and the source phrase
+    - expect: unset time or recurrence fields are omitted instead of showing
+      empty/default rows, and there is no separate next-date-calculation row
   3. Click the task and edit it in place.
     - expect: the composer replaces the task row instead of appearing above the list
     - expect: the stored recurrence and completion-based mode remain inspectable,
@@ -286,6 +288,8 @@ backend, database, network access, or pre-existing user data.
     - expect: the flexible-schedule explanation appears only after hovering the
       question mark beside recurrence
     - expect: the existing date picker is embedded below the due details
+    - expect: the popover is 70% of its previous width and uses a compact summary
+    - expect: time and recurrence sections are absent when their values are unset
   3. Pick another day and save the recurring task.
     - expect: the update payload uses the selected due date while preserving
       recurrence settings

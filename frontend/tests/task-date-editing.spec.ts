@@ -5,20 +5,32 @@ test.describe('Tasks', () => {
     await mockApi.open('/');
 
     const recurring = page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' });
+    const plain = page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' });
 
-    // 1. A task click opens editing; its due date also expands date details.
+    // 1. A task click opens editing; a plain due date expands only the fields that exist.
     await recurring.click();
     await expect(page.getByTestId('edit-task')).toBeVisible();
     await page.getByRole('button', { name: 'Отменить' }).click();
 
+    await plain.locator('.task-date').click();
+    const plainDetails = page.getByTestId('edit-task').locator('.date-popover');
+    await expect(plainDetails).toHaveCSS('width', '273px');
+    await expect(plainDetails.locator('.date-summary')).toContainText('26 октября 2026 г.');
+    await expect(plainDetails.getByLabel('Время')).toHaveCount(0);
+    await expect(plainDetails.locator('.recurrence-summary')).toHaveCount(0);
+    await expect(plainDetails.getByText('Расчёт следующей даты', { exact: true })).toHaveCount(0);
+    await plainDetails.getByRole('button', { name: 'Закрыть меню' }).click();
+    await page.getByRole('button', { name: 'Отменить' }).click();
+
+    // 2. Recurrence details keep the delayed help and shared calendar.
     await recurring.locator('.task-date').click();
     const editor = page.getByTestId('edit-task');
-    const dateDetails = editor.getByLabel('Параметры срока').filter({
-      has: page.getByText('Расчёт следующей даты')
-    });
+    const dateDetails = editor.locator('.date-popover');
     await expect(dateDetails).toBeVisible();
+    await expect(dateDetails.getByLabel('Время')).toHaveCount(0);
+    await expect(dateDetails.locator('.recurrence-value')).toHaveText('каждый день');
+    await expect(dateDetails.locator('.recurrence-value')).not.toContainText('от дня выполнения');
 
-    // 2. The explanation is tucked behind a delayed tooltip and the shared calendar is embedded.
     const help = dateDetails.getByRole('button', {
       name: 'Поставьте ! после слова «каждый», например «каждый! день», чтобы отсчитывать новый срок от дня выполнения.'
     });
