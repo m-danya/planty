@@ -134,6 +134,7 @@
   ondragleave={() => (dragMode = null)}
   ondrop={(event) => {
     event.preventDefault();
+    event.stopPropagation();
     onDropTask(task, dragMode ?? modeFor(event));
     dragMode = null;
   }}

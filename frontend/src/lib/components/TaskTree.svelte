@@ -84,7 +84,7 @@
   {/if}
   {#if continuationAfter?.id === task.id && onSaveContinuation && onCancelContinuation}
     <div class:task-card={variant === 'card'} class="inline-edit" style={`--depth: ${depth}`} role="listitem">
-      <TaskComposer section={task.section_id} onSave={onSaveContinuation} onCancel={onCancelContinuation} />
+      <TaskComposer section={task.section_id} defaultDueTo={continuationAfter.due_to} onSave={onSaveContinuation} onCancel={onCancelContinuation} />
     </div>
   {/if}
 {/each}

@@ -22,7 +22,8 @@ test.describe('Tasks', () => {
     });
     expect(mockApi.requests('POST', '/api/task').at(-1)?.body).toMatchObject({
       parent_task_id: ids.todayTask,
-      title: 'Купить воду для тренировки'
+      title: 'Купить воду для тренировки',
+      due_to: '2026-10-26'
     });
     await expect.poll(() => mockApi.requests('POST', '/api/task/move').at(-1)?.body).toMatchObject({
       index: 2,

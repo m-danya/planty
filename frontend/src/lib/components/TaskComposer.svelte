@@ -6,11 +6,12 @@
   import type { Section, Task, TaskDraft } from '$lib/types';
 
   let {
-    task = null, section, sections = [], onSave, onSaveAndContinue, onCancel
+    task = null, section, sections = [], defaultDueTo = null, onSave, onSaveAndContinue, onCancel
   }: {
     task?: Task | null;
     section: string;
     sections?: Section[];
+    defaultDueTo?: string | null;
     onSave: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onSaveAndContinue?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancel: () => void;
@@ -34,7 +35,7 @@
     localizedSectionTitle(candidate.title).replace(/^[^\p{L}\p{N}]+/u, '').toLocaleLowerCase('ru-RU')
       .startsWith(sectionQuery.toLocaleLowerCase('ru-RU'))
   ).slice(0, 7));
-  const effectiveDate = $derived(parsed.dueTo ?? task?.due_to ?? null);
+  const effectiveDate = $derived(parsed.dueTo ?? task?.due_to ?? defaultDueTo);
   const effectiveTime = $derived(dueTimeChanged ? manualDueTime : parsed.dueTime ?? task?.due_time ?? null);
   const effectiveRecurrence = $derived(parsed.phrase ? parsed.recurrence : task?.recurrence ?? null);
 
@@ -71,6 +72,8 @@
         draft.due_to = task.due_to;
         draft.due_time = task.due_time;
         draft.recurrence = task.recurrence;
+      } else if (!task && parsed.phrase === null && defaultDueTo) {
+        draft.due_to = defaultDueTo;
       }
       if (dueTimeChanged) draft.due_time = manualDueTime;
       await (continueWithSibling && onSaveAndContinue

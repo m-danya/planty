@@ -25,6 +25,7 @@
   let sidebarOpen = $state(false);
   let composerOpen = $state(false);
   let composerSectionId = $state<string | null>(null);
+  let composerDueTo = $state<string | null>(null);
   let editingTask = $state<Task | null>(null);
   let moveTaskTarget = $state<Task | null>(null);
   let draggedTask = $state<Task | null>(null);
@@ -67,16 +68,18 @@
   function resetComposer() {
     composerOpen = false;
     composerSectionId = null;
+    composerDueTo = null;
     editingTask = null;
     subtaskParent = null;
     continuationAfter = null;
   }
 
-  function openComposer(sectionId: string, parent: Task | null = null) {
+  function openComposer(sectionId: string, parent: Task | null = null, dueTo: string | null = null) {
     editingTask = null;
     continuationAfter = null;
     subtaskParent = parent;
     composerSectionId = sectionId;
+    composerDueTo = dueTo;
     composerOpen = true;
   }
 
@@ -230,6 +233,7 @@
       }
       composerOpen = false;
       composerSectionId = null;
+      composerDueTo = null;
       editingTask = null;
       subtaskParent = null;
       continuationAfter = null;
@@ -258,6 +262,7 @@
     editingTask = null;
     continuationAfter = { ...current, section_id: sectionId };
     composerSectionId = sectionId;
+    composerDueTo = current.due_to;
     composerOpen = true;
   }
 
@@ -287,7 +292,7 @@
     else await changeView('calendar');
   }
 
-  function editTask(task: Task) { editingTask = task; composerSectionId = task.section_id; subtaskParent = null; continuationAfter = null; composerOpen = true; }
+  function editTask(task: Task) { editingTask = task; composerSectionId = task.section_id; composerDueTo = null; subtaskParent = null; continuationAfter = null; composerOpen = true; }
 
   function openAddSubtask(task: Task) { openComposer(task.section_id, task); }
 
@@ -342,6 +347,18 @@
       draggedTask = null;
       taskDragStartOffsetX = null;
       await refreshSection();
+    });
+  }
+
+  async function dropTaskOnCalendarDate(dueTo: string) {
+    const source = draggedTask;
+    draggedTask = null;
+    taskDragStartOffsetX = null;
+    if (!source || source.due_to === dueTo) return;
+    await safe(async () => {
+      await api.updateTask(source.id, { due_to: dueTo });
+      await changeView('calendar');
+      notify(t('taskScheduled'));
     });
   }
 
@@ -425,7 +442,7 @@
 
 <svelte:head><title>{heading} · Planty</title></svelte:head>
 
-{#snippet renderTasks(items: Task[], variant: 'list' | 'card' = 'list', reorder = false)}
+{#snippet renderTasks(items: Task[], variant: 'list' | 'card' = 'list', reorder = false, calendarDueTo: string | null = null)}
   <TaskList
     tasks={items}
     {variant}
@@ -435,7 +452,11 @@
     onDelete={(task) => void deleteTask(task)}
     onMove={openMoveTask}
     onDragStart={(task, offsetX) => { draggedTask = task; taskDragStartOffsetX = offsetX; }}
-    onDropTask={reorder ? (task, mode) => void dropTask(task, mode) : () => {}}
+    onDropTask={calendarDueTo
+      ? () => void dropTaskOnCalendarDate(calendarDueTo)
+      : reorder
+        ? (task, mode) => void dropTask(task, mode)
+        : () => {}}
     dragStartOffsetX={taskDragStartOffsetX}
     collapsedIds={collapsed}
     onCollapseToggle={toggleCollapse}
@@ -453,6 +474,12 @@
     onCancelContinuation={resetComposer}
     onSchedule={(task, dueTo) => void scheduleTask(task, dueTo)}
   />
+{/snippet}
+
+{#snippet addTaskButton(sectionId: string, dueTo: string | null, shortcut: boolean)}
+  <button class="add-task-button" onclick={() => openComposer(sectionId, null, dueTo)}>
+    <Plus />{t('addTask')}{#if shortcut} <kbd>Q</kbd>{/if}
+  </button>
 {/snippet}
 
 {#if loading || !user}
@@ -496,7 +523,7 @@
                   {/if}
                   {@render renderTasks(group.tasks, sectionLayout === 'board' ? 'card' : 'list', true)}
                   {#if !composerOpen || composerSectionId !== group.section.id}
-                    <button class="add-task-button" onclick={() => openComposer(group.section.id)}><Plus />{t('addTask')}</button>
+                    {@render addTaskButton(group.section.id, null, false)}
                   {/if}
                 </section>
               {/each}
@@ -506,7 +533,7 @@
               <TaskComposer section={composerSectionId ?? selected.id} sections={leafSections} onSave={saveTask} onCancel={resetComposer} />
             {/if}
             {@render renderTasks(tasks, 'list', true)}
-            {#if !composerOpen}<button class="add-task-button" onclick={() => { if (selected) openComposer(selected.id); }}><Plus />{t('addTask')} <kbd>Q</kbd></button>{/if}
+            {#if !composerOpen}{@render addTaskButton(selected.id, null, true)}{/if}
           {/if}
           {#if !selected}<div class="empty-state"><div class="empty-icon">🌱</div>{t('createSectionFirst')}</div>{/if}
         {:else if view === 'search'}
@@ -515,7 +542,26 @@
           {@render renderTasks(searchResults)}
         {:else if view === 'calendar'}
           {#if overdueTasks.length}<section class="calendar-group overdue-group"><h2>{t('overdue')}</h2>{@render renderTasks(overdueTasks)}</section>{/if}
-          {#each calendarGroups as group}<section class="calendar-group"><h2>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>{@render renderTasks(group.tasks)}</section>{/each}
+          {#each calendarGroups as group}
+            <section
+              class="calendar-group"
+              role="group"
+              aria-labelledby={`calendar-date-${group.date}`}
+              data-testid="calendar-date-group"
+              data-date={group.date}
+              ondragover={(event) => { if (draggedTask) event.preventDefault(); }}
+              ondrop={(event) => { event.preventDefault(); void dropTaskOnCalendarDate(group.date); }}
+            >
+              <h2 id={`calendar-date-${group.date}`}>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+              {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent && composerDueTo === group.date}
+                <TaskComposer section={composerSectionId ?? selectedLeafSections[0]?.id ?? leafSections[0]?.id} sections={leafSections} defaultDueTo={group.date} onSave={saveTask} onCancel={resetComposer} />
+              {/if}
+              {@render renderTasks(group.tasks, 'list', false, group.date)}
+              {#if !composerOpen || composerDueTo !== group.date}
+                {@render addTaskButton(selectedLeafSections[0]?.id ?? leafSections[0]?.id, group.date, false)}
+              {/if}
+            </section>
+          {/each}
           {#if !overdueTasks.length && !calendarGroups.length}<div class="empty-state"><div class="empty-icon">☀️</div>{t('noMonthTasks')}</div>{/if}
         {:else}
           {@render renderTasks(tasks)}

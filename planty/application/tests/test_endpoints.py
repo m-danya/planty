@@ -66,6 +66,24 @@ async def test_create_and_update_task_due_time(ac: AsyncClient) -> None:
     assert response.json()["task"]["due_time"] == "17:45:30"
 
 
+async def test_update_due_date_preserves_recurrence(ac: AsyncClient) -> None:
+    task_id = "f15c4c32-3d85-4a64-a216-75bdf6f2d8c5"
+
+    response = await ac.patch(
+        "/api/task",
+        json={"id": task_id, "due_to": "2026-11-01"},
+    )
+
+    assert response.status_code == 200
+    task = response.json()["task"]
+    assert task["due_to"] == "2026-11-01"
+    assert task["recurrence"] == {
+        "period": 1,
+        "type": "days",
+        "flexible_mode": False,
+    }
+
+
 async def test_rejects_due_time_without_due_date(ac: AsyncClient) -> None:
     response = await ac.post(
         "/api/task",

@@ -61,7 +61,7 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Edit a nested task and press Shift+Enter.
     - expect: the edit is saved and a new composer opens after the task subtree
-    - expect: the next task is created with the same parent and sibling position
+    - expect: the next task is created with the same parent, due date, and sibling position
   2. Create a task containing a flexible recurring natural-language date and time.
     - expect: the phrase is highlighted, `каждые!` maps to flexible recurrence,
       and the create payload contains the parsed due time
@@ -231,6 +231,20 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Start without user sections or dated and archived tasks.
     - expect: section, search, calendar, and archive empty states are visible
+
+#### 5.3. calendar-task-actions
+
+**File:** `tests/calendar-task-actions.spec.ts`
+
+**Steps:**
+  1. Add a task from a dated calendar group.
+    - expect: the shared task composer opens and the create payload receives the
+      group's date unless the title contains another explicit date
+  2. Edit a calendar task and press Shift+Enter to create its next sibling.
+    - expect: the continuation task inherits the edited task's date
+  3. Drag a recurring task from one calendar day to another.
+    - expect: only its due date is patched, while its recurrence and section
+      hierarchy remain unchanged
 
 ### 6. Date Parser
 
