@@ -3,6 +3,7 @@
   import { CalendarDays, Check, Clock3, Flag, Info, Plus, Repeat2, X } from '@lucide/svelte';
   import { parseTaskText, recurrenceLabel, toDraft } from '$lib/date-parser';
   import { getLocale, localizedSectionTitle, t } from '$lib/i18n.svelte';
+  import { taskDatePresentation } from '$lib/task-date-presentation';
   import type { Section, Task, TaskDraft } from '$lib/types';
 
   let {
@@ -36,6 +37,7 @@
       .startsWith(sectionQuery.toLocaleLowerCase('ru-RU'))
   ).slice(0, 7));
   const effectiveDate = $derived(parsed.dueTo ?? task?.due_to ?? defaultDueTo);
+  const effectiveDatePresentation = $derived(effectiveDate ? taskDatePresentation(effectiveDate) : null);
   const effectiveTime = $derived(dueTimeChanged ? manualDueTime : parsed.dueTime ?? task?.due_time ?? null);
   const effectiveRecurrence = $derived(parsed.phrase ? parsed.recurrence : task?.recurrence ?? null);
 
@@ -147,9 +149,9 @@
   <input class="composer-description" bind:value={description} placeholder={t('description')} aria-label={t('taskDescription')} />
   <div class="composer-actions">
     <button type="button" class="icon-soft" title={t('moreOptions')} aria-label={t('moreOptions')}><Plus size={20} /></button>
-    {#if effectiveDate}
-      <button type="button" class="date-chip" onclick={() => dateOpen = !dateOpen} aria-expanded={dateOpen} aria-label={t('dateDetails')}>
-        <CalendarDays size={17} /> {parsed.label ?? formatDate(effectiveDate)}
+    {#if effectiveDate && effectiveDatePresentation}
+      <button type="button" class={`date-chip ${effectiveDatePresentation.className}`} onclick={() => dateOpen = !dateOpen} aria-expanded={dateOpen} aria-label={t('dateDetails')}>
+        <CalendarDays size={17} /> {parsed.label ?? effectiveDatePresentation.text}
         {#if effectiveTime}<span class="due-time">{effectiveTime.slice(0, 5)}</span>{/if}
         {#if effectiveRecurrence}<Repeat2 size={14} aria-label={recurrenceLabel(effectiveRecurrence, getLocale())} />{/if}
       </button>

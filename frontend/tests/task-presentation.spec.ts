@@ -65,5 +65,17 @@ test.describe('Tasks', () => {
     const orphanRow = page.getByTestId('task-row').filter({ hasText: 'Осиротевшая подзадача' });
     await expect(orphanRow).toBeVisible();
     await expect(orphanRow).toHaveCSS('padding-left', '1px');
+
+    // 3. Inline editing reuses the same relative labels and semantic colors.
+    await todayRow.click({ modifiers: ['Alt'] });
+    const todayChip = page.getByTestId('edit-task').locator('.date-chip.today');
+    await expect(todayChip).toContainText('Сегодня');
+    await expect(todayChip).toHaveCSS('color', 'rgb(7, 147, 46)');
+    await page.getByRole('button', { name: 'Отменить' }).click();
+
+    await tomorrowRow.click({ modifiers: ['Alt'] });
+    const tomorrowChip = page.getByTestId('edit-task').locator('.date-chip.tomorrow');
+    await expect(tomorrowChip).toContainText('Завтра');
+    await expect(tomorrowChip).toHaveCSS('color', 'rgb(182, 98, 0)');
   });
 });

@@ -2,6 +2,7 @@
   import { Archive, CalendarDays, ChevronRight, GripVertical, MoveRight, Plus, Repeat2, Trash2 } from '@lucide/svelte';
   import type { Task, TaskDropMode } from '$lib/types';
   import { recurrenceLabel } from '$lib/date-parser';
+  import { taskDatePresentation } from '$lib/task-date-presentation';
   import { getLocale, t } from '$lib/i18n.svelte';
   import DatePicker from './DatePicker.svelte';
 
@@ -45,19 +46,6 @@
   let menuPos = $state<{ x: number; y: number } | null>(null);
   let customDateOpen = $state(false);
   let pointerId = $state<number | null>(null);
-
-  function dateLabel(value: string): { text: string; className: string } {
-    const due = new Date(`${value}T12:00:00`);
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
-    const diff = Math.round((due.getTime() - today.getTime()) / 86400000);
-    const locale = getLocale() === 'ru' ? 'ru-RU' : 'en-US';
-    if (diff < 0) return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'overdue' };
-    if (diff === 0) return { text: t('today'), className: 'today' };
-    if (diff === 1) return { text: t('tomorrow'), className: 'tomorrow' };
-    if (diff < 7) return { text: due.toLocaleDateString(locale, { weekday: 'long' }), className: 'weekday' };
-    return { text: due.toLocaleDateString(locale, { day: 'numeric', month: 'short' }), className: 'future' };
-  }
 
   function clickRow(event: MouseEvent) {
     if (event.altKey) onEdit(task);
@@ -142,7 +130,7 @@
     <div class="task-title">{task.title}</div>
     {#if task.description}<div class="task-description">{task.description}</div>{/if}
     {#if task.due_to}
-      {@const due = dateLabel(task.due_to)}
+      {@const due = taskDatePresentation(task.due_to)}
       <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.due_time}<span class="task-time">· {task.due_time.slice(0, 5)}</span>{/if}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</div>
     {/if}
   </div>

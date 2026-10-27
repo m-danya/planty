@@ -139,6 +139,8 @@ backend, database, network access, or pre-existing user data.
     - expect: due time uses the same neutral color regardless of the date color
   2. Collapse the parent task with its chevron and expand it again.
     - expect: child rows hide and reappear and aria-expanded follows the state
+  3. Edit tasks due today and tomorrow.
+    - expect: the editor reuses the row's relative label and semantic date color
 
 #### 3.6. task-errors
 
