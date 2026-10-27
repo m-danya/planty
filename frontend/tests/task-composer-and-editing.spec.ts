@@ -43,6 +43,8 @@ test.describe('Tasks', () => {
     await expect(datePopover).toContainText('26 октября 2026 г.');
     await expect(datePopover).toContainText('каждые 3 дн.');
     await expect(datePopover.getByLabel('Время')).toHaveValue('18:30');
+    await expect(datePopover.getByLabel('Время')).toHaveAttribute('type', 'text');
+    await expect(datePopover.locator('.time-field svg')).toHaveCount(1);
     await expect(datePopover).toContainText('Гибко — от дня выполнения');
     await expect(datePopover).toContainText('каждые! 3 дня начиная завтра в 18:30');
     await page.getByRole('button', { name: 'Закрыть меню' }).last().click();

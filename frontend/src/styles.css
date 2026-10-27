@@ -153,7 +153,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .chip-button { border: 1px solid #e0e3e0; background: #fff; }
 .date-chip { display: flex; align-items: center; gap: 5px; min-height: 38px; padding: 0 11px; border: 1px solid #dfe2df; background: #fff; border-radius: 9px; font-size: 15px; cursor: pointer; }
 .time-field { display: inline-flex; align-items: center; gap: 6px; color: #5f6560; }
-.time-field input { width: 105px; border: 1px solid #dfe2df; border-radius: 7px; padding: 5px 7px; color: #303530; background: #fff; font: inherit; }
+.time-field input { width: 74px; border: 1px solid #dfe2df; border-radius: 7px; padding: 5px 7px; color: #303530; background: #fff; font: inherit; font-variant-numeric: tabular-nums; }
 .composer select { max-width: 280px; border: 1px solid #dfe2df; border-radius: 9px; background: white; padding: 8px 10px; color: #5f6560; }
 .composer-spacer { flex: 1; }.cancel-button, .submit-button { border: 0; background: transparent; display: grid; place-items: center; width: 44px; height: 42px; border-radius: 10px; }
 .cancel-button { color: #7d827e; }.cancel-button:hover { background: #f3f4f3; }

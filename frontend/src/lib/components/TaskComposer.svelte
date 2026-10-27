@@ -172,7 +172,7 @@
       <header><CalendarDays size={19} /><strong>{t('dateDetails')}</strong><button type="button" onclick={() => dateOpen = false} aria-label={t('closeMenu')}><X size={17} /></button></header>
       <dl>
         <div><dt>{t('dueDate')}</dt><dd>{formatDate(effectiveDate)}</dd></div>
-        <div><dt>{t('dueTime')}</dt><dd><label class="time-field"><Clock3 size={15} /><input type="time" value={effectiveTime?.slice(0, 5) ?? ''} onchange={changeDueTime} aria-label={t('dueTime')} /></label></dd></div>
+        <div><dt>{t('dueTime')}</dt><dd><label class="time-field"><Clock3 size={15} /><input type="text" inputmode="numeric" pattern="(?:[01]\d|2[0-3]):[0-5]\d" maxlength="5" placeholder="00:00" value={effectiveTime?.slice(0, 5) ?? ''} onchange={changeDueTime} aria-label={t('dueTime')} /></label></dd></div>
         <div><dt>{t('repeat')}</dt><dd>{effectiveRecurrence ? recurrenceLabel(effectiveRecurrence, getLocale()) : t('noRepeat')}</dd></div>
         {#if effectiveRecurrence}<div><dt>{t('schedule')}</dt><dd>{effectiveRecurrence.flexible_mode ? t('flexibleSchedule') : t('fixedSchedule')}</dd></div>{/if}
         {#if parsed.phrase}<div><dt>{t('sourcePhrase')}</dt><dd>«{parsed.phrase}»</dd></div>{/if}

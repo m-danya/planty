@@ -71,6 +71,8 @@ backend, database, network access, or pre-existing user data.
     - expect: the composer replaces the task row instead of appearing above the list
     - expect: the stored recurrence and completion-based mode remain inspectable,
       and editing the time updates the task payload
+    - expect: the time field uses an unclipped 24-hour `HH:MM` value and one
+      clock icon in every browser
   4. Type a `#section` prefix and choose the suggested destination by keyboard.
     - expect: the token is removed from the title and update/move payloads are correct
 
