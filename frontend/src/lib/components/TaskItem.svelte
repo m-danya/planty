@@ -46,22 +46,45 @@
   let menuPos = $state<{ x: number; y: number } | null>(null);
   let customDateOpen = $state(false);
   let pointerId = $state<number | null>(null);
+  let pointerStart = $state<{ x: number; y: number } | null>(null);
+  let pointerMoved = $state(false);
+  let suppressClick = $state(false);
 
   function clickRow(event: MouseEvent) {
+    if (suppressClick) {
+      event.preventDefault();
+      suppressClick = false;
+      return;
+    }
     if ((event.target as Element).closest('button, input, select, textarea, a')) return;
     onEdit(task);
   }
 
   function pointerDown(event: PointerEvent) {
     if (event.button !== 0) return;
+    const interactive = (event.target as Element).closest('button, input, select, textarea, a');
+    if (interactive && !interactive.classList.contains('drag-handle')) return;
     pointerId = event.pointerId;
+    pointerStart = { x: event.clientX, y: event.clientY };
+    pointerMoved = false;
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
     onDragStart(task, event);
   }
 
+  function pointerMove(event: PointerEvent) {
+    if (pointerId !== event.pointerId || !pointerStart) return;
+    if (Math.hypot(event.clientX - pointerStart.x, event.clientY - pointerStart.y) >= 6) {
+      pointerMoved = true;
+    }
+  }
+
   function pointerEnd(event: PointerEvent) {
     if (pointerId !== event.pointerId) return;
+    suppressClick = pointerMoved;
+    if (suppressClick) window.setTimeout(() => { suppressClick = false; }, 0);
     pointerId = null;
+    pointerStart = null;
+    pointerMoved = false;
     const row = event.currentTarget as HTMLElement;
     if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
   }
@@ -112,11 +135,14 @@
   data-task-id={task.id}
   data-testid="task-row"
   role="listitem"
-  draggable="false"
   onclick={clickRow}
+  onpointerdown={pointerDown}
+  onpointermove={pointerMove}
+  onpointerup={pointerEnd}
+  onpointercancel={pointerEnd}
   oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; menuPos = { x: event.clientX, y: event.clientY }; }}
 >
-  <button class="drag-handle" aria-label={t('dragTask')} onpointerdown={pointerDown} onpointerup={pointerEnd} onpointercancel={pointerEnd} onclick={(event) => event.stopPropagation()}><GripVertical size={16} /></button>
+  <button class="drag-handle" aria-label={t('dragTask')} onclick={(event) => event.stopPropagation()}><GripVertical size={16} /></button>
   <div class="task-chevron-slot">
     {#if childCount > 0}
       {#if onCollapseToggle}

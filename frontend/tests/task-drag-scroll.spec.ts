@@ -15,10 +15,10 @@ test.describe('Tasks', () => {
     await page.evaluate(() => window.scrollTo(0, 0));
 
     const source = page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' });
-    const handleBox = await source.getByRole('button', { name: 'Перетащить задачу' }).boundingBox();
-    if (!handleBox) throw new Error('Drag source must be visible');
-    const x = handleBox.x + handleBox.width / 2;
-    const y = handleBox.y + handleBox.height / 2;
+    const dragAreaBox = await source.locator('.task-title').boundingBox();
+    if (!dragAreaBox) throw new Error('Drag source must be visible');
+    const x = dragAreaBox.x + dragAreaBox.width / 2;
+    const y = dragAreaBox.y + dragAreaBox.height / 2;
     await page.mouse.move(x, y);
     await page.mouse.down();
     await page.mouse.move(x, y + 12, { steps: 4 });

@@ -102,6 +102,7 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Drag a root task vertically with less than 40 px of horizontal movement,
      then drag it at least 40 px to the right.
+    - expect: dragging starts from the ordinary task body, not only its handle
     - expect: the near-vertical drag only reorders the task and keeps it at the root
     - expect: crossing the right threshold makes the task an indented child
   2. Try to move the parent at least 40 px right into its new child.
@@ -127,6 +128,7 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Start dragging a task in a list taller than the viewport and turn the mouse
      wheel before dropping it.
+    - expect: dragging can start from the ordinary task body
     - expect: the page scrolls while the pointer drag remains active
     - expect: ending the drag clears the pointer-drag state
 

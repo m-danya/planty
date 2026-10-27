@@ -48,10 +48,10 @@ test.describe('Special Views', () => {
     const targetGroup = tomorrowGroup;
     const sourceBox = await recurring.boundingBox();
     const targetBox = await targetGroup.boundingBox();
-    const handleBox = await recurring.getByRole('button', { name: 'Перетащить задачу' }).boundingBox();
-    if (!sourceBox || !targetBox || !handleBox) throw new Error('Calendar drag endpoints must be visible');
-    const startX = handleBox.x + handleBox.width / 2;
-    const startY = handleBox.y + handleBox.height / 2;
+    const dragAreaBox = await recurring.locator('.task-title').boundingBox();
+    if (!sourceBox || !targetBox || !dragAreaBox) throw new Error('Calendar drag endpoints must be visible');
+    const startX = dragAreaBox.x + dragAreaBox.width / 2;
+    const startY = dragAreaBox.y + dragAreaBox.height / 2;
     await page.mouse.move(startX, startY);
     await page.mouse.down();
     await page.mouse.move(startX, startY + 8, { steps: 2 });

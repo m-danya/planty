@@ -5,16 +5,17 @@ async function dragWithHorizontalOffset(
   page: Page,
   source: Locator,
   target: Locator,
-  horizontalOffset: number
+  horizontalOffset: number,
+  expectRefresh = true
 ) {
   const sourceBox = await source.boundingBox();
   const targetBox = await target.boundingBox();
-  const handleBox = await source.getByRole('button', { name: 'Перетащить задачу' }).boundingBox();
+  const dragAreaBox = await source.locator('.task-title').boundingBox();
   const sourceListBox = await source.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " task-list ")][1]').boundingBox();
   const targetListBox = await target.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " task-list ")][1]').boundingBox();
-  if (!sourceBox || !targetBox || !handleBox || !sourceListBox || !targetListBox) throw new Error('Drag source and target must be visible');
-  const startX = handleBox.x + handleBox.width / 2;
-  const startY = handleBox.y + handleBox.height / 2;
+  if (!sourceBox || !targetBox || !dragAreaBox || !sourceListBox || !targetListBox) throw new Error('Drag source and target must be visible');
+  const startX = dragAreaBox.x + dragAreaBox.width / 2;
+  const startY = dragAreaBox.y + dragAreaBox.height / 2;
   const localStartX = startX - sourceListBox.x;
   await page.mouse.move(startX, startY);
   await page.mouse.down();
@@ -26,7 +27,11 @@ async function dragWithHorizontalOffset(
   );
   await expect(source).toHaveClass(/dragging/);
   await expect(target).toHaveClass(horizontalOffset >= 40 ? /drop-child/ : /drop-before/);
+  const refreshed = expectRefresh
+    ? page.waitForResponse((response) => response.request().method() === 'GET' && response.url().includes('/api/section/'))
+    : null;
   await page.mouse.up();
+  if (refreshed) await refreshed;
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   }));
@@ -75,7 +80,8 @@ test.describe('Tasks', () => {
       page,
       page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' }),
       page.getByTestId('task-row').filter({ hasText: 'Сходить в зал' }),
-      40
+      40,
+      false
     );
     await expect(page.getByRole('status')).toHaveText('Нельзя перенести задачу внутрь её подзадачи');
     expect(mockApi.requests('POST', '/api/task/move')).toHaveLength(movesBeforeCycle);
