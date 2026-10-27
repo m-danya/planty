@@ -97,6 +97,27 @@ class SectionService:
         self._section_repo = uow.section_repo
         self._task_repo = uow.task_repo
 
+    async def _collect_task_descendants(self, task_id: UUID) -> list[Task]:
+        descendants: list[Task] = []
+        for child in await self._task_repo.get_children(task_id):
+            descendants.append(child)
+            descendants.extend(await self._collect_task_descendants(child.id))
+        return descendants
+
+    async def _set_task_descendants_archived(
+        self, task_id: UUID, section: Section, *, is_archived: bool
+    ) -> None:
+        for descendant in await self._collect_task_descendants(task_id):
+            if descendant.is_archived == is_archived:
+                continue
+            if is_archived:
+                descendant.archive()
+                section.remove_task(descendant)
+            else:
+                descendant.unarchive()
+                section.insert_task(descendant)
+            await self._task_repo.update_or_create(descendant, must_exist=True)
+
     async def add(self, user_id: UUID, section_data: SectionCreateRequest) -> Section:
         parent_section = await self._section_repo.get(
             section_data.parent_id, with_direct_subsections=True
@@ -228,14 +249,7 @@ class SectionService:
         else:
             section_to = await self._section_repo.get(request.section_to_id)
 
-        async def collect_descendants(parent_id: UUID) -> list[Task]:
-            descendants: list[Task] = []
-            for candidate in await self._task_repo.get_children(parent_id):
-                descendants.append(candidate)
-                descendants.extend(await collect_descendants(candidate.id))
-            return descendants
-
-        descendants = await collect_descendants(task.id)
+        descendants = await self._collect_task_descendants(task.id)
 
         if section_to.user_id != user_id:
             raise ForbiddenException()
@@ -361,15 +375,25 @@ class SectionService:
             raise TaskNotFoundException(task_id=task_id)
         task_is_archived_before = task.is_archived
 
-        task.toggle_completed(auto_archive=auto_archive)
+        is_becoming_completed = not task.is_completed
+        should_auto_archive = auto_archive and (
+            not is_becoming_completed or task.parent_task_id is None
+        )
+        task.toggle_completed(auto_archive=should_auto_archive)
 
         if task.is_archived != task_is_archived_before:
             if task.is_archived:
                 # "remove" task from section to update others' indices:
                 section.remove_task(task)
+                await self._set_task_descendants_archived(
+                    task.id, section, is_archived=True
+                )
             else:
                 # unarchiving task => add to section end
                 section.insert_task(task)
+                await self._set_task_descendants_archived(
+                    task.id, section, is_archived=False
+                )
             await self._section_repo.update(section)
         await self._task_repo.update_or_create(task)
         return convert_to_response(section)
@@ -390,9 +414,15 @@ class SectionService:
             # just became archived =>
             # "remove" task from section to update others' indices:
             section.remove_task(task)
+            await self._set_task_descendants_archived(
+                task.id, section, is_archived=True
+            )
         else:
             # unarchiving task => add to section end
             section.insert_task(task)
+            await self._set_task_descendants_archived(
+                task.id, section, is_archived=False
+            )
         await self._section_repo.update(section)
         await self._task_repo.update_or_create(task)
         return convert_to_response(section)
