@@ -36,6 +36,7 @@
   let composerSectionId = $state<string | null>(null);
   let composerDueTo = $state<string | null>(null);
   let editingTask = $state<Task | null>(null);
+  let editDateOpen = $state(false);
   let moveTaskTarget = $state<Task | null>(null);
   let draggedTask = $state<Task | null>(null);
   let taskDragStartOffsetX = $state<number | null>(null);
@@ -82,12 +83,14 @@
     composerSectionId = null;
     composerDueTo = null;
     editingTask = null;
+    editDateOpen = false;
     subtaskParent = null;
     continuationAfter = null;
   }
 
   function openComposer(sectionId: string, parent: Task | null = null, dueTo: string | null = null) {
     editingTask = null;
+    editDateOpen = false;
     continuationAfter = null;
     subtaskParent = parent;
     composerSectionId = sectionId;
@@ -374,6 +377,7 @@
       composerSectionId = null;
       composerDueTo = null;
       editingTask = null;
+      editDateOpen = false;
       subtaskParent = null;
       continuationAfter = null;
       if (wasEditing || view !== 'section') await refreshCurrent();
@@ -431,7 +435,7 @@
     else await changeView('calendar');
   }
 
-  function editTask(task: Task) { editingTask = task; composerSectionId = task.section_id; composerDueTo = null; subtaskParent = null; continuationAfter = null; composerOpen = true; }
+  function editTask(task: Task, openDateDetails = false) { editingTask = task; editDateOpen = openDateDetails; composerSectionId = task.section_id; composerDueTo = null; subtaskParent = null; continuationAfter = null; composerOpen = true; }
 
   function openAddSubtask(task: Task) { openComposer(task.section_id, task); }
 
@@ -604,6 +608,7 @@
     onSaveNewTask={saveTask}
     onCancelNewTask={resetComposer}
     {editingTask}
+    {editDateOpen}
     editSections={leafSections}
     onSaveEdit={saveTask}
     onCancelEdit={resetComposer}

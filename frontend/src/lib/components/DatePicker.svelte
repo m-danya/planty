@@ -3,10 +3,11 @@
   import { untrack } from 'svelte';
   import { getLocale, t } from '$lib/i18n.svelte';
 
-  let { value, x, y, onSelect, onClose }: {
+  let { value, x = 0, y = 0, inline = false, onSelect, onClose }: {
     value: string | null;
-    x: number;
-    y: number;
+    x?: number;
+    y?: number;
+    inline?: boolean;
     onSelect: (value: string) => void;
     onClose: () => void;
   } = $props();
@@ -62,14 +63,22 @@
   }
 </script>
 
-<div class="calendar-picker" role="dialog" aria-modal="false" aria-label={t('chooseDueDate')} tabindex="-1" style={`left:${x}px;top:${y}px`}>
+<div
+  class:inline
+  class="calendar-picker"
+  role={inline ? 'group' : 'dialog'}
+  aria-modal={inline ? undefined : 'false'}
+  aria-label={t('chooseDueDate')}
+  tabindex="-1"
+  style={inline ? undefined : `left:${x}px;top:${y}px`}
+>
   <header class="calendar-picker-header">
     <span class="calendar-picker-icon"><CalendarDays size={18} /></span>
     <h3>{monthLabel}</h3>
     <div class="calendar-picker-nav">
       <button type="button" aria-label={t('previousMonth')} onclick={() => changeMonth(-1)}><ChevronLeft size={18} /></button>
       <button type="button" aria-label={t('nextMonth')} onclick={() => changeMonth(1)}><ChevronRight size={18} /></button>
-      <button type="button" aria-label={t('closeCalendar')} onclick={onClose}><X size={18} /></button>
+      {#if !inline}<button type="button" aria-label={t('closeCalendar')} onclick={onClose}><X size={18} /></button>{/if}
     </div>
   </header>
   <div class="calendar-weekdays" aria-hidden="true">

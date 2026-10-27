@@ -20,6 +20,7 @@
     onSaveNewTask,
     onCancelNewTask,
     editingTask = null,
+    editDateOpen = false,
     editSections = [],
     onSaveEdit,
     onCancelEdit,
@@ -32,7 +33,7 @@
     tasks: Task[];
     variant?: 'list' | 'card';
     onToggle: (task: Task) => void;
-    onEdit: (task: Task) => void;
+    onEdit: (task: Task, openDateDetails?: boolean) => void;
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
@@ -46,6 +47,7 @@
     onSaveNewTask?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancelNewTask?: () => void;
     editingTask?: Task | null;
+    editDateOpen?: boolean;
     editSections?: Section[];
     onSaveEdit?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancelEdit?: () => void;
@@ -76,6 +78,7 @@
     {onSaveNewTask}
     {onCancelNewTask}
     {editingTask}
+    {editDateOpen}
     {editSections}
     {onSaveEdit}
     {onCancelEdit}

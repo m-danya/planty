@@ -24,6 +24,7 @@
     onSaveNewTask,
     onCancelNewTask,
     editingTask = null,
+    editDateOpen = false,
     editSections = [],
     onSaveEdit,
     onCancelEdit,
@@ -38,7 +39,7 @@
     depth?: number;
     variant?: 'list' | 'card';
     onToggle: (task: Task) => void;
-    onEdit: (task: Task) => void;
+    onEdit: (task: Task, openDateDetails?: boolean) => void;
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
@@ -52,6 +53,7 @@
     onSaveNewTask?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancelNewTask?: () => void;
     editingTask?: Task | null;
+    editDateOpen?: boolean;
     editSections?: Section[];
     onSaveEdit?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancelEdit?: () => void;
@@ -69,13 +71,13 @@
   {@const children = tasks.filter((candidate) => candidate.parent_task_id === task.id)}
   {#if editingTask?.id === task.id && onSaveEdit && onCancelEdit}
     <div class:task-card={variant === 'card'} class="inline-edit" style={`--depth: ${depth}`} role="listitem">
-      <TaskComposer {task} section={task.section_id} sections={editSections} onSave={onSaveEdit} {onSaveAndContinue} onCancel={onCancelEdit} />
+      <TaskComposer {task} section={task.section_id} sections={editSections} initialDateOpen={editDateOpen} onSave={onSaveEdit} {onSaveAndContinue} onCancel={onCancelEdit} />
     </div>
   {:else}
     <TaskItem {task} {depth} {variant} childCount={children.length} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} dropMode={dropTarget?.taskId === task.id ? dropTarget.mode : null} dragging={draggedTaskId === task.id} collapsed={collapsedIds?.has(task.id) ?? false} {onCollapseToggle} {onAddSubtask} {onSchedule} />
   {/if}
   {#if children.length && !collapsedIds?.has(task.id)}
-    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {variant} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {dropTarget} {draggedTaskId} {collapsedIds} {onCollapseToggle} {onAddSubtask} {newSubtaskParent} {onSaveNewTask} {onCancelNewTask} {editingTask} {editSections} {onSaveEdit} {onCancelEdit} {onSaveAndContinue} {continuationAfter} {onSaveContinuation} {onCancelContinuation} {onSchedule} />
+    <TaskTree {tasks} parentId={task.id} depth={depth + 1} {variant} {onToggle} {onEdit} {onArchive} {onDelete} {onMove} {onDragStart} {dropTarget} {draggedTaskId} {collapsedIds} {onCollapseToggle} {onAddSubtask} {newSubtaskParent} {onSaveNewTask} {onCancelNewTask} {editingTask} {editDateOpen} {editSections} {onSaveEdit} {onCancelEdit} {onSaveAndContinue} {continuationAfter} {onSaveContinuation} {onCancelContinuation} {onSchedule} />
   {/if}
   {#if newSubtaskParent?.id === task.id && onSaveNewTask && onCancelNewTask}
     <div class:task-card={variant === 'card'} class="inline-edit" style={`--depth: ${depth + 1}`} role="listitem">

@@ -1,18 +1,20 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { CalendarDays, Check, Clock3, Flag, Info, Plus, Repeat2, X } from '@lucide/svelte';
+  import { CalendarDays, Check, CircleHelp, Clock3, Flag, Plus, Repeat2, X } from '@lucide/svelte';
   import { parseTaskText, recurrenceLabel, toDraft } from '$lib/date-parser';
   import { getLocale, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import { taskDatePresentation } from '$lib/task-date-presentation';
   import type { Section, Task, TaskDraft } from '$lib/types';
+  import DatePicker from './DatePicker.svelte';
 
   let {
-    task = null, section, sections = [], defaultDueTo = null, onSave, onSaveAndContinue, onCancel
+    task = null, section, sections = [], defaultDueTo = null, initialDateOpen = false, onSave, onSaveAndContinue, onCancel
   }: {
     task?: Task | null;
     section: string;
     sections?: Section[];
     defaultDueTo?: string | null;
+    initialDateOpen?: boolean;
     onSave: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onSaveAndContinue?: (draft: TaskDraft, sectionId: string) => void | Promise<void>;
     onCancel: () => void;
@@ -26,6 +28,8 @@
   let suggestionIndex = $state(0);
   let manualDueTime = $state<string | null>(null);
   let dueTimeChanged = $state(false);
+  let manualDueDate = $state<string | null>(null);
+  let dueDateChanged = $state(false);
   let textarea: HTMLTextAreaElement;
   const parsed = $derived(parseTaskText(value, new Date(), getLocale()));
   const parts = $derived(highlightParts());
@@ -36,12 +40,13 @@
     localizedSectionTitle(candidate.title).replace(/^[^\p{L}\p{N}]+/u, '').toLocaleLowerCase('ru-RU')
       .startsWith(sectionQuery.toLocaleLowerCase('ru-RU'))
   ).slice(0, 7));
-  const effectiveDate = $derived(parsed.phrase ? parsed.dueTo : task?.due_to ?? defaultDueTo);
+  const effectiveDate = $derived(dueDateChanged ? manualDueDate : parsed.phrase ? parsed.dueTo : task?.due_to ?? defaultDueTo);
   const effectiveDatePresentation = $derived(effectiveDate ? taskDatePresentation(effectiveDate) : null);
   const effectiveTime = $derived(dueTimeChanged ? manualDueTime : parsed.dueTime ?? task?.due_time ?? null);
   const effectiveRecurrence = $derived(parsed.phrase ? parsed.recurrence : task?.recurrence ?? null);
 
   onMount(() => {
+    dateOpen = initialDateOpen;
     value = task?.title ?? '';
     description = task?.description ?? '';
     selectedSection = section;
@@ -77,6 +82,7 @@
       } else if (!task && parsed.phrase === null && defaultDueTo) {
         draft.due_to = defaultDueTo;
       }
+      if (dueDateChanged) draft.due_to = manualDueDate;
       if (dueTimeChanged) draft.due_time = manualDueTime;
       await (continueWithSibling && onSaveAndContinue
         ? onSaveAndContinue(draft, selectedSection)
@@ -127,6 +133,11 @@
     manualDueTime = value || null;
     dueTimeChanged = true;
   }
+
+  function changeDueDate(value: string) {
+    manualDueDate = value;
+    dueDateChanged = true;
+  }
 </script>
 
 <div class="composer" data-testid={task ? 'edit-task' : 'new-task'}>
@@ -173,11 +184,20 @@
       <dl>
         <div><dt>{t('dueDate')}</dt><dd>{formatDate(effectiveDate)}</dd></div>
         <div><dt>{t('dueTime')}</dt><dd><label class="time-field"><Clock3 size={15} /><input type="text" inputmode="numeric" pattern="(?:[01]\d|2[0-3]):[0-5]\d" maxlength="5" placeholder="00:00" value={effectiveTime?.slice(0, 5) ?? ''} onchange={changeDueTime} aria-label={t('dueTime')} /></label></dd></div>
-        <div><dt>{t('repeat')}</dt><dd>{effectiveRecurrence ? recurrenceLabel(effectiveRecurrence, getLocale()) : t('noRepeat')}</dd></div>
+        <div>
+          <dt class="repeat-label">
+            {t('repeat')}
+            <button type="button" class="repeat-help" aria-label={t('flexibleHelp')}>
+              <CircleHelp size={15} />
+              <span role="tooltip">{t('flexibleHelp')}</span>
+            </button>
+          </dt>
+          <dd>{effectiveRecurrence ? recurrenceLabel(effectiveRecurrence, getLocale()) : t('noRepeat')}</dd>
+        </div>
         {#if effectiveRecurrence}<div><dt>{t('schedule')}</dt><dd>{effectiveRecurrence.flexible_mode ? t('flexibleSchedule') : t('fixedSchedule')}</dd></div>{/if}
         {#if parsed.phrase}<div><dt>{t('sourcePhrase')}</dt><dd>«{parsed.phrase}»</dd></div>{/if}
       </dl>
-      <p class="date-help"><Info size={16} />{t('flexibleHelp')}</p>
+      <DatePicker inline value={effectiveDate} onSelect={changeDueDate} onClose={() => {}} />
     </section>
   {/if}
 </div>

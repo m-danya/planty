@@ -29,7 +29,7 @@
     variant?: 'list' | 'card';
     childCount?: number;
     onToggle: (task: Task) => void;
-    onEdit: (task: Task) => void;
+    onEdit: (task: Task, openDateDetails?: boolean) => void;
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
@@ -48,7 +48,8 @@
   let pointerId = $state<number | null>(null);
 
   function clickRow(event: MouseEvent) {
-    if (event.altKey) onEdit(task);
+    if ((event.target as Element).closest('button, input, select, textarea, a')) return;
+    onEdit(task);
   }
 
   function pointerDown(event: PointerEvent) {
@@ -131,7 +132,7 @@
     {#if task.description}<div class="task-description">{task.description}</div>{/if}
     {#if task.due_to}
       {@const due = taskDatePresentation(task.due_to)}
-      <div class={`task-date ${due.className}`}><CalendarDays size={15} />{due.text}{#if task.due_time}<span class="task-time">· {task.due_time.slice(0, 5)}</span>{/if}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</div>
+      <button type="button" class={`task-date ${due.className}`} onclick={(event) => { event.stopPropagation(); onEdit(task, true); }}><CalendarDays size={15} />{due.text}{#if task.due_time}<span class="task-time">· {task.due_time.slice(0, 5)}</span>{/if}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</button>
     {/if}
   </div>
   {#if menuOpen}

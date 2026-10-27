@@ -67,7 +67,7 @@ backend, database, network access, or pre-existing user data.
       and the create payload contains the parsed due time
     - expect: clicking the date chip explains the due date, editable time,
       recurrence, source phrase, and completion-based schedule
-  3. Alt-click the task and edit it in place.
+  3. Click the task and edit it in place.
     - expect: the composer replaces the task row instead of appearing above the list
     - expect: the stored recurrence and completion-based mode remain inspectable,
       and editing the time updates the task payload
@@ -215,7 +215,7 @@ backend, database, network access, or pre-existing user data.
   1. Open a parent section containing both direct and deeply nested leaf sections.
     - expect: every descendant leaf is grouped under its own heading and all tasks are visible
     - expect: task counts appear in the same tooltip to the right of the hovered current section or subsection title, visually aligned with the text
-    - expect: Alt-click editing replaces the task in its own group
+    - expect: clicking a task replaces it with the editor in its own group
   2. Switch the parent section to board mode and create a task in one column.
     - expect: columns reuse the task card component and creation targets that leaf section
     - expect: the layout is saved for this section in `localStorage` and survives reload
@@ -244,10 +244,10 @@ backend, database, network access, or pre-existing user data.
 **Steps:**
   1. Search titles and descriptions, including an empty result.
     - expect: debounced results match the query and encoded request
-    - expect: Alt-click opens the shared inline editor in the search result
+    - expect: clicking opens the shared inline editor in the search result
   2. Open calendar and archive views.
     - expect: overdue and dated groups and archived tasks are rendered
-    - expect: Alt-click edits a calendar task in place and also opens inline editing in the archive
+    - expect: clicking edits a calendar task in place and also opens inline editing in the archive
 
 #### 5.2. empty-states
 
@@ -270,6 +270,22 @@ backend, database, network access, or pre-existing user data.
   3. Drag a recurring task from one calendar day to another.
     - expect: only its due date is patched, while its recurrence and section
       hierarchy remain unchanged
+
+#### 5.4. task-date-editing
+
+**File:** `tests/task-date-editing.spec.ts`
+
+**Steps:**
+  1. Click a task, cancel editing, then click its displayed due date.
+    - expect: the task click opens the shared inline editor
+    - expect: the due-date click opens the editor with date details expanded
+  2. Inspect the recurrence help and embedded calendar.
+    - expect: the flexible-schedule explanation appears only after hovering the
+      question mark beside recurrence
+    - expect: the existing date picker is embedded below the due details
+  3. Pick another day and save the recurring task.
+    - expect: the update payload uses the selected due date while preserving
+      recurrence settings
 
 ### 6. Date Parser
 

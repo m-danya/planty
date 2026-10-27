@@ -65,8 +65,6 @@ test.describe('Tasks', () => {
     // 3. Edit the title, preserve its parsed date, and move it to Planty.
     const createdRow = page.getByTestId('task-row').filter({ hasText: 'полить цветы' });
     await createdRow.click();
-    await expect(page.getByTestId('edit-task')).toHaveCount(0);
-    await createdRow.click({ modifiers: ['Alt'] });
     await expect(page.getByTestId('edit-task')).toBeVisible();
     await expect(page.locator('.inline-edit > [data-testid="edit-task"]')).toBeVisible();
     await page.getByRole('button', { name: 'Параметры срока' }).click();
