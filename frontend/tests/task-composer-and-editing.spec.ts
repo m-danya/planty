@@ -42,7 +42,7 @@ test.describe('Tasks', () => {
     await page.getByRole('button', { name: 'Параметры срока' }).click();
     const datePopover = page.getByTestId('new-task').locator('.date-popover');
     await expect(datePopover).toHaveCSS('width', '273px');
-    await expect(datePopover.locator('.date-summary')).toHaveText(/26 октября 2026 г.,\s*18:30/);
+    await expect(datePopover.locator('.date-summary')).toHaveText(/26 октября 2026 г.,/);
     await expect(datePopover.locator('.recurrence-value')).toHaveText('каждые 3 дн. — от дня выполнения');
     await expect(datePopover.getByLabel('Время')).toHaveValue('18:30');
     await expect(datePopover.getByLabel('Время')).toHaveAttribute('type', 'text');

@@ -171,7 +171,6 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .date-popover > header { display: flex; align-items: center; gap: 8px; padding: 2px 2px 11px; border-bottom: 1px solid var(--line); }
 .date-popover > header button { margin-left: auto; border: 0; border-radius: 6px; background: transparent; padding: 4px; display: grid; }
 .date-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; padding: 12px 3px 10px; font-size: 14px; font-weight: 650; }
-.date-summary-separator { margin-left: -2px; color: var(--muted); }
 .date-summary .time-field { gap: 4px; font-weight: 500; }
 .date-summary .time-field input { width: 56px; padding: 3px 2px; border: 0; border-bottom: 1px solid #cfd5d0; border-radius: 0; }
 .recurrence-summary { padding: 9px 3px 10px; border-top: 1px solid var(--line); }

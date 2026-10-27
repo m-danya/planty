@@ -181,9 +181,8 @@
     <section class="date-popover" aria-label={t('dateDetails')}>
       <header><CalendarDays size={19} /><strong>{t('dateDetails')}</strong><button type="button" onclick={() => dateOpen = false} aria-label={t('closeMenu')}><X size={17} /></button></header>
       <div class="date-summary">
-        <span>{formatDate(effectiveDate)}</span>
+        <span>{formatDate(effectiveDate)}{#if effectiveTime},{/if}</span>
         {#if effectiveTime}
-          <span class="date-summary-separator" aria-hidden="true">,</span>
           <label class="time-field"><Clock3 size={15} /><input type="text" inputmode="numeric" pattern="(?:[01]\d|2[0-3]):[0-5]\d" maxlength="5" value={effectiveTime.slice(0, 5)} onchange={changeDueTime} aria-label={t('dueTime')} /></label>
         {/if}
       </div>
