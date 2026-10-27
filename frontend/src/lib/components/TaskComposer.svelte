@@ -36,7 +36,7 @@
     localizedSectionTitle(candidate.title).replace(/^[^\p{L}\p{N}]+/u, '').toLocaleLowerCase('ru-RU')
       .startsWith(sectionQuery.toLocaleLowerCase('ru-RU'))
   ).slice(0, 7));
-  const effectiveDate = $derived(parsed.dueTo ?? task?.due_to ?? defaultDueTo);
+  const effectiveDate = $derived(parsed.phrase ? parsed.dueTo : task?.due_to ?? defaultDueTo);
   const effectiveDatePresentation = $derived(effectiveDate ? taskDatePresentation(effectiveDate) : null);
   const effectiveTime = $derived(dueTimeChanged ? manualDueTime : parsed.dueTime ?? task?.due_time ?? null);
   const effectiveRecurrence = $derived(parsed.phrase ? parsed.recurrence : task?.recurrence ?? null);

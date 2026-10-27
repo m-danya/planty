@@ -223,6 +223,7 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
   const recurringWeekday = lower.match(new RegExp(`${recurringPrefix}\\s+(${weekdayNames})(!?)(?!\\p{L})`, 'u'));
   const recurringBusinessDay = lower.match(new RegExp(`(?<!\\p{L})(?:${recurringPrefix}\\s+(?:${amountPattern}\\s+)?(?:будн(?:ий|их)\\s+(?:день|дня|дней)|рабоч(?:ий|их)\\s+(?:день|дня|дней)|weekday(?:s)?)(!?)|по\\s+будням(!?)|weekdays(!?))(?!\\p{L})`, 'u'));
   const relative = lower.match(new RegExp(`(?<!\\p{L})(?:через|in)\\s+(?:${amountPattern}\\s+)?(days|day|weekdays|weekday|weeks|week|months|month|years|year|будн(?:их|ий)\\s+(?:дней|день)|рабоч(?:их|ий)\\s+(?:дней|день)|дней|дня|день|недель|недели|неделю|месяцев|месяца|месяц|лет|года|год)(?!\\p{L})`, 'u'));
+  const withoutDate = [...lower.matchAll(/(?<!\p{L})(без\s+срока|нет\s+срока|no\s+due\s+date|no\s+date)(?!\p{L})/gu)].at(-1) ?? null;
 
   if (choose(recurringQuarter)) {
     recurrence = { period: amount(match[3]) * 3, type: 'months', flexible_mode: match[1] === '!' || match[2] === '!' || match[4] === '!' };
@@ -282,7 +283,14 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
       if (dueMoment <= now) due = plusDays(now, 1);
     }
   }
-  if ((!match.length && !parsedTime) || !due) {
+  const latestParsedIndex = Math.max(match.index ?? -1, parsedTime?.index ?? -1);
+  const removesDate = withoutDate !== null && (withoutDate.index ?? -1) > latestParsedIndex;
+  if (removesDate) {
+    match = withoutDate;
+    due = null;
+    recurrence = null;
+  }
+  if ((!match.length && !parsedTime) || (!due && !removesDate)) {
     return { cleanTitle: text, phrase: null, dueTo: null, dueTime: null, recurrence: null, label: null };
   }
 
@@ -294,7 +302,7 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
     const phrase = raw.trim();
     ranges.push({ start: start + leadingSpace, end: start + leadingSpace + phrase.length, phrase });
   }
-  if (parsedTime) {
+  if (parsedTime && !removesDate) {
     const overlapsDate = ranges.some((range) => parsedTime.index < range.end && parsedTime.index + parsedTime.length > range.start);
     if (!overlapsDate) ranges.push({ start: parsedTime.index, end: parsedTime.index + parsedTime.length, phrase: parsedTime.phrase });
   }
@@ -312,10 +320,10 @@ export function parseTaskText(input: string, now = new Date(), locale: 'ru' | 'e
   return {
     cleanTitle,
     phrase,
-    dueTo: localIso(due),
-    dueTime: parsedTime?.value ?? null,
+    dueTo: removesDate ? null : localIso(due!),
+    dueTime: removesDate ? null : parsedTime?.value ?? null,
     recurrence,
-    label: recurrence ? phrase : displayDate(due, now, locale)
+    label: removesDate ? null : recurrence ? phrase : displayDate(due!, now, locale)
   };
 }
 

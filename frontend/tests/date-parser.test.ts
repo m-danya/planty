@@ -109,6 +109,30 @@ describe('natural-language date parser', () => {
   });
 
   it.each([
+    ['каждый день качаться без срока', 'каждый день качаться', 'без срока'],
+    ['work out every day no date', 'work out every day', 'no date'],
+    ['позвонить завтра нет срока', 'позвонить завтра', 'нет срока'],
+    ['call tomorrow no due date', 'call tomorrow', 'no due date']
+  ])('lets a trailing no-date phrase override earlier scheduling in %s', (input, cleanTitle, phrase) => {
+    expect(parseTaskText(input, now)).toEqual({
+      cleanTitle,
+      phrase,
+      dueTo: null,
+      dueTime: null,
+      recurrence: null,
+      label: null
+    });
+  });
+
+  it('lets a later date override an earlier no-date phrase', () => {
+    expect(parseTaskText('позвонить без срока завтра', now)).toMatchObject({
+      cleanTitle: 'позвонить без срока',
+      phrase: 'завтра',
+      dueTo: '2026-10-26'
+    });
+  });
+
+  it.each([
     ['Позвонить завтра в 16:00', 'Позвонить', '2026-10-26', '16:00'],
     ['Buy milk tomorrow 9am', 'Buy milk', '2026-10-26', '09:00'],
     ['Созвон пт 19:30', 'Созвон', '2026-10-30', '19:30'],

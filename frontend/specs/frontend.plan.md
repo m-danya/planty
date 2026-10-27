@@ -179,6 +179,17 @@ backend, database, network access, or pre-existing user data.
     - expect: otherwise the selected sound plays only after a successful
       transition to the completed state
 
+#### 3.9. task-no-date-parsing
+
+**File:** `tests/task-no-date-parsing.spec.ts`
+
+**Steps:**
+  1. Edit a recurring dated task and end its title with `без срока`.
+    - expect: `без срока` owns the highlighted date phrase even after an
+      earlier recurrence phrase
+    - expect: saving clears the due date, due time, and recurrence while
+      retaining the earlier recurrence words as ordinary title text
+
 ### 4. Sections
 
 **Seed:** `tests/fixtures.ts`
