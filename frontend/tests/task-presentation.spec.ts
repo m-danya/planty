@@ -57,10 +57,10 @@ test.describe('Tasks', () => {
     await expect(tomorrowRow).toBeVisible();
 
     const overdueRow = page.getByTestId('task-row').filter({ hasText: 'Просроченная задача' });
-    await expect(overdueRow.locator('.task-date.overdue')).toContainText('24 окт.');
+    await expect(overdueRow.locator('.task-date.overdue')).toContainText('24 октября');
 
     const futureRow = page.getByTestId('task-row').filter({ hasText: 'Задача на будущее' });
-    await expect(futureRow.locator('.task-date.future')).toContainText('1 нояб.');
+    await expect(futureRow.locator('.task-date.future')).toContainText('1 ноября');
 
     const orphanRow = page.getByTestId('task-row').filter({ hasText: 'Осиротевшая подзадача' });
     await expect(orphanRow).toBeVisible();

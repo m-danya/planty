@@ -10,6 +10,7 @@
   import type { Section, Task, TaskDraft, TaskDropMode, User } from '$lib/types';
   import { getLocale, initLocale, localizedError, localizedSectionTitle, t } from '$lib/i18n.svelte';
   import { getAutoArchive, getSectionLayout, initPreferences, playCompletionSound, setSectionLayout, type SectionLayout } from '$lib/preferences.svelte';
+  import { calendarDateHeading } from '$lib/task-date-presentation';
 
   type View = 'section' | 'search' | 'calendar' | 'archived';
   type SectionDialog = { mode: 'new' | 'rename' | 'move' | 'delete'; section: Section | null };
@@ -695,7 +696,7 @@
               data-date={group.date}
               class:calendar-drop={calendarDropDate === group.date}
             >
-              <h2 id={`calendar-date-${group.date}`}>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+              <h2 id={`calendar-date-${group.date}`}>{calendarDateHeading(group.date)}</h2>
               {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent && composerDueTo === group.date}
                 <TaskComposer section={composerSectionId ?? selectedLeafSections[0]?.id ?? leafSections[0]?.id} sections={leafSections} defaultDueTo={group.date} onSave={saveTask} onCancel={resetComposer} />
               {/if}

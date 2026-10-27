@@ -40,6 +40,6 @@ test.describe('Tasks', () => {
       due_to: '2026-12-24'
     });
     row = page.getByTestId('task-row').filter({ hasText: 'Задача на будущее' });
-    await expect(row.locator('.task-date.future')).toContainText('24 дек.');
+    await expect(row.locator('.task-date.future')).toContainText('24 декабря');
   });
 });

@@ -287,6 +287,16 @@ backend, database, network access, or pre-existing user data.
     - expect: the update payload uses the selected due date while preserving
       recurrence settings
 
+#### 5.5. date-year-display
+
+**File:** `tests/date-year-display.spec.ts`
+
+**Steps:**
+  1. Render task dates from the current and a different year.
+    - expect: the current-year label omits the year while the other label shows it
+  2. Open calendar groups that cross New Year.
+    - expect: current-year headings omit the year and next-year headings show it
+
 ### 6. Date Parser
 
 **Seed:** `tests/date-parser.test.ts`
