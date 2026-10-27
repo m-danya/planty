@@ -33,6 +33,10 @@ test.describe('Tasks', () => {
     const updatedDescription = `${firstDescriptionItem}\n  - **Второй** пункт`;
     await editor.getByLabel('Название задачи').fill(updatedTitle);
     const description = editor.getByLabel('Описание задачи');
+    const initialDescriptionHeight = await description.evaluate((field) => field.getBoundingClientRect().height);
+    await description.fill('Первая строка\nВторая строка\nТретья строка\nЧетвёртая строка');
+    await expect.poll(() => description.evaluate((field) => field.getBoundingClientRect().height))
+      .toBeGreaterThan(initialDescriptionHeight);
     await description.fill(firstDescriptionItem);
     await expect(description).toBeFocused();
     await expect(description).toHaveCSS('outline-style', 'none');

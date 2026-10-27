@@ -31,6 +31,7 @@
   let manualDueDate = $state<string | null>(null);
   let dueDateChanged = $state(false);
   let textarea: HTMLTextAreaElement;
+  let descriptionTextarea: HTMLTextAreaElement;
   const parsed = $derived(parseTaskText(value, new Date(), getLocale()));
   const parts = $derived(highlightParts());
   const sectionMention = $derived(parseSectionMention());
@@ -56,6 +57,15 @@
   $effect(() => {
     sectionQuery;
     suggestionIndex = 0;
+  });
+
+  $effect(() => {
+    description;
+    queueMicrotask(() => {
+      if (!descriptionTextarea) return;
+      descriptionTextarea.style.height = 'auto';
+      descriptionTextarea.style.height = `${descriptionTextarea.scrollHeight}px`;
+    });
   });
 
   function parseSectionMention(): { marker: string; query: string } | null {
@@ -181,7 +191,7 @@
       </div>
     {/if}
   </div>
-  <textarea class="composer-description" bind:value={description} onkeydown={onDescriptionKeydown} rows="2" placeholder={t('description')} aria-label={t('taskDescription')}></textarea>
+  <textarea bind:this={descriptionTextarea} class="composer-description" bind:value={description} onkeydown={onDescriptionKeydown} rows="2" placeholder={t('description')} aria-label={t('taskDescription')}></textarea>
   <div class="composer-actions">
     <button type="button" class="icon-soft" title={t('moreOptions')} aria-label={t('moreOptions')}><Plus size={20} /></button>
     {#if effectiveDate && effectiveDatePresentation}

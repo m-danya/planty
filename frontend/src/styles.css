@@ -152,7 +152,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .composer-input-wrap textarea { position: absolute; inset: 0; resize: none; overflow: hidden; color: transparent; caret-color: #222; background: transparent; outline: none; }
 .composer-input-wrap textarea::placeholder { color: #929792; opacity: 1; }
 .composer-input-wrap textarea:placeholder-shown { color: #20231f; }
-.composer-description { border: 0; outline: 0; width: 100%; min-height: 46px; padding: 4px 0 8px; color: #666c67; font: inherit; font-size: 14px; line-height: 1.35; resize: vertical; }
+.composer-description { border: 0; outline: 0; width: 100%; min-height: 46px; padding: 4px 0 8px; overflow-y: hidden; color: #666c67; font: inherit; font-size: 14px; line-height: 1.35; resize: none; }
 .composer-description:focus-visible { outline: none; }
 .composer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
 .composer-actions button { cursor: pointer; }

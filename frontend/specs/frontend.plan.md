@@ -100,6 +100,7 @@ backend, database, network access, or pre-existing user data.
   2. Open the task editor and save multiline Markdown.
     - expect: the editor contains the original Markdown source
     - expect: the description does not show the global green focus outline
+    - expect: the description grows vertically as lines are added
     - expect: Enter in a list item starts another item with the same indentation
     - expect: Ctrl+Enter saves the edit, preserving and rendering the Markdown
   3. Create a task while the description is focused.
