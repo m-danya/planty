@@ -89,6 +89,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .inline-edit .composer { margin: 8px 0; }
 .task-row { --indent: calc(var(--depth) * 28px); position: relative; display: flex; min-height: 78px; align-items: flex-start; padding: 15px 6px 13px calc(1px + var(--indent)); border-bottom: 1px solid var(--line); transition: background .16s, transform .16s; }
 .task-row:hover { background: #fcfdfc; }
+.task-row.dragging { opacity: .55; cursor: grabbing; }
 .task-row.bare { min-height: 0; }
 .drag-handle { width: 16px; height: 26px; border: 0; background: none; padding: 5px 0; color: #adb1ad; opacity: 0; cursor: grab; }
 .task-row:hover .drag-handle { opacity: 1; }
@@ -176,7 +177,7 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .search-wrap { position: relative; margin-bottom: 30px; }
 .search-wrap svg { position: absolute; left: 15px; top: 13px; color: #777d78; }
 .search-input { width: 100%; border: 1px solid #cdd2cd; border-radius: 11px; padding: 13px 16px 13px 46px; font-size: 17px; }
-.calendar-group { margin-bottom: 30px; }.calendar-group h2 { font-size: 17px; margin: 0; padding: 12px 5px; border-bottom: 1px solid var(--line); }
+.calendar-group { margin-bottom: 30px; }.calendar-group.calendar-drop { border-radius: 10px; background: #f2f8f3; box-shadow: 0 0 0 2px #9bc7a3; }.calendar-group h2 { font-size: 17px; margin: 0; padding: 12px 5px; border-bottom: 1px solid var(--line); }
 .calendar-group.overdue-group h2 { color: #d42c3c; }
 .loading { width: 30px; height: 30px; margin: 100px auto; border: 3px solid #d9e1da; border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

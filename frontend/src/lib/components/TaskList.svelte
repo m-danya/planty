@@ -11,8 +11,8 @@
     onDelete,
     onMove,
     onDragStart,
-    onDropTask,
-    dragStartOffsetX = null,
+    dropTarget = null,
+    draggedTaskId = null,
     collapsedIds,
     onCollapseToggle,
     onAddSubtask,
@@ -36,9 +36,9 @@
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
-    onDragStart: (task: Task, offsetX: number) => void;
-    onDropTask: (target: Task, mode: TaskDropMode) => void;
-    dragStartOffsetX?: number | null;
+    onDragStart: (task: Task, event: PointerEvent) => void;
+    dropTarget?: { taskId: string; mode: TaskDropMode } | null;
+    draggedTaskId?: string | null;
     collapsedIds?: Set<string>;
     onCollapseToggle?: (task: Task) => void;
     onAddSubtask?: (task: Task) => void;
@@ -67,8 +67,8 @@
     {onDelete}
     {onMove}
     {onDragStart}
-    {onDropTask}
-    {dragStartOffsetX}
+    {dropTarget}
+    {draggedTaskId}
     {collapsedIds}
     {onCollapseToggle}
     {onAddSubtask}

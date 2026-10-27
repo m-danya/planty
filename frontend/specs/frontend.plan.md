@@ -117,6 +117,16 @@ backend, database, network access, or pre-existing user data.
     - expect: moving at least 40 px right within the cards nests across columns
     - expect: move indices are relative to the destination section, not the whole board
 
+#### 3.4.1. task-drag-scroll
+
+**File:** `tests/task-drag-scroll.spec.ts`
+
+**Steps:**
+  1. Start dragging a task in a list taller than the viewport and turn the mouse
+     wheel before dropping it.
+    - expect: the page scrolls while the pointer drag remains active
+    - expect: ending the drag clears the pointer-drag state
+
 #### 3.5. task-presentation
 
 **File:** `tests/task-presentation.spec.ts`

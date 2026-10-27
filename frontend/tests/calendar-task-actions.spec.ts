@@ -45,25 +45,32 @@ test.describe('Special Views', () => {
 
     // 3. Calendar DnD changes only due_to and leaves recurrence and hierarchy intact.
     const recurring = page.getByTestId('task-row').filter({ hasText: 'Разобрать GTD' });
-    const novemberGroup = page.getByTestId('calendar-date-group').filter({
-      has: page.getByRole('heading', { name: /1 ноября/ })
-    });
-    const transfer = await page.evaluateHandle(() => new DataTransfer());
-    await recurring.dispatchEvent('dragstart', { dataTransfer: transfer, clientX: 100, clientY: 100 });
-    await novemberGroup.dispatchEvent('dragover', { dataTransfer: transfer });
-    await novemberGroup.dispatchEvent('drop', { dataTransfer: transfer });
+    const targetGroup = tomorrowGroup;
+    const sourceBox = await recurring.boundingBox();
+    const targetBox = await targetGroup.boundingBox();
+    const handleBox = await recurring.getByRole('button', { name: 'Перетащить задачу' }).boundingBox();
+    if (!sourceBox || !targetBox || !handleBox) throw new Error('Calendar drag endpoints must be visible');
+    const startX = handleBox.x + handleBox.width / 2;
+    const startY = handleBox.y + handleBox.height / 2;
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX, startY + 8, { steps: 2 });
+    await page.mouse.move(targetBox.x + 100, targetBox.y + 20, { steps: 5 });
+    await expect(recurring).toHaveClass(/dragging/);
+    await expect(targetGroup).toHaveClass(/calendar-drop/);
+    await page.mouse.up();
 
     await expect.poll(() => mockApi.state.tasks.find((task) => task.id === ids.todayTask)?.due_to)
-      .toBe('2026-11-01');
+      .toBe('2026-10-26');
     expect(mockApi.requests('PATCH', '/api/task').at(-1)?.body).toEqual({
       id: ids.todayTask,
-      due_to: '2026-11-01'
+      due_to: '2026-10-26'
     });
     expect(mockApi.state.tasks.find((task) => task.id === ids.todayTask)).toMatchObject({
       section_id: ids.inbox,
       parent_task_id: null,
       recurrence: { period: 1, type: 'days', flexible_mode: false }
     });
-    await expect(novemberGroup.getByText('Разобрать GTD', { exact: true })).toBeVisible();
+    await expect(targetGroup.getByText('Разобрать GTD', { exact: true })).toBeVisible();
   });
 });

@@ -9,31 +9,27 @@ async function dragWithHorizontalOffset(
 ) {
   const sourceBox = await source.boundingBox();
   const targetBox = await target.boundingBox();
-  if (!sourceBox || !targetBox) throw new Error('Drag source and target must be visible');
-  const localStartX = Math.min(100, sourceBox.width / 2);
-  const startX = sourceBox.x + localStartX;
-  const transfer = await page.evaluateHandle(() => new DataTransfer());
-  await source.dispatchEvent('dragstart', {
-    dataTransfer: transfer,
-    clientX: startX,
-    clientY: sourceBox.y + sourceBox.height / 2
-  });
-  await target.dispatchEvent('dragover', {
-    dataTransfer: transfer,
-    clientX: targetBox.x + localStartX + horizontalOffset,
-    clientY: targetBox.y + targetBox.height / 2
-  });
-  await page.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())));
-  await target.dispatchEvent('dragover', {
-    dataTransfer: transfer,
-    clientX: targetBox.x + localStartX + horizontalOffset,
-    clientY: targetBox.y + targetBox.height / 2
-  });
-  await target.dispatchEvent('drop', {
-    dataTransfer: transfer,
-    clientX: targetBox.x + localStartX + horizontalOffset,
-    clientY: targetBox.y + targetBox.height / 2
-  });
+  const handleBox = await source.getByRole('button', { name: 'Перетащить задачу' }).boundingBox();
+  const sourceListBox = await source.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " task-list ")][1]').boundingBox();
+  const targetListBox = await target.locator('xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " task-list ")][1]').boundingBox();
+  if (!sourceBox || !targetBox || !handleBox || !sourceListBox || !targetListBox) throw new Error('Drag source and target must be visible');
+  const startX = handleBox.x + handleBox.width / 2;
+  const startY = handleBox.y + handleBox.height / 2;
+  const localStartX = startX - sourceListBox.x;
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX, startY + 8, { steps: 2 });
+  await page.mouse.move(
+    targetListBox.x + localStartX + horizontalOffset,
+    targetBox.y + targetBox.height / 2,
+    { steps: 5 }
+  );
+  await expect(source).toHaveClass(/dragging/);
+  await expect(target).toHaveClass(horizontalOffset >= 40 ? /drop-child/ : /drop-before/);
+  await page.mouse.up();
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
 }
 
 test.describe('Tasks', () => {

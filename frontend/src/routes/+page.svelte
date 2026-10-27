@@ -13,6 +13,15 @@
 
   type View = 'section' | 'search' | 'calendar' | 'archived';
   type SectionDialog = { mode: 'new' | 'rename' | 'move' | 'delete'; section: Section | null };
+  type TaskPointerDrag = {
+    task: Task;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    startOffsetX: number;
+    reorder: boolean;
+    active: boolean;
+  };
 
   let user = $state<User | null>(null);
   let sectionsTree = $state<Section[]>([]);
@@ -30,6 +39,9 @@
   let moveTaskTarget = $state<Task | null>(null);
   let draggedTask = $state<Task | null>(null);
   let taskDragStartOffsetX = $state<number | null>(null);
+  let taskPointerDrag = $state<TaskPointerDrag | null>(null);
+  let taskDropTarget = $state<{ taskId: string; mode: TaskDropMode } | null>(null);
+  let calendarDropDate = $state<string | null>(null);
   let toast = $state('');
   let query = $state('');
   let searchResults = $state<Task[]>([]);
@@ -186,6 +198,133 @@
     setSectionLayout(selected.id, sectionLayout);
   }
 
+  function finishTaskDrag() {
+    draggedTask = null;
+    taskDragStartOffsetX = null;
+    taskPointerDrag = null;
+    taskDropTarget = null;
+    calendarDropDate = null;
+  }
+
+  function finishNativeDrag() {
+    draggedSection = null;
+  }
+
+  function scrollDuringDrag(event: WheelEvent) {
+    if (!draggedSection) return;
+    const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? 16
+      : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? innerHeight
+        : 1;
+    const deltaX = event.deltaX * scale;
+    const deltaY = event.deltaY * scale;
+    const scrollable = event.composedPath().find((candidate) => {
+      if (!(candidate instanceof HTMLElement)) return false;
+      const style = getComputedStyle(candidate);
+      const canScrollX = deltaX !== 0
+        && /(auto|scroll|overlay)/.test(style.overflowX)
+        && candidate.scrollWidth > candidate.clientWidth;
+      const canScrollY = deltaY !== 0
+        && /(auto|scroll|overlay)/.test(style.overflowY)
+        && candidate.scrollHeight > candidate.clientHeight;
+      return canScrollX || canScrollY;
+    });
+    event.preventDefault();
+    if (scrollable instanceof HTMLElement) scrollable.scrollBy(deltaX, deltaY);
+    else window.scrollBy(deltaX, deltaY);
+  }
+
+  function visibleTask(taskId: string): Task | null {
+    return [
+      ...tasks,
+      ...searchResults,
+      ...overdueTasks,
+      ...calendarGroups.flatMap((group) => group.tasks)
+    ].find((task) => task.id === taskId) ?? null;
+  }
+
+  function startTaskPointerDrag(task: Task, event: PointerEvent, reorder: boolean) {
+    const source = event.currentTarget as HTMLElement;
+    const sourceList = source.closest<HTMLElement>('.task-list') ?? source;
+    taskPointerDrag = {
+      task,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      startOffsetX: event.clientX - sourceList.getBoundingClientRect().left,
+      reorder,
+      active: false
+    };
+    taskDropTarget = null;
+    calendarDropDate = null;
+  }
+
+  function moveTaskPointer(event: PointerEvent) {
+    const pointer = taskPointerDrag;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    if (!pointer.active && Math.hypot(event.clientX - pointer.startX, event.clientY - pointer.startY) < 6) return;
+    if (!pointer.active) {
+      taskPointerDrag = { ...pointer, active: true };
+      draggedTask = pointer.task;
+      taskDragStartOffsetX = pointer.startOffsetX;
+    }
+    event.preventDefault();
+    const hovered = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement | null;
+    if (view === 'calendar') {
+      const group = hovered?.closest<HTMLElement>('[data-testid="calendar-date-group"]');
+      calendarDropDate = group?.dataset.date ?? null;
+      taskDropTarget = null;
+      return;
+    }
+    calendarDropDate = null;
+    if (view !== 'section' || !pointer.reorder) {
+      taskDropTarget = null;
+      return;
+    }
+    const targetRow = hovered?.closest<HTMLElement>('[data-task-id]')
+      ?? [...document.querySelectorAll<HTMLElement>('[data-task-id]')].find((row) => {
+        const bounds = row.getBoundingClientRect();
+        return event.clientY >= bounds.top && event.clientY <= bounds.bottom;
+      });
+    const targetId = targetRow?.dataset.taskId;
+    if (!targetRow || !targetId || targetId === pointer.task.id) {
+      taskDropTarget = null;
+      return;
+    }
+    const targetList = targetRow.closest<HTMLElement>('.task-list') ?? targetRow;
+    const horizontalOffset = event.clientX - targetList.getBoundingClientRect().left - pointer.startOffsetX;
+    const mode: TaskDropMode = horizontalOffset >= 39.5
+      ? 'child'
+      : horizontalOffset <= -39.5
+        ? 'outdent'
+        : 'preserve';
+    taskDropTarget = { taskId: targetId, mode };
+  }
+
+  function endTaskPointer(event: PointerEvent) {
+    const pointer = taskPointerDrag;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    const active = pointer.active;
+    const dueTo = calendarDropDate;
+    const dropTarget = taskDropTarget;
+    taskPointerDrag = null;
+    taskDropTarget = null;
+    calendarDropDate = null;
+    if (!active) return;
+    event.preventDefault();
+    if (dueTo) {
+      void dropTaskOnCalendarDate(dueTo);
+      return;
+    }
+    const target = dropTarget ? visibleTask(dropTarget.taskId) : null;
+    if (target && dropTarget) {
+      void dropTask(target, dropTarget.mode);
+      return;
+    }
+    finishTaskDrag();
+  }
+
   async function changeView(next: 'search' | 'calendar' | 'archived') {
     view = next;
     sidebarOpen = false;
@@ -320,40 +459,43 @@
   }
 
   async function dropTask(target: Task, mode: TaskDropMode) {
-    if (!draggedTask || draggedTask.id === target.id) return;
+    const source = draggedTask;
+    if (!source || source.id === target.id) {
+      finishTaskDrag();
+      return;
+    }
     const descendants = new Set<string>();
     const collect = (parentId: string) => tasks.filter((task) => task.parent_task_id === parentId).forEach((child) => { descendants.add(child.id); collect(child.id); });
-    collect(draggedTask.id);
-    const currentParent = draggedTask.parent_task_id
-      ? tasks.find((task) => task.id === draggedTask?.parent_task_id) ?? null
+    collect(source.id);
+    const currentParent = source.parent_task_id
+      ? tasks.find((task) => task.id === source.parent_task_id) ?? null
       : null;
-    const movingAcrossSections = draggedTask.section_id !== target.section_id;
-    let parentId = draggedTask.parent_task_id;
+    const movingAcrossSections = source.section_id !== target.section_id;
+    let parentId = source.parent_task_id;
     if (mode === 'child') parentId = target.id;
     else if (movingAcrossSections) parentId = null;
     else if (mode === 'outdent') parentId = currentParent?.parent_task_id ?? null;
-    if (parentId === draggedTask.id || (parentId !== null && descendants.has(parentId))) {
+    if (parentId === source.id || (parentId !== null && descendants.has(parentId))) {
+      finishTaskDrag();
       notify(t('cannotNestTask'));
       return;
     }
     const destinationTasks = tasks.filter((task) => task.section_id === target.section_id);
     let index = destinationTasks.findIndex((task) => task.id === target.id);
     if (!movingAcrossSections) {
-      const sourceIndex = destinationTasks.findIndex((task) => task.id === draggedTask!.id);
+      const sourceIndex = destinationTasks.findIndex((task) => task.id === source.id);
       if (sourceIndex < index) index -= 1;
     }
+    finishTaskDrag();
     await safe(async () => {
-      await api.moveTask(draggedTask!.id, target.section_id, Math.max(0, mode === 'child' ? index + 1 : index), parentId);
-      draggedTask = null;
-      taskDragStartOffsetX = null;
+      await api.moveTask(source.id, target.section_id, Math.max(0, mode === 'child' ? index + 1 : index), parentId);
       await refreshSection();
     });
   }
 
   async function dropTaskOnCalendarDate(dueTo: string) {
     const source = draggedTask;
-    draggedTask = null;
-    taskDragStartOffsetX = null;
+    finishTaskDrag();
     if (!source || source.due_to === dueTo) return;
     await safe(async () => {
       await api.updateTask(source.id, { due_to: dueTo });
@@ -440,9 +582,10 @@
   }
 </script>
 
+<svelte:window onwheel={scrollDuringDrag} ondragend={finishNativeDrag} onpointermove={moveTaskPointer} onpointerup={endTaskPointer} onpointercancel={endTaskPointer} />
 <svelte:head><title>{heading} · Planty</title></svelte:head>
 
-{#snippet renderTasks(items: Task[], variant: 'list' | 'card' = 'list', reorder = false, calendarDueTo: string | null = null)}
+{#snippet renderTasks(items: Task[], variant: 'list' | 'card' = 'list', reorder = false)}
   <TaskList
     tasks={items}
     {variant}
@@ -451,13 +594,9 @@
     onArchive={(task) => void archiveTask(task)}
     onDelete={(task) => void deleteTask(task)}
     onMove={openMoveTask}
-    onDragStart={(task, offsetX) => { draggedTask = task; taskDragStartOffsetX = offsetX; }}
-    onDropTask={calendarDueTo
-      ? () => void dropTaskOnCalendarDate(calendarDueTo)
-      : reorder
-        ? (task, mode) => void dropTask(task, mode)
-        : () => {}}
-    dragStartOffsetX={taskDragStartOffsetX}
+    onDragStart={(task, event) => startTaskPointerDrag(task, event, reorder)}
+    dropTarget={taskDropTarget}
+    draggedTaskId={draggedTask?.id ?? null}
     collapsedIds={collapsed}
     onCollapseToggle={toggleCollapse}
     onAddSubtask={openAddSubtask}
@@ -549,14 +688,13 @@
               aria-labelledby={`calendar-date-${group.date}`}
               data-testid="calendar-date-group"
               data-date={group.date}
-              ondragover={(event) => { if (draggedTask) event.preventDefault(); }}
-              ondrop={(event) => { event.preventDefault(); void dropTaskOnCalendarDate(group.date); }}
+              class:calendar-drop={calendarDropDate === group.date}
             >
               <h2 id={`calendar-date-${group.date}`}>{new Date(`${group.date}T12:00:00`).toLocaleDateString(getLocale() === 'ru' ? 'ru-RU' : 'en-US', { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
               {#if composerOpen && !editingTask && !continuationAfter && !subtaskParent && composerDueTo === group.date}
                 <TaskComposer section={composerSectionId ?? selectedLeafSections[0]?.id ?? leafSections[0]?.id} sections={leafSections} defaultDueTo={group.date} onSave={saveTask} onCancel={resetComposer} />
               {/if}
-              {@render renderTasks(group.tasks, 'list', false, group.date)}
+              {@render renderTasks(group.tasks)}
               {#if !composerOpen || composerDueTo !== group.date}
                 {@render addTaskButton(selectedLeafSections[0]?.id ?? leafSections[0]?.id, group.date, false)}
               {/if}

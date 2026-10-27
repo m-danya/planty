@@ -16,8 +16,8 @@
     onDelete,
     onMove,
     onDragStart,
-    onDropTask,
-    dragStartOffsetX = null,
+    dropMode = null,
+    dragging = false,
     collapsed = false,
     onCollapseToggle,
     onAddSubtask,
@@ -32,9 +32,9 @@
     onArchive: (task: Task) => void;
     onDelete: (task: Task) => void;
     onMove: (task: Task) => void;
-    onDragStart: (task: Task, offsetX: number) => void;
-    onDropTask: (target: Task, mode: TaskDropMode) => void;
-    dragStartOffsetX?: number | null;
+    onDragStart: (task: Task, event: PointerEvent) => void;
+    dropMode?: TaskDropMode | null;
+    dragging?: boolean;
     collapsed?: boolean;
     onCollapseToggle?: (task: Task) => void;
     onAddSubtask?: (task: Task) => void;
@@ -43,8 +43,8 @@
 
   let menuOpen = $state(false);
   let menuPos = $state<{ x: number; y: number } | null>(null);
-  let dragMode = $state<TaskDropMode | null>(null);
   let customDateOpen = $state(false);
+  let pointerId = $state<number | null>(null);
 
   function dateLabel(value: string): { text: string; className: string } {
     const due = new Date(`${value}T12:00:00`);
@@ -61,6 +61,20 @@
 
   function clickRow(event: MouseEvent) {
     if (event.altKey) onEdit(task);
+  }
+
+  function pointerDown(event: PointerEvent) {
+    if (event.button !== 0) return;
+    pointerId = event.pointerId;
+    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    onDragStart(task, event);
+  }
+
+  function pointerEnd(event: PointerEvent) {
+    if (pointerId !== event.pointerId) return;
+    pointerId = null;
+    const row = event.currentTarget as HTMLElement;
+    if (row.hasPointerCapture(event.pointerId)) row.releasePointerCapture(event.pointerId);
   }
 
   function closeMenu() {
@@ -93,20 +107,6 @@
     return { x, y: Math.max(8, Math.min(menuPos.y, innerHeight - height - 8)) };
   }
 
-  function modeFor(event: DragEvent): TaskDropMode {
-    if (dragStartOffsetX === null) return 'preserve';
-    const target = event.currentTarget as HTMLElement;
-    const targetList = target.closest<HTMLElement>('.task-list') ?? target;
-    const horizontalOffset = event.clientX - targetList.getBoundingClientRect().left - dragStartOffsetX;
-    if (horizontalOffset >= 40) return 'child';
-    if (horizontalOffset <= -40) return 'outdent';
-    return 'preserve';
-  }
-
-  function dragOver(event: DragEvent) {
-    event.preventDefault();
-    dragMode = modeFor(event);
-  }
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -115,33 +115,19 @@
   class:completed={task.is_completed}
   class:task-card={variant === 'card'}
   class:bare={!task.due_to && !task.description}
-  class:drop-before={dragMode === 'preserve' || dragMode === 'outdent'}
-  class:drop-child={dragMode === 'child'}
+  class:dragging
+  class:drop-before={dropMode === 'preserve' || dropMode === 'outdent'}
+  class:drop-child={dropMode === 'child'}
   class="task-row"
   style={`--depth: ${depth}`}
   data-task-id={task.id}
   data-testid="task-row"
   role="listitem"
-  draggable="true"
-  ondragstart={(event) => {
-    event.dataTransfer?.setData('text/plain', task.id);
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
-    const source = event.currentTarget as HTMLElement;
-    const sourceList = source.closest<HTMLElement>('.task-list') ?? source;
-    onDragStart(task, event.clientX - sourceList.getBoundingClientRect().left);
-  }}
-  ondragover={dragOver}
-  ondragleave={() => (dragMode = null)}
-  ondrop={(event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    onDropTask(task, dragMode ?? modeFor(event));
-    dragMode = null;
-  }}
+  draggable="false"
   onclick={clickRow}
   oncontextmenu={(event) => { event.preventDefault(); menuOpen = true; menuPos = { x: event.clientX, y: event.clientY }; }}
 >
-  <button class="drag-handle" aria-label={t('dragTask')}><GripVertical size={16} /></button>
+  <button class="drag-handle" aria-label={t('dragTask')} onpointerdown={pointerDown} onpointerup={pointerEnd} onpointercancel={pointerEnd} onclick={(event) => event.stopPropagation()}><GripVertical size={16} /></button>
   <div class="task-chevron-slot">
     {#if childCount > 0}
       {#if onCollapseToggle}
