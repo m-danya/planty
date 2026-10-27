@@ -89,6 +89,22 @@ backend, database, network access, or pre-existing user data.
     - expect: every refreshed view reflects the mock server state
     - expect: cancelling deletion leaves the task intact
 
+#### 3.2a. task-markdown
+
+**File:** `tests/task-markdown.spec.ts`
+
+**Steps:**
+  1. Render Markdown in a task title and description.
+    - expect: bold, italic, strikethrough, safe links, and unordered lists use semantic HTML
+    - expect: unsafe link schemes remain visible as literal Markdown text
+  2. Open the task editor and save multiline Markdown.
+    - expect: the editor contains the original Markdown source
+    - expect: the description does not show the global green focus outline
+    - expect: Enter in a list item starts another item with the same indentation
+    - expect: Ctrl+Enter saves the edit, preserving and rendering the Markdown
+  3. Create a task while the description is focused.
+    - expect: Ctrl+Enter saves the new task just like Enter in the title
+
 #### 3.3. task-move-dialog
 
 **File:** `tests/task-move-dialog.spec.ts`

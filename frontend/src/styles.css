@@ -105,7 +105,11 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 .task-copy { min-width: 0; flex: 1; cursor: grab; }
 .task-row.dragging .task-copy { cursor: grabbing; }
 .task-title { font-size: 17px; line-height: 1.4; overflow-wrap: anywhere; }
-.task-description { color: #6d726e; margin-top: 2px; font-size: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.task-description { color: #6d726e; margin-top: 2px; font-size: 14px; overflow-wrap: anywhere; }
+.task-title p, .task-description p { margin: 0; white-space: pre-wrap; }
+.task-title ul, .task-description ul { margin: 2px 0; padding-left: 1.35em; }
+.task-title li, .task-description li { padding-left: .1em; }
+.task-title a, .task-description a { color: #237a45; text-decoration: underline; text-underline-offset: 2px; }
 .task-date { display: flex; align-items: center; gap: 4px; width: fit-content; margin-top: 7px; padding: 0; border: 0; background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
 .task-date.today, .date-chip.today { color: #07932e; }.task-date.overdue, .date-chip.overdue { color: #db2b3c; }.task-date.tomorrow, .date-chip.tomorrow { color: #b66200; }.task-date.weekday, .date-chip.weekday { color: #8a36b1; }.task-date.future, .date-chip.future { color: #3973bd; }
 .task-time, .due-time { color: #5f6560; font-variant-numeric: tabular-nums; }
@@ -142,13 +146,14 @@ button.task-chevron.expanded svg { transform: rotate(90deg); }
 
 .composer { border: 1px solid #b9bdb9; border-radius: 14px; padding: 14px 17px 12px; margin: 8px 0 16px; background: #fff; box-shadow: 0 4px 20px rgb(20 30 20 / 6%); }
 .composer-input-wrap { position: relative; font-size: 20px; line-height: 1.45; min-height: 31px; }
-.composer-highlight, .composer textarea { margin: 0; padding: 0; border: 0; width: 100%; min-height: 31px; line-height: inherit; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+.composer-highlight, .composer-input-wrap textarea { margin: 0; padding: 0; border: 0; width: 100%; min-height: 31px; line-height: inherit; font: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
 .composer-highlight { pointer-events: none; color: #262926; }
 .composer-highlight mark { background: #e1e3e1; border-radius: 3px; color: inherit; }
-.composer textarea { position: absolute; inset: 0; resize: none; overflow: hidden; color: transparent; caret-color: #222; background: transparent; outline: none; }
-.composer textarea::placeholder { color: #929792; opacity: 1; }
-.composer textarea:placeholder-shown { color: #20231f; }
-.composer-description { border: 0; outline: 0; width: 100%; padding: 4px 0 8px; color: #666c67; font-size: 14px; }
+.composer-input-wrap textarea { position: absolute; inset: 0; resize: none; overflow: hidden; color: transparent; caret-color: #222; background: transparent; outline: none; }
+.composer-input-wrap textarea::placeholder { color: #929792; opacity: 1; }
+.composer-input-wrap textarea:placeholder-shown { color: #20231f; }
+.composer-description { border: 0; outline: 0; width: 100%; min-height: 46px; padding: 4px 0 8px; color: #666c67; font: inherit; font-size: 14px; line-height: 1.35; resize: vertical; }
+.composer-description:focus-visible { outline: none; }
 .composer-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; }
 .composer-actions button { cursor: pointer; }
 .icon-soft, .chip-button { border: 0; display: grid; place-items: center; background: #f3f4f3; border-radius: 9px; width: 38px; height: 38px; color: #606660; }

@@ -116,6 +116,30 @@
     if (event.key === 'Escape') onCancel();
   }
 
+  function onDescriptionKeydown(event: KeyboardEvent) {
+    if (event.key !== 'Enter' || event.isComposing) return;
+
+    if (event.ctrlKey || event.metaKey) {
+      event.preventDefault();
+      void submit();
+      return;
+    }
+
+    const field = event.currentTarget as HTMLTextAreaElement;
+    const selectionStart = field.selectionStart;
+    const selectionEnd = field.selectionEnd;
+    const lineStart = description.lastIndexOf('\n', selectionStart - 1) + 1;
+    const currentLine = description.slice(lineStart, selectionStart);
+    const listItem = currentLine.match(/^(\s*)-\s+/u);
+    if (!listItem) return;
+
+    event.preventDefault();
+    const prefix = `${listItem[1]}- `;
+    description = `${description.slice(0, selectionStart)}\n${prefix}${description.slice(selectionEnd)}`;
+    const nextCaret = selectionStart + prefix.length + 1;
+    queueMicrotask(() => field.setSelectionRange(nextCaret, nextCaret));
+  }
+
   function highlightParts() {
     if (!parsed.phrase) return { before: value, phrase: '', after: '' };
     const index = value.toLocaleLowerCase('ru-RU').indexOf(parsed.phrase.toLocaleLowerCase('ru-RU'));
@@ -157,7 +181,7 @@
       </div>
     {/if}
   </div>
-  <input class="composer-description" bind:value={description} placeholder={t('description')} aria-label={t('taskDescription')} />
+  <textarea class="composer-description" bind:value={description} onkeydown={onDescriptionKeydown} rows="2" placeholder={t('description')} aria-label={t('taskDescription')}></textarea>
   <div class="composer-actions">
     <button type="button" class="icon-soft" title={t('moreOptions')} aria-label={t('moreOptions')}><Plus size={20} /></button>
     {#if effectiveDate && effectiveDatePresentation}

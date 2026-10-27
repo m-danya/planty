@@ -5,6 +5,7 @@
   import { taskDatePresentation } from '$lib/task-date-presentation';
   import { getLocale, t } from '$lib/i18n.svelte';
   import DatePicker from './DatePicker.svelte';
+  import Markdown from './Markdown.svelte';
 
   let {
     task,
@@ -154,8 +155,8 @@
   </div>
   <button class="complete-button" aria-label={task.is_completed ? t('restoreTask') : t('completeTask')} onclick={(event) => { event.stopPropagation(); onToggle(task); }}></button>
   <div class="task-copy">
-    <div class="task-title">{task.title}</div>
-    {#if task.description}<div class="task-description">{task.description}</div>{/if}
+    <div class="task-title"><Markdown source={task.title} /></div>
+    {#if task.description}<div class="task-description"><Markdown source={task.description} /></div>{/if}
     {#if task.due_to}
       {@const due = taskDatePresentation(task.due_to)}
       <button type="button" class={`task-date ${due.className}`} onclick={(event) => { event.stopPropagation(); onEdit(task, true); }}><CalendarDays size={15} />{due.text}{#if task.due_time}<span class="task-time">· {task.due_time.slice(0, 5)}</span>{/if}{#if task.recurrence}<Repeat2 size={14} aria-label={recurrenceLabel(task.recurrence, getLocale())} />{/if}</button>
